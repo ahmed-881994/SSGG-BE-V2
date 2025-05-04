@@ -1,9 +1,10 @@
+from typing import Optional
 from fastapi import HTTPException
 from app.database.connectionmanager import connect
 from app.service.logging import insert_log
 
 
-def search_members_db(name: str | None = None, teamID: int | None = None):
+def search_members_db(name: Optional[str] = None, teamID: Optional[int] = None):
     """Search for members based on name or teamID.
     This method allows you to search for members in the database by their name or teamID.
     If both parameters are provided, it will search for members that match either one.
@@ -29,7 +30,6 @@ def search_members_db(name: str | None = None, teamID: int | None = None):
             finally:
                 # insert_log(cursor, event, response, "SearchMembers")
                 conn.commit()
-    return response
 
 
 def format_member_records(records):
