@@ -1,7 +1,7 @@
+from typing import Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import ValidationError
 
 from app.service.addmember import add_member_db
 from app.service.getmember import format_member_record, get_member_db
@@ -37,7 +37,7 @@ def read_root():
 
 
 @app.get("/members", tags=["Members"])
-def search_members(name: str | None = None, teamID: int | None = None):
+def search_members(name: Optional[str] = None, teamID: Optional[int] = None):
     """
     Search members by (Name, Team)
     """
@@ -104,7 +104,7 @@ def get_member_attendance(member_id: str):
 
 
 @app.get("/teams", tags=["Teams"], operation_id="getTeams")
-def get_teams(team_name: str | None = None, stage_id: int | None = None, leader_id: str | None = None):
+def get_teams(team_name: Optional[str] = None, stage_id: Optional[int] = None, leader_id: Optional[str] = None):
     """
     Search teams by (Team Name, LeaderID, StageID)
     """
