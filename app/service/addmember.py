@@ -1,7 +1,6 @@
 from typing import Any
 from fastapi import HTTPException
 from app.database.connectionmanager import connect
-from app.schema.member import Member
 
 def add_member_db(member: dict[str, Any]):
     """adds a new member to the database.
