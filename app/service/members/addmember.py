@@ -1,5 +1,4 @@
 from typing import Any
-from fastapi import HTTPException
 from app.database.connectionmanager import connect
 
 

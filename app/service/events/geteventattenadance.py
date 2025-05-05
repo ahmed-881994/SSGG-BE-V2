@@ -1,0 +1,30 @@
+from fastapi import HTTPException
+from app.database.connectionmanager import connect
+
+def get_event_attendance_db(event_id: int):
+    conn = connect()
+    if conn is not None:
+        with conn as conn:
+            cursor = conn.cursor()
+            args = [event_id]
+            cursor.callproc("GetEventAttendance", args)
+            records = cursor.fetchall()
+            if records is None or len(records) == 0:
+                raise HTTPException(status_code=404, detail="Attendance not found")
+            conn.commit()
+            return format_event_attendance_records(records)
+        
+        
+def format_event_attendance_records(records):
+    result = {}
+    result['EventID'] = records[0].get('event_id')
+    result['Attendance'] = []
+    for record in records:
+        entry = {
+            "MemberID": record.get("member_id"),
+            "MemberName":{"EN":record.get("member_name_en"), "AR":record.get("member_name_ar")},
+            "AttendanceStateID": record.get("attendance_state_id"),
+            "AttendanceStateName":{"EN": record.get("attendance_state_name_en"), "AR": record.get("attendance_state_name_ar")},
+        }
+        result['Attendance'].append(entry)
+    return result
