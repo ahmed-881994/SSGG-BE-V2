@@ -4,6 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pymysql import MySQLError
 
+from app.service.events.createevent import create_event_db
+from app.service.events.getevent import get_event_db
+from app.service.events.geteventattenadance import get_event_attendance_db
+from app.service.events.searchevents import search_events_db
+from app.service.events.updateevent import update_event_db
+from app.service.events.updateeventattendance import update_event_attendance_db
 from app.service.members.addmember import add_member_db
 from app.service.members.getmember import get_member_db
 from app.service.members.getmemberattendance import get_member_attendance_db
@@ -38,7 +44,7 @@ def read_root():
         Dict: A dictionary with a welcome message.
         - message (str): A welcome message indicating the application is running.
     """
-    return {"message": "Welcome to the SSGG-V2 apAPIpAPIlication!"}
+    return {"message": "Welcome to the SSGG-V2 API!"}
 
 #------------------------------#
 # Members Endpoints
@@ -53,15 +59,8 @@ def search_members(name: Optional[str] = None, teamID: Optional[int] = None):
         return search_members_db(name, teamID)
     except MySQLError as error:
         raise HTTPException(status_code=500, detail=error.args)
-    # if records:
-    #     data = format_member_records(records)
-    #     return data
-    # else:
-    #     raise HTTPException(
-    #         status_code=404, detail="No members found with the provided criteria.")
 
-
-@app.post("/members", tags=["Members"])
+@app.post("/members", tags=["Members"], status_code=201)
 def add_member(body: Dict):
     """
     Creates a new member
@@ -94,7 +93,7 @@ def update_member(member_id: str, body: Dict):
         raise HTTPException(status_code=500, detail=error.args)
 
 
-@app.get("/members/{member_id}/attendance", tags=["Members"], operation_id="getMemberAttendance")
+@app.get("/members/{member_id}/attendance", tags=["Members"])
 def get_member_attendance(member_id: str):
     """
     Gets member attendance by ID
@@ -108,18 +107,18 @@ def get_member_attendance(member_id: str):
 # Teams Endpoints
 #------------------------------#
 
-@app.get("/teams", tags=["Teams"], operation_id="getTeams")
-def get_teams(team_name: Optional[str] = None, stage_id: Optional[int] = None, leader_id: Optional[str] = None):
+@app.get("/teams", tags=["Teams"])
+def get_teams(teamName: Optional[str] = None, stageID: Optional[int] = None, leaderID: Optional[str] = None):
     """
     Search teams by (Team Name, LeaderID, StageID)
     """
     try:
-        return search_teams_db(team_name, stage_id, leader_id)
+        return search_teams_db(teamName, stageID, leaderID)
     except MySQLError as error:
         raise HTTPException(status_code=500, detail=error.args)
 
 
-@app.post("/teams/transfer", tags=["Teams"], operation_id="transferTeam")
+@app.post("/teams/transfer", tags=["Teams"])
 def transfer_team(body: List[Dict]):
     """
     Transfer a list of members to a team
@@ -130,7 +129,7 @@ def transfer_team(body: List[Dict]):
         raise HTTPException(status_code=500, detail=error.args)
 
 
-@app.get("/teams/{team_id}/members", tags=["Teams"], operation_id="getTeamMembers")
+@app.get("/teams/{team_id}/members", tags=["Teams"])
 def get_team_members(team_id: int):
     """
     Get all members in a team
@@ -141,7 +140,7 @@ def get_team_members(team_id: int):
         raise HTTPException(status_code=500, detail=error.args)
 
 
-@app.get("/teams/{team_id}/attendance", tags=["Teams"], operation_id="getTeamAttendance")
+@app.get("/teams/{team_id}/attendance", tags=["Teams"])
 def get_team_attendance(team_id: int):
     """
     Get all attendance records for a team
@@ -155,19 +154,66 @@ def get_team_attendance(team_id: int):
 # Events Endpoints
 #------------------------------#
 
-@app.get("/events", tags=["Events"], operation_id="searchEvents")
-def search_events(team_id: Optional[int] = None, start_date: Optional[str] = None, end_date: Optional[str] = None, event_name: Optional[str] = None):
+@app.get("/events", tags=["Events"])
+def search_events(teamID: Optional[int] = None, startDate: Optional[str] = None, endDate: Optional[str] = None, name: Optional[str] = None):
     """
     Search events by (Name, Team, Start and End dates)
     """
-    pass
+    try:
+        return search_events_db(teamID, startDate, endDate, name)
+    except MySQLError as error:
+        raise HTTPException(status_code=500, detail=error.args)
 
-@app.post("/events/{event_id}/attendance", tags=["Events"], operation_id="takeEventAttendance")
-def take_team_attendance(team_id: int):
+@app.post("/events", tags=["Events"] , status_code=201)
+def create_event(body: Dict):
     """
-    Get all members in a team
+    Creates a new event
     """
-    pass
+    try:
+        return create_event_db(body)
+    except MySQLError as error:
+        raise HTTPException(status_code=500, detail=error.args)
+
+@app.get("/events/{event_id}", tags=["Events"])
+def get_event(event_id: int):
+    """
+    Gets event by ID
+    """
+    try:
+        return get_event_db(event_id)
+    except MySQLError as error:
+        raise HTTPException(status_code=500, detail=error.args)
+
+
+@app.patch("/events/{event_id}", tags=["Events"])
+def update_event(event_id: int, body: dict):
+    """
+    Updates event by ID
+    """
+    try:
+        return update_event_db(event_id, body)
+    except MySQLError as error:
+        raise HTTPException(status_code=500, detail=error.args)
+
+@app.get("/events/{event_id}/attendance", tags=["Events"], status_code=201)
+def get_event_attendance(event_id: int):
+    """
+    Gets the attendance list of an event
+    """
+    try:
+        return get_event_attendance_db(event_id)
+    except MySQLError as error:
+        raise HTTPException(status_code=500, detail=error.args)
+
+@app.patch("/events/{event_id}/attendance", tags=["Events"])
+def update_event_attendance(event_id: int, body: dict):
+    """
+    Updates members attendance in an event
+    """
+    try:
+        return update_event_attendance_db(event_id, body)
+    except MySQLError as error:
+        raise HTTPException(status_code=500, detail=error.args)
 
 
 @app.exception_handler(HTTPException)
