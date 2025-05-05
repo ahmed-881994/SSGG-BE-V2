@@ -20,16 +20,20 @@ def search_members_db(name: Optional[str] = None, teamID: Optional[int] = None):
 
     if conn is not None:
         with conn as conn:
-            try:
+            # try:
                 cursor = conn.cursor()
                 cursor.callproc("SearchMembers", [teamID, name])
                 records = cursor.fetchall()
-                return records
-            except Exception as error:
-                raise HTTPException(status_code=500, detail=error.args)
-            finally:
+                if records is not None and len(records) > 0:
+                    conn.commit()
+                    return format_member_records(records)
+                else:
+                    raise HTTPException(
+                        status_code=404, detail="No members found with the provided criteria.")
+            # except Exception as error:
+            #     raise HTTPException(status_code=500, detail=error.args)
+            # finally:
                 # insert_log(cursor, event, response, "SearchMembers")
-                conn.commit()
 
 
 def format_member_records(records):

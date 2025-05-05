@@ -8,17 +8,21 @@ def get_member_db(member_id: str):
 
     if conn is not None:
         with conn as conn:
-            try:
+            # try:
                 cursor = conn.cursor()
                 cursor.callproc("GetMember", [member_id])
                 records = cursor.fetchall()
-
-                return records
-            except Exception as error:
-                raise HTTPException(status_code=500, detail=error.args)
-            finally:
+                if records is not None and len(records) > 0:
+                    data = format_member_record(records)
+                    conn.commit()
+                    return data
+                else:
+                    raise HTTPException(status_code=404, detail="No members found with the provided criteria.")
+            # except Exception as error:
+            #     raise HTTPException(status_code=500, detail=error.args)
+            # finally:
                 # insert_log(cursor, event, response, "GetMember")
-                conn.commit()
+                
 
 
 def format_member_record(records):

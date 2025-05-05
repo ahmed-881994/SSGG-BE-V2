@@ -1,4 +1,3 @@
-from typing import Any
 from fastapi import HTTPException
 from app.database.connectionmanager import connect
 from app.service.logging import insert_log
@@ -15,32 +14,27 @@ def get_member_attendance_db(member_id: str):
         HTTPException: _description_
 
     Returns:
-        tuple: A tuple containing result code and the attendance records of the member if found.
-
+        dict: Having the attendance records of the member.
     """
     conn = connect()
 
     if conn is not None:
         with conn as conn:
-            try:
-                cursor = conn.cursor()
-                args = [member_id]
-                cursor.callproc("GetMember", args)
-                memberRecord = cursor.fetchone()
-                if memberRecord:
-                    cursor.callproc("GetMemberAttendance", args)
-                    records = cursor.fetchall()
-                    if len(records) == 0:
-                        return (-2, None)
-                    else:
-                        return (0, records)
-                else:
-                    return (-1, None)
-            except Exception as error:
-                raise HTTPException(status_code=500, detail=error.args)
-            finally:
+            cursor = conn.cursor()
+            args = [member_id]
+            cursor.callproc("GetMember", args)
+            memberRecord = cursor.fetchone()
+            if memberRecord is None or len(memberRecord) == 0:
+                raise HTTPException(
+                    status_code=404, detail="Member not found.")
+            cursor.callproc("GetMemberAttendance", args)
+            records = cursor.fetchall()
+            if records is None or len(records) == 0:
+                raise HTTPException(
+                    status_code=404, detail="No attendance records found for the provided member ID.")
+            conn.commit()
+            return format_member_attendance_records(records)
                 # insert_log(cursor, event, response, "GetMemberAttendance")
-                conn.commit()
 
 
 def format_member_attendance_records(records):
