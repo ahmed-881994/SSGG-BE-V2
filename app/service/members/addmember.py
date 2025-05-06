@@ -1,8 +1,9 @@
 from typing import Any
 from app.database.connectionmanager import connect
+from app.schema.members.member import MemberAddUpdate
 
 
-def add_member_db(member: dict[str, Any]):
+def add_member_db(member: MemberAddUpdate):
     """adds a new member to the database.
     This method allows you to add a new member to the database.
 
@@ -21,43 +22,43 @@ def add_member_db(member: dict[str, Any]):
         with conn as conn:
             cursor = conn.cursor()
             args = [
-                member.get("MemberID"),
-                member.get("Name").get("EN"),
-                member.get("Name").get("AR"),
-                member.get("PlaceOfBirth"),
-                member.get("DateOfBirth"),
-                member.get("Address"),
-                str(member.get("NationalIdNo")),
-                str(member.get("ClubIdNo")),
-                member.get("PassportNo"),
-                member.get("DateJoined"),
-                member.get("MobileNo"),
-                member.get("HomeContact"),
-                member.get("Email"),
-                member.get("FacebookURL"),
-                member.get("SchoolName"),
-                member.get("EducationType"),
-                member.get("FatherName"),
-                member.get("FatherContact"),
-                member.get("FatherJob"),
-                member.get("MotherName"),
-                member.get("MotherContact"),
-                member.get("MotherJob"),
-                member.get("GuardianName"),
-                member.get("GuardianContact"),
-                member.get("GuardianRelationship"),
-                member.get("Hobbies"),
-                member.get("HealthIssues"),
-                member.get("Medications"),
-                member.get("QRCodeURL"),
-                member.get("ImageURL"),
-                member.get("NationalIdURL"),
-                member.get("ParentNationalIdURL"),
-                member.get("ClubIdURL"),
-                member.get("PassportURL"),
-                member.get("BirthCertificateURL"),
-                1 if member.get("PhotoConsent") == True else 0,
-                1 if member.get("ConditionsConsent") == True else 0,
+                member.member_id,
+                member.name.en if member.name and hasattr(member.name, 'en') else None,
+                member.name.en if member.name and hasattr(member.name, 'ar') else None,
+                member.place_of_birth,
+                member.date_of_birth,
+                member.address,
+                str(member.national_id_no),
+                str(member.club_id_no),
+                member.passport_no,
+                member.date_joined,
+                member.mobile_no,
+                member.home_contact,
+                member.email,
+                member.facebook_url,
+                member.school_name,
+                member.education_type,
+                member.father_name,
+                member.father_contact,
+                member.father_job,
+                member.mother_name,
+                member.mother_contact,
+                member.mother_job,
+                member.guardian_name,
+                member.guardian_contact,
+                member.guardian_relationship,
+                member.hobbies,
+                member.health_issues,
+                member.medications,
+                member.qr_code_url,
+                member.image_url,
+                member.national_id_url,
+                member.parent_national_id_url,
+                member.club_id_url,
+                member.passport_url,
+                member.birth_certificate_url,
+                1 if member.photo_consent == True else 0,
+                1 if member.conditions_consent == True else 0,
             ]
             cursor.callproc("AddMember", args)
             conn.commit()

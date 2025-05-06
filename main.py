@@ -2,8 +2,11 @@ from typing import Dict, Optional, List
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 from pymysql import MySQLError
 
+from app.schema.common import ErrorResponse
+from app.schema.members.member import MemberAddUpdate, MemberAttendance, MemberGet
 from app.service.events.createevent import create_event_db
 from app.service.events.getevent import get_event_db
 from app.service.events.geteventattenadance import get_event_attendance_db
@@ -20,7 +23,9 @@ from app.service.teams.getteammembers import get_team_members_db
 from app.service.teams.searchteams import search_teams_db
 from app.service.teams.transferteammembers import transfer_team_members_db
 
-app = FastAPI()
+app = FastAPI(version="2.0.0", responses={
+    500: {"description": "Internal server error", "model": ErrorResponse},
+})
 
 origins = ['*']
 
@@ -50,7 +55,8 @@ def read_root():
 # Members Endpoints
 #------------------------------#
 
-@app.get("/members", tags=["Members"])
+@app.get("/members", tags=["Members"], responses={
+    200: {"description": "Success", "model": List[MemberGet]}})
 def search_members(name: Optional[str] = None, teamID: Optional[int] = None):
     """
     Search members by (Name, Team)
@@ -60,8 +66,9 @@ def search_members(name: Optional[str] = None, teamID: Optional[int] = None):
     except MySQLError as error:
         raise HTTPException(status_code=500, detail=error.args)
 
-@app.post("/members", tags=["Members"], status_code=201)
-def add_member(body: Dict):
+@app.post("/members", tags=["Members"], status_code=201, responses={
+    201: {"description": "Member created successfully", "model": MemberAddUpdate}})
+def add_member(body: MemberAddUpdate):
     """
     Creates a new member
     """
@@ -71,7 +78,8 @@ def add_member(body: Dict):
         raise HTTPException(status_code=500, detail=error.args)
 
 
-@app.get("/members/{member_id}", tags=["Members"])
+@app.get("/members/{member_id}", tags=["Members"], responses={
+    200: {"description": "Success", "model": MemberGet}})
 def get_member(member_id: str):
     """
     Get Member by ID
@@ -82,8 +90,9 @@ def get_member(member_id: str):
         raise HTTPException(status_code=500, detail=error.args)
 
 
-@app.patch("/members/{member_id}", tags=["Members"])
-def update_member(member_id: str, body: Dict):
+@app.patch("/members/{member_id}", tags=["Members"], responses={
+    200: {"description": "Member updated successfully", "model": MemberAddUpdate}})
+def update_member(member_id: str, body: MemberAddUpdate):
     """
     Updates a member
     """
@@ -93,7 +102,8 @@ def update_member(member_id: str, body: Dict):
         raise HTTPException(status_code=500, detail=error.args)
 
 
-@app.get("/members/{member_id}/attendance", tags=["Members"])
+@app.get("/members/{member_id}/attendance", tags=["Members"], responses={
+    200: {"description": "Success", "model": MemberAttendance}})
 def get_member_attendance(member_id: str):
     """
     Gets member attendance by ID
@@ -216,20 +226,20 @@ def update_event_attendance(event_id: int, body: dict):
         raise HTTPException(status_code=500, detail=error.args)
 
 
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request, exc):
-    """
-    Custom exception handler for HTTPException.
-    This function handles HTTP exceptions and returns a JSON response with the error details.
+# @app.exception_handler(HTTPException)
+# async def http_exception_handler(request, exc):
+#     """
+#     Custom exception handler for HTTPException.
+#     This function handles HTTP exceptions and returns a JSON response with the error details.
 
-    Args:
-        request: The HTTP request object.
-        exc: The HTTPException object.
+#     Args:
+#         request: The HTTP request object.
+#         exc: The HTTPException object.
 
-    Returns:
-        JSONResponse: A JSON response containing the error details.
-    """
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"detail": exc.detail},
-    )
+#     Returns:
+#         JSONResponse: A JSON response containing the error details.
+#     """
+#     return JSONResponse(
+#         status_code=exc.status_code,
+#         content={"detail": exc.detail},
+#     )

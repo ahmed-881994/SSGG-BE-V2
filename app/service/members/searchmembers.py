@@ -1,4 +1,5 @@
-from typing import Optional
+import datetime
+from typing import Any, Optional
 from fastapi import HTTPException
 from app.database.connectionmanager import connect
 from app.service.logging import insert_log
@@ -21,22 +22,22 @@ def search_members_db(name: Optional[str] = None, teamID: Optional[int] = None):
     if conn is not None:
         with conn as conn:
             # try:
-                cursor = conn.cursor()
-                cursor.callproc("SearchMembers", [teamID, name])
-                records = cursor.fetchall()
-                if records is not None and len(records) > 0:
-                    conn.commit()
-                    return format_member_records(records)
-                else:
-                    raise HTTPException(
-                        status_code=404, detail="No members found with the provided criteria.")
+            cursor = conn.cursor()
+            cursor.callproc("SearchMembers", [teamID, name])
+            records = cursor.fetchall()
+            if records is not None and len(records) > 0:
+                conn.commit()
+                return format_member_records(records)
+            else:
+                raise HTTPException(
+                    status_code=404, detail="No members found with the provided criteria.")
             # except Exception as error:
             #     raise HTTPException(status_code=500, detail=error.args)
             # finally:
-                # insert_log(cursor, event, response, "SearchMembers")
+            # insert_log(cursor, event, response, "SearchMembers")
 
 
-def format_member_records(records):
+def format_member_records(records:tuple[dict[str, Any]]):
     formatted_entries = []
 
     for record in records:
@@ -58,8 +59,8 @@ def format_member_records(records):
                 "TeamID": record.get("team_id"),
                 "IsTeamLeader": record.get("is_leader"),
                 "IsTeamLeader": True if record.get("is_leader") == 1 else False,
-                "DateJoined": record.get("team_join_date"),
-                "DateTransferred": record.get("team_transfer_date"),
+                "DateJoined": None if record.get("team_join_date") is None else record.get("team_join_date"),
+                "DateTransferred": None if record.get("team_transfer_date") is None else record.get("team_transfer_date"),
                 "IsCurrentTeam": True if record.get("team_transfer_date") is None and record.get("is_leader") == 0 else False,
                 "TeamName": {
                     "EN": record.get("team_name_en"),
@@ -77,8 +78,8 @@ def format_member_records(records):
                         "TeamID": record.get("team_id"),
                         "IsTeamLeader": record.get("is_leader"),
                         "IsTeamLeader": True if record.get("is_leader") == 1 else False,
-                        "DateJoined": record.get("team_join_date"),
-                        "DateTransferred": record.get("team_transfer_date"),
+                        "DateJoined": None if record.get("team_join_date") is None else record.get("team_join_date"),
+                        "DateTransferred": None if record.get("team_transfer_date") is None else record.get("team_transfer_date"),
                         "IsCurrentTeam": True if record.get("team_transfer_date") is None and record.get("is_leader") == 0 else False,
                         "TeamName": {
                             "EN": record.get("team_name_en"),
@@ -87,12 +88,12 @@ def format_member_records(records):
                     }
                 ],
                 "PlaceOfBirth": record.get("place_of_birth"),
-                "DateOfBirth": record.get("date_of_birth"),
+                "DateOfBirth": None if record.get("date_of_birth") is None else record.get("date_of_birth"),
                 "Address": record.get("address"),
                 "NationalIdNo": record.get("national_id_no"),
                 "ClubIdNo": record.get("club_id_no"),
                 "PassportNo": record.get("passport_no"),
-                "DateJoined": record.get("date_joined"),
+                "DateJoined": None if record.get("date_joined") is None else str(record.get("date_joined")),
                 "MobileNo": record.get("mobile_number"),
                 "HomeContact": record.get("home_contact"),
                 "Email": record.get("email"),
