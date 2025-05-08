@@ -1,8 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from starlette.middleware.sessions import SessionMiddleware
+
 from app.api import auth, events, members, teams
 from app.schema.common import ErrorResponse
 
@@ -11,8 +9,6 @@ app = FastAPI(title="SSGG", summary="This is the documentation for the backend A
     500: {"description": "Internal server error", "model": ErrorResponse},
 })
 
-app.add_middleware(SessionMiddleware, secret_key="session-secret-key")
-security = HTTPBearer()
 
 origins = ['*']
 
