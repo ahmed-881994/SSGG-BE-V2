@@ -32,8 +32,8 @@ def format_events_records(records):
                 "AR": record.get("event_name_ar"),
             },
             "Location": record.get("event_location"),
-            "StartDate": record.get("event_start_date"),
-            "EndDate": record.get("event_end_date"),
+            "StartDate": str(record.get("event_start_date")),
+            "EndDate": str(record.get("event_end_date")),
             "IsMultiTeam": True if record.get("is_multi_team") == 1 else False,
             "TeamID": record.get("team_id"),
         }

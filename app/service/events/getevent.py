@@ -19,13 +19,14 @@ def get_event_db(event_id: int):
 def format_event_record(record):
     entry = {
         "EventID": record.get("event_id"),
-        "EventName": {
+        "EventTypeID": record.get("event_type_id"),
+        "Name": {
             "EN": record.get("event_name_en"),
             "AR": record.get("event_name_ar"),
         },
-        "EventLocation": record.get("event_location"),
-        "EventStartDate": record.get("event_start_date"),
-        "EventEndDate": record.get("event_end_date"),
+        "Location": record.get("event_location"),
+        "StartDate": str(record.get("event_start_date")),
+        "EndDate": str(record.get("event_end_date")),
         "IsMultiTeam": True if record.get("is_multi_team") == 1 else False,
         "TeamID": record.get("team_id"),
     }

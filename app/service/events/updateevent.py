@@ -1,8 +1,9 @@
 from fastapi import HTTPException
 from app.database.connectionmanager import connect
+from app.schema.events.events import EventCreate
 
 
-def update_event_db(event_id: int, body: dict):
+def update_event_db(event_id: int, body: EventCreate):
     conn = connect()
 
     if conn is not None:
@@ -16,15 +17,14 @@ def update_event_db(event_id: int, body: dict):
                 raise HTTPException(
                     status_code=404, detail="Event not found")
             args = []
-            args.append(event_id)
-            args.append(body.get("EventTypeID"))
-            args.append(body.get("EventName").get("EN"))
-            args.append(body.get("EventName").get("AR"))
-            args.append(body.get("EventLocation"))
-            args.append(body.get("EventStartDate"))
-            args.append(body.get("EventEndDate"))
-            args.append(1 if body.get("IsMultiTeam") == True else 0)
-            args.append(body.get("TeamID"))
+            args.append(body.event_type_id)
+            args.append(body.name.en)
+            args.append(body.name.ar)
+            args.append(body.location)
+            args.append(body.start_date)
+            args.append(body.end_date)
+            args.append(1 if body.is_multi_team== True else 0)
+            args.append(body.team_id)
             cursor.callproc("UpdateEvent", args)
             conn.commit()
             return {"message": "Event updated"}

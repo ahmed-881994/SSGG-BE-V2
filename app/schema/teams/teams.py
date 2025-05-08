@@ -2,14 +2,9 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
+from app.schema.common import AttendanceItem, MemberBrief, Name
 
-class Name(BaseModel):
-    en: Optional[str] = Field(alias='EN', default=None)
-    ar: Optional[str] = Field(alias='AR', default=None)
     
-class Member(BaseModel):
-        member_id: str = Field(alias='MemberID')
-        name: Name = Field(alias='Name')
 
 class Team(BaseModel):
     
@@ -21,8 +16,8 @@ class Team(BaseModel):
     team_id: Optional[int] = Field(None, alias='TeamID')
     name: Optional[Name] = Field(None, alias='Name')
     stage: Optional[Stage] = Field(None, alias='Stage')
-    leaders: Optional[List[Member]] = Field(None, alias='Leaders')
-    members: Optional[List[Member]] = Field(None, alias='Members')
+    leaders: Optional[List[MemberBrief]] = Field(None, alias='Leaders')
+    members: Optional[List[MemberBrief]] = Field(None, alias='Members')
 
 class TeamTransfer(BaseModel):
     class Member(BaseModel):
@@ -35,12 +30,6 @@ class TeamTransfer(BaseModel):
     member: Member = Field(alias='Member')
     
 class TeamAttendance(BaseModel):
-    class AttendanceItem(BaseModel):
-        member: Member = Field( alias='Member')
-        attendance_id: int = Field(alias='AttendanceID')
-        attendance_state_id: int = Field(alias='AttendanceStateID')
-        attendance_state_name: Name = Field(alias='AttendanceStateName')
-
 
     event_id: Optional[int] = Field(None, alias='EventID')
     name: Name = Field(alias='Name')

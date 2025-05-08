@@ -2,10 +2,10 @@ import datetime
 from typing import List, Optional 
 from pydantic import BaseModel, Field
 
+from app.schema.common import Name
 
-class Name(BaseModel):
-    en: Optional[str] = Field(alias='EN', default=None)
-    ar: Optional[str] = Field(alias='AR', default=None)
+
+
 
 
 class Team(BaseModel):

@@ -53,7 +53,7 @@ def format_team_records(records):
             teams[team_id]["StageName"]["AR"] = entry.get('stage_name_ar')
 
         member = {
-            "MemberID": entry.get('member_id'),
+            "MemberID": entry.get('member_id') if entry.get('member_id') else "", # the condition should be removed
             "Name": {
                 "EN": entry.get('name_en'),
                 "AR": entry.get('name_ar')

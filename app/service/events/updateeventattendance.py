@@ -1,8 +1,9 @@
 from fastapi import HTTPException
 from app.database.connectionmanager import connect
+from app.schema.events.events import UpdateEventAttendance
 
 
-def update_event_attendance_db(event_id: int, body: dict):
+def update_event_attendance_db(event_id: int, body: UpdateEventAttendance):
     conn = connect()
 
     if conn is not None:
@@ -17,11 +18,11 @@ def update_event_attendance_db(event_id: int, body: dict):
                 raise HTTPException(
                     status_code=404, detail="Event not found")
 
-            attendance_list = body.get("Attendance")
+            attendance_list = body.attendance
 
             for attendance in attendance_list:
-                member_id = attendance.get("MemberID")
-                attendance_state = attendance.get("AttendanceStateID")
+                member_id = attendance.member_id
+                attendance_state = attendance.attendance_state_id
                 cursor.callproc("GetMember", [member_id])
                 member = cursor.fetchone()
                 
@@ -29,7 +30,7 @@ def update_event_attendance_db(event_id: int, body: dict):
                 if member is None:
                     conn.rollback()
                     raise HTTPException(
-                        status_code=404, detail="Event not found")
+                        status_code=404, detail="Member not found")
 
                 cursor.callproc(
                     "TakeAttendance", [
