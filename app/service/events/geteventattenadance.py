@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from app.database.connectionmanager import connect
+from app.util.database import connect
 
 
 def get_event_attendance_db(event_id: int):

@@ -1,8 +1,8 @@
 import datetime
 from typing import Any, Optional
 from fastapi import HTTPException
-from app.database.connectionmanager import connect
-from app.service.logging import insert_log
+from app.util.database import connect
+from app.util.logging import insert_log
 
 
 def search_members_db(name: Optional[str] = None, teamID: Optional[int] = None):

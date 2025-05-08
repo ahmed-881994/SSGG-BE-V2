@@ -1,8 +1,8 @@
 from typing import List
 from fastapi import HTTPException
-from app.database.connectionmanager import connect
+from app.util.database import connect
 from app.schema.teams.teams import TeamAdd
-from app.service.logging import insert_log
+from app.util.logging import insert_log
 
 
 def add_team_member_db(team_id: int, body: List[TeamAdd]):

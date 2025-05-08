@@ -1,8 +1,8 @@
 from collections import defaultdict
 from typing import Optional
 from fastapi import HTTPException
-from app.database.connectionmanager import connect
-from app.service.logging import insert_log
+from app.util.database import connect
+from app.util.logging import insert_log
 
 
 def search_teams_db(team_name: Optional[str] = None, stage_id: Optional[int] = None, leader_id: Optional[str] = None):

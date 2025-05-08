@@ -1,5 +1,5 @@
 from typing import Any
-from app.database.connectionmanager import connect
+from app.util.database import connect
 from app.schema.members.member import MemberAddUpdate
 
 

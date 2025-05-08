@@ -1,6 +1,6 @@
 from fastapi import HTTPException
-from app.database.connectionmanager import connect
-from app.service.logging import insert_log
+from app.util.database import connect
+from app.util.logging import insert_log
 
 
 def get_member_attendance_db(member_id: str):

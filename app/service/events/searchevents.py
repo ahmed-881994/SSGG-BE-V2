@@ -1,6 +1,6 @@
 from typing import Optional
 from fastapi import HTTPException
-from app.database.connectionmanager import connect
+from app.util.database import connect
 
 
 def search_events_db(team_id: Optional[int] = None, start_date: Optional[str] = None, end_date: Optional[str] = None, event_name: Optional[str] = None):

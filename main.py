@@ -1,35 +1,18 @@
-from typing import Dict, Optional, List
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import ValidationError
-from pymysql import MySQLError
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from starlette.middleware.sessions import SessionMiddleware
+from app.api import auth, events, members, teams
+from app.schema.common import ErrorResponse
 
-from app.schema.common import ErrorResponse, SuccessResponse
-from app.schema.members.member import MemberAddUpdate, MemberAttendance, MemberGet
-from app.schema.teams.teams import Team, TeamAdd, TeamAttendance, TeamTransfer
-from app.schema.events.events import Event, EventAttendance, EventCreate, UpdateEventAttendance
-from app.service.events.createevent import create_event_db
-from app.service.events.getevent import get_event_db
-from app.service.events.geteventattenadance import get_event_attendance_db
-from app.service.events.searchevents import search_events_db
-from app.service.events.updateevent import update_event_db
-from app.service.events.updateeventattendance import update_event_attendance_db
-from app.service.members.addmember import add_member_db
-from app.service.members.getmember import get_member_db
-from app.service.members.getmemberattendance import get_member_attendance_db
-from app.service.members.searchmembers import search_members_db
-from app.service.members.updatemember import update_member_db
-from app.service.teams.addteammember import add_team_member_db
-from app.service.teams.getteamattendance import get_team_attendance_db
-from app.service.teams.getteammembers import get_team_members_db
-from app.service.teams.searchteams import search_teams_db
-from app.service.teams.transferteammembers import transfer_team_members_db
-
-app = FastAPI(version="2.0.0", responses={
+app = FastAPI(title="SSGG", summary="This is the documentation for the backend APIs for the Sporting Scouts and Girl Guides members management app", version="2.0.0", responses={
     400: {"description": "Bad request", "model": ErrorResponse},
     500: {"description": "Internal server error", "model": ErrorResponse},
 })
+
+app.add_middleware(SessionMiddleware, secret_key="session-secret-key")
+security = HTTPBearer()
 
 origins = ['*']
 
@@ -43,7 +26,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+tags_metadata = [
+    {
+        "name": "Members",
+        "description": "Everything about Members.",
+    },
+    {
+        "name": "Teams",
+        "description": "Everything about Teams.",
+    },
+    {
+        "name": "Events",
+        "description": "Everything about Events.",
+    },
+]
 
+app.openapi_tags = tags_metadata
+
+# ------------------------------#
+# API routes
+# ------------------------------#
+app.include_router(auth.router)
+app.include_router(members.router)
+app.include_router(teams.router)
+app.include_router(events.router)
+
+
+# ------------------------------#
+# Health check endpoint
+# ------------------------------#
 @app.get("/", include_in_schema=False)
 def read_root():
     """Health check endpoint.
@@ -54,202 +65,6 @@ def read_root():
         - message (str): A welcome message indicating the application is running.
     """
     return {"message": "Welcome to the SSGG-V2 API!"}
-
-#------------------------------#
-# Members Endpoints
-#------------------------------#
-
-@app.get("/members", tags=["Members"], response_model=List[MemberGet], responses={
-    200: {"description": "Success", "model": List[MemberGet]}})
-def search_members(name: Optional[str] = None, teamID: Optional[int] = None):
-    """
-    Search members by (Name, Team)
-    """
-    try:
-        return search_members_db(name, teamID)
-    except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
-
-@app.post("/members", tags=["Members"], status_code=201, responses={
-    201: {"description": "Member created successfully", "model": MemberAddUpdate}})
-def add_member(body: MemberAddUpdate):
-    """
-    Creates a new member
-    """
-    try:
-        return add_member_db(body)
-    except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
-
-
-@app.get("/members/{member_id}", tags=["Members"], response_model=MemberGet, responses={
-    200: {"description": "Success", "model": MemberGet}})
-def get_member(member_id: str):
-    """
-    Get Member by ID
-    """
-    try:
-        return get_member_db(member_id)
-    except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
-
-
-@app.patch("/members/{member_id}", tags=["Members"], responses={
-    200: {"description": "Member updated successfully", "model": MemberAddUpdate}})
-def update_member(member_id: str, body: MemberAddUpdate):
-    """
-    Updates a member
-    """
-    try:
-        return update_member_db(member_id, body)
-    except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
-
-
-@app.get("/members/{member_id}/attendance", tags=["Members"], responses={
-    200: {"description": "Success", "model": MemberAttendance}})
-def get_member_attendance(member_id: str):
-    """
-    Gets member attendance by ID
-    """
-    try:
-        return get_member_attendance_db(member_id)
-    except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
-
-#------------------------------#
-# Teams Endpoints
-#------------------------------#
-
-@app.get("/teams", tags=["Teams"], response_model=List[Team], responses={
-    200: {"description": "Success", "model": List[Team]}})
-def get_teams(teamName: Optional[str] = None, stageID: Optional[int] = None, leaderID: Optional[str] = None):
-    """
-    Search teams by (Team Name, LeaderID, StageID)
-    """
-    try:
-        return search_teams_db(teamName, stageID, leaderID)
-    except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
-
-
-@app.post("/teams/transfer", tags=["Teams"], response_model= SuccessResponse, responses={
-    200: {"description": "Success", "model": SuccessResponse}})
-def transfer_team(body: List[TeamTransfer]):
-    """
-    Transfer a list of members to a team
-    """
-    try:
-        return transfer_team_members_db(body)
-    except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
-
-
-@app.get("/teams/{team_id}/members", tags=["Teams"], response_model= Team, responses={
-    200: {"description": "Success", "model": Team}})
-def get_team_members(team_id: int):
-    """
-    Get all members in a team
-    """
-    try:
-        return get_team_members_db(team_id)
-    except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
-
-
-@app.post("/teams/{teamID}/members", tags=["Teams"], response_model= SuccessResponse, responses={
-    200: {"description": "Success", "model": SuccessResponse}})
-def add_team_members(teamID: int, body: List[TeamAdd]):
-    """
-    Adds a list of members to a team
-    """
-    try:
-        return add_team_member_db(teamID ,body)
-    except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
-
-
-@app.get("/teams/{team_id}/attendance", tags=["Teams"], response_model= List[TeamAttendance], responses={
-    200: {"description": "Success", "model": List[TeamAttendance]}})
-def get_team_attendance(team_id: int):
-    """
-    Get all attendance records for a team
-    """
-    try:
-        return get_team_attendance_db(team_id)
-    except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
-
-#------------------------------#
-# Events Endpoints
-#------------------------------#
-
-@app.get("/events", tags=["Events"], response_model=List[Event], responses={
-    200: {"description": "Success", "model": List[Event]}})
-def search_events(teamID: Optional[int] = None, startDate: Optional[str] = None, endDate: Optional[str] = None, name: Optional[str] = None):
-    """
-    Search events by (Name, Team, Start and End dates)
-    """
-    try:
-        return search_events_db(teamID, startDate, endDate, name)
-    except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
-
-@app.post("/events", tags=["Events"] , status_code=201, response_model=SuccessResponse, responses={
-    200: {"description": "Success", "model": SuccessResponse}})
-def create_event(body: EventCreate):
-    """
-    Creates a new event
-    """
-    try:
-        return create_event_db(body)
-    except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
-
-@app.get("/events/{event_id}", tags=["Events"], response_model=Event, responses={
-    200: {"description": "Success", "model": Event}})
-def get_event(event_id: int):
-    """
-    Gets event by ID
-    """
-    try:
-        return get_event_db(event_id)
-    except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
-
-
-@app.patch("/events/{event_id}", tags=["Events"], response_model=SuccessResponse, responses={
-    200: {"description": "Success", "model": SuccessResponse}})
-def update_event(event_id: int, body: EventCreate):
-    """
-    Updates event by ID
-    """
-    try:
-        return update_event_db(event_id, body)
-    except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
-
-@app.get("/events/{event_id}/attendance", tags=["Events"], response_model=EventAttendance, responses={
-    200: {"description": "Success", "model": EventAttendance}})
-def get_event_attendance(event_id: int):
-    """
-    Gets the attendance list of an event
-    """
-    try:
-        return get_event_attendance_db(event_id)
-    except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
-
-@app.patch("/events/{event_id}/attendance", tags=["Events"], response_model=SuccessResponse, responses={
-    200: {"description": "Success", "model": SuccessResponse}})
-def update_event_attendance(event_id: int, body: UpdateEventAttendance):
-    """
-    Updates members attendance in an event
-    """
-    try:
-        return update_event_attendance_db(event_id, body)
-    except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
 
 
 # @app.exception_handler(HTTPException)

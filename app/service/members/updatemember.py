@@ -1,8 +1,8 @@
 from typing import Any
 from fastapi import HTTPException
-from app.database.connectionmanager import connect
+from app.util.database import connect
 from app.schema.members.member import MemberAddUpdate
-from app.service.logging import insert_log
+from app.util.logging import insert_log
 
 
 def update_member_db(member_id: str, member: MemberAddUpdate):
