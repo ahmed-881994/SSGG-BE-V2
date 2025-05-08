@@ -25,4 +25,4 @@ def create_event_db(body: EventCreate):
             if event_record is None or event_record.get("event_id") is None:
                 raise HTTPException(
                     status_code=500, detail="Error creating event")
-            return {"message": f"Event id {event_record.get("event_id")}"}
+            return {"message": f"Event id {event_record.get('event_id')}"}
