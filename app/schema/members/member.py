@@ -30,7 +30,7 @@ class MemberGet(BaseModel):
     date_joined: Optional[str] = Field(alias='DateJoined', pattern= r'^20\d{2}$', default=None)
     mobile_no: Optional[str] = Field(alias='MobileNo', default=None)
     home_contact: Optional[str] = Field(alias='HomeContact', default=None)
-    email: Optional[str] = Field(alias='Email', default=None)
+    email: Optional[str] = Field(alias='Email', pattern=r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', default=None)
     facebook_url: Optional[str] = Field(alias='FacebookURL', default=None)
     school_name: Optional[str] = Field(alias='SchoolName', default=None)
     education_type: Optional[str] = Field(alias='EducationType', default=None)

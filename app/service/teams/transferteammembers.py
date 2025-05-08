@@ -1,9 +1,10 @@
 from fastapi import HTTPException
 from app.database.connectionmanager import connect
+from app.schema.teams.teams import TeamTransfer
 from app.service.logging import insert_log
 
 
-def transfer_team_members_db(body: list[dict]):
+def transfer_team_members_db(body: list[TeamTransfer]):
     """Transfer a member to another team.
     This method allows you to transfer a member from one team to another.
     Args:
@@ -25,12 +26,11 @@ def transfer_team_members_db(body: list[dict]):
         with conn as conn:
             cursor = conn.cursor()
             for item in body:
-                member_id = item.get("Member").get("MemberID")
-                is_leader = 1 if item.get("Member").get(
-                    "IsLeader") == True else 0
-                from_team_id = item.get("FromTeamID")
-                to_team_id = item.get("ToTeamID")
-                transfer_date = item.get("TransferDate")
+                member_id = item.member.member_id
+                is_leader = 1 if item.member.is_leader == True else 0
+                from_team_id = item.from_team_id
+                to_team_id = item.to_team_id
+                transfer_date = item.transfer_date
                 cursor.callproc("GetMember", [member_id])
                 member_object = cursor.fetchone()
                 if member_object is None:

@@ -39,7 +39,7 @@ def format_member_record(records):
         "NationalIdNo": records[0].get("national_id_no"),
         "ClubIdNo": records[0].get("club_id_no"),
         "PassportNo": records[0].get("passport_no"),
-        "DateJoined": records[0].get("date_joined"),
+        "DateJoined": None if records[0].get("date_joined") is None else str(records[0].get("date_joined")),
         "MobileNo": records[0].get("mobile_number"),
         "HomeContact": records[0].get("home_contact"),
         "Email": records[0].get("email"),

@@ -5,8 +5,9 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from pymysql import MySQLError
 
-from app.schema.common import ErrorResponse
+from app.schema.common import ErrorResponse, SuccessResponse
 from app.schema.members.member import MemberAddUpdate, MemberAttendance, MemberGet
+from app.schema.teams.teams import Team, TeamAdd, TeamAttendance, TeamTransfer
 from app.service.events.createevent import create_event_db
 from app.service.events.getevent import get_event_db
 from app.service.events.geteventattenadance import get_event_attendance_db
@@ -18,12 +19,14 @@ from app.service.members.getmember import get_member_db
 from app.service.members.getmemberattendance import get_member_attendance_db
 from app.service.members.searchmembers import search_members_db
 from app.service.members.updatemember import update_member_db
+from app.service.teams.addteammember import add_team_member_db
 from app.service.teams.getteamattendance import get_team_attendance_db
 from app.service.teams.getteammembers import get_team_members_db
 from app.service.teams.searchteams import search_teams_db
 from app.service.teams.transferteammembers import transfer_team_members_db
 
 app = FastAPI(version="2.0.0", responses={
+    400: {"description": "Bad request", "model": ErrorResponse},
     500: {"description": "Internal server error", "model": ErrorResponse},
 })
 
@@ -55,7 +58,7 @@ def read_root():
 # Members Endpoints
 #------------------------------#
 
-@app.get("/members", tags=["Members"], responses={
+@app.get("/members", tags=["Members"], response_model=List[MemberGet], responses={
     200: {"description": "Success", "model": List[MemberGet]}})
 def search_members(name: Optional[str] = None, teamID: Optional[int] = None):
     """
@@ -78,7 +81,7 @@ def add_member(body: MemberAddUpdate):
         raise HTTPException(status_code=500, detail=error.args)
 
 
-@app.get("/members/{member_id}", tags=["Members"], responses={
+@app.get("/members/{member_id}", tags=["Members"], response_model=MemberGet, responses={
     200: {"description": "Success", "model": MemberGet}})
 def get_member(member_id: str):
     """
@@ -117,7 +120,8 @@ def get_member_attendance(member_id: str):
 # Teams Endpoints
 #------------------------------#
 
-@app.get("/teams", tags=["Teams"])
+@app.get("/teams", tags=["Teams"], response_model=List[Team], responses={
+    200: {"description": "Success", "model": List[Team]}})
 def get_teams(teamName: Optional[str] = None, stageID: Optional[int] = None, leaderID: Optional[str] = None):
     """
     Search teams by (Team Name, LeaderID, StageID)
@@ -128,8 +132,9 @@ def get_teams(teamName: Optional[str] = None, stageID: Optional[int] = None, lea
         raise HTTPException(status_code=500, detail=error.args)
 
 
-@app.post("/teams/transfer", tags=["Teams"])
-def transfer_team(body: List[Dict]):
+@app.post("/teams/transfer", tags=["Teams"], response_model= SuccessResponse, responses={
+    200: {"description": "Success", "model": SuccessResponse}})
+def transfer_team(body: List[TeamTransfer]):
     """
     Transfer a list of members to a team
     """
@@ -139,7 +144,8 @@ def transfer_team(body: List[Dict]):
         raise HTTPException(status_code=500, detail=error.args)
 
 
-@app.get("/teams/{team_id}/members", tags=["Teams"])
+@app.get("/teams/{team_id}/members", tags=["Teams"], response_model= Team, responses={
+    200: {"description": "Success", "model": Team}})
 def get_team_members(team_id: int):
     """
     Get all members in a team
@@ -150,7 +156,20 @@ def get_team_members(team_id: int):
         raise HTTPException(status_code=500, detail=error.args)
 
 
-@app.get("/teams/{team_id}/attendance", tags=["Teams"])
+@app.post("/teams/{teamID}/members", tags=["Teams"], response_model= SuccessResponse, responses={
+    200: {"description": "Success", "model": SuccessResponse}})
+def add_team_members(teamID: int, body: List[TeamAdd]):
+    """
+    Adds a list of members to a team
+    """
+    try:
+        return add_team_member_db(teamID ,body)
+    except MySQLError as error:
+        raise HTTPException(status_code=500, detail=error.args)
+
+
+@app.get("/teams/{team_id}/attendance", tags=["Teams"], response_model= List[TeamAttendance], responses={
+    200: {"description": "Success", "model": List[TeamAttendance]}})
 def get_team_attendance(team_id: int):
     """
     Get all attendance records for a team
