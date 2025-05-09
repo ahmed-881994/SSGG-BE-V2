@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import os
+from typing import Optional
 import jwt
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
@@ -15,7 +16,7 @@ def verify_password(plain_password, hashed_password):
 def get_password_hash(password):
     return pwd_context.hash(password)
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     SECRET_KEY = os.environ.get("secret_key")
     ALGORITHM = os.environ.get("algorithm")
     to_encode = data.copy()
