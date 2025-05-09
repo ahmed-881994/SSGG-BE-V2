@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api import auth, events, members, teams
 from app.schema.common import ErrorResponse
@@ -63,20 +64,20 @@ def read_root():
     return {"message": "Welcome to the SSGG-V2 API!"}
 
 
-# @app.exception_handler(HTTPException)
-# async def http_exception_handler(request, exc):
-#     """
-#     Custom exception handler for HTTPException.
-#     This function handles HTTP exceptions and returns a JSON response with the error details.
+@app.exception_handler(Exception)
+async def http_exception_handler(request, exc):
+    """
+    Custom exception handler for HTTPException.
+    This function handles HTTP exceptions and returns a JSON response with the error details.
 
-#     Args:
-#         request: The HTTP request object.
-#         exc: The HTTPException object.
+    Args:
+        request: The HTTP request object.
+        exc: The HTTPException object.
 
-#     Returns:
-#         JSONResponse: A JSON response containing the error details.
-#     """
-#     return JSONResponse(
-#         status_code=exc.status_code,
-#         content={"detail": exc.detail},
-#     )
+    Returns:
+        JSONResponse: A JSON response containing the error details.
+    """
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
