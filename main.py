@@ -1,9 +1,15 @@
-from fastapi import FastAPI
+import logging
+
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api import auth, events, members, teams
 from app.schema.common import ErrorResponse
+
+logger = logging.getLogger('uvicorn.error')
+#logger.setLevel(logging.ERROR)
+
 
 app = FastAPI(title="SSGG", summary="This is the documentation for the backend APIs for the Sporting Scouts and Girl Guides members management app", version="2.0.0", responses={
     400: {"description": "Bad request", "model": ErrorResponse},
@@ -64,7 +70,7 @@ def read_root():
     return {"message": "Welcome to the SSGG-V2 API!"}
 
 
-@app.exception_handler(Exception)
+@app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
     """
     Custom exception handler for HTTPException.
@@ -77,6 +83,14 @@ async def http_exception_handler(request, exc):
     Returns:
         JSONResponse: A JSON response containing the error details.
     """
+    logger.error(f"HTTPException: {exc.detail}")
+    logger.info(f"Request: {request.method} {request.url}")
+    logger.info(f"Headers: {request.headers}")
+    logger.info(f"Body: {await request.body()}")
+    logger.info(f"Query Params: {request.query_params}")
+    logger.info(f"Path Params: {request.path_params}")
+    logger.info(f"Client: {request.client.host}:{request.client.port}")
+    logger.info(f"Exception: {exc}")
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail},
