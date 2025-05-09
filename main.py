@@ -70,7 +70,7 @@ def read_root():
     return {"message": "Welcome to the SSGG-V2 API!"}
 
 
-@app.exception_handler(HTTPException)
+@app.exception_handler(Exception)
 async def http_exception_handler(request, exc):
     """
     Custom exception handler for HTTPException.
