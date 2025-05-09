@@ -7,8 +7,7 @@ from app.schema.common import ErrorResponse
 app = FastAPI(title="SSGG", summary="This is the documentation for the backend APIs for the Sporting Scouts and Girl Guides members management app", version="2.0.0", responses={
     400: {"description": "Bad request", "model": ErrorResponse},
     500: {"description": "Internal server error", "model": ErrorResponse},
-})
-
+}, on_startup=None)
 
 origins = ['*']
 
@@ -38,6 +37,7 @@ tags_metadata = [
 ]
 
 app.openapi_tags = tags_metadata
+
 
 # ------------------------------#
 # API routes
