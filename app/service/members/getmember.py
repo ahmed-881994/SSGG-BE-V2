@@ -1,5 +1,4 @@
-from fastapi import HTTPException
-
+from app.exceptions.exceptions import EntityDoesNotExistError
 from app.util.database import connect
 
 
@@ -16,8 +15,8 @@ def get_member_db(member_id: str):
                 conn.commit()
                 return data
             else:
-                raise HTTPException(
-                    status_code=404, detail="No members found with the provided criteria.")
+                raise EntityDoesNotExistError(
+                    message="No members found with the provided criteria.", name=None)
 
 
 def format_member_record(records):

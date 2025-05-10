@@ -1,6 +1,5 @@
-from typing import Any
-from app.util.database import connect
 from app.schema.members.member import MemberAddUpdate
+from app.util.database import connect
 
 
 def add_member_db(member: MemberAddUpdate):
@@ -9,9 +8,6 @@ def add_member_db(member: MemberAddUpdate):
 
     Args:
         member (dict[str, Any]): _description_
-
-    Raises:
-        HTTPException: _description_
 
     Returns:
         _type_: _description_
@@ -23,8 +19,10 @@ def add_member_db(member: MemberAddUpdate):
             cursor = conn.cursor()
             args = [
                 member.member_id,
-                member.name.en if member.name and hasattr(member.name, 'en') else None,
-                member.name.en if member.name and hasattr(member.name, 'ar') else None,
+                member.name.en if member.name and hasattr(
+                    member.name, 'en') else None,
+                member.name.en if member.name and hasattr(
+                    member.name, 'ar') else None,
                 member.place_of_birth,
                 member.date_of_birth,
                 member.address,

@@ -2,6 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pymysql import MySQLError
 
+from app.exceptions.exceptions import ServiceError
 from app.schema.members.member import MemberAddUpdate, MemberAttendance, MemberGet
 from app.service.auth.users import get_current_active_user
 from app.service.members.addmember import add_member_db
@@ -22,7 +23,8 @@ def search_members(name: Optional[str] = None, teamID: Optional[int] = None):
     try:
         return search_members_db(name, teamID)
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )
 
 
 @router.post("", status_code=201, responses={
@@ -34,7 +36,8 @@ def add_member(body: MemberAddUpdate):
     try:
         return add_member_db(body)
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )
 
 
 @router.get("/{member_id}", response_model=MemberGet, responses={
@@ -46,7 +49,8 @@ def get_member(member_id: str):
     try:
         return get_member_db(member_id)
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )
 
 
 @router.patch("/{member_id}", responses={
@@ -58,7 +62,8 @@ def update_member(member_id: str, body: MemberAddUpdate):
     try:
         return update_member_db(member_id, body)
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )
 
 
 @router.get("/{member_id}/attendance", responses={
@@ -70,4 +75,5 @@ def get_member_attendance(member_id: str):
     try:
         return get_member_attendance_db(member_id)
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )

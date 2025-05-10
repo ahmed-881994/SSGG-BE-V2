@@ -1,6 +1,5 @@
-from fastapi import HTTPException
+from app.exceptions.exceptions import EntityDoesNotExistError
 from app.util.database import connect
-from app.util.logging import insert_log
 
 
 def get_member_attendance_db(member_id: str):
@@ -11,7 +10,7 @@ def get_member_attendance_db(member_id: str):
         member_id (str): _description_
 
     Raises:
-        HTTPException: _description_
+        EntityDoesNotExistError: _description_
 
     Returns:
         dict: Having the attendance records of the member.
@@ -25,16 +24,16 @@ def get_member_attendance_db(member_id: str):
             cursor.callproc("GetMember", args)
             memberRecord = cursor.fetchone()
             if memberRecord is None or len(memberRecord) == 0:
-                raise HTTPException(
-                    status_code=404, detail="Member not found.")
+                raise EntityDoesNotExistError(
+                    message="Member not found.", name=None)
             cursor.callproc("GetMemberAttendance", args)
             records = cursor.fetchall()
             if records is None or len(records) == 0:
-                raise HTTPException(
-                    status_code=404, detail="No attendance records found for the provided member ID.")
+                raise EntityDoesNotExistError(
+                    message="No attendance records found for the provided member ID.", name=None)
             conn.commit()
             return format_member_attendance_records(records)
-                # insert_log(cursor, event, response, "GetMemberAttendance")
+            # insert_log(cursor, event, response, "GetMemberAttendance")
 
 
 def format_member_attendance_records(records):

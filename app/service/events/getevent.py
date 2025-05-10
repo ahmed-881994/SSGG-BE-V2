@@ -1,4 +1,4 @@
-from fastapi import HTTPException
+from app.exceptions.exceptions import EntityDoesNotExistError
 from app.util.database import connect
 
 
@@ -11,7 +11,8 @@ def get_event_db(event_id: int):
             cursor.callproc("GetEvent", args)
             records = cursor.fetchone()
             if records is None or len(records) == 0:
-                raise HTTPException(status_code=404, detail="Event not found")
+                raise EntityDoesNotExistError(
+                    message="Event not found", name=None)
             conn.commit()
             return format_event_record(records)
 

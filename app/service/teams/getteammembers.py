@@ -1,6 +1,5 @@
-from fastapi import HTTPException
+from app.exceptions.exceptions import EntityDoesNotExistError
 from app.util.database import connect
-from app.util.logging import insert_log
 
 
 def get_team_members_db(team_id: int):
@@ -9,7 +8,7 @@ def get_team_members_db(team_id: int):
     Args:
         team_id (int): The ID of the team whose members are to be retrieved.
     Raises:
-        HTTPException: If the team ID is not found or if there are no members in the team.
+        EntityDoesNotExistError: If the team ID is not found or if there are no members in the team.
     Returns:
         list[dict]: A list of dictionaries containing the team members' details.
     """
@@ -25,8 +24,8 @@ def get_team_members_db(team_id: int):
                 conn.commit()
                 return data
             else:
-                raise HTTPException(
-                    status_code=404, detail="Team has no members or teamID is not correct")
+                raise EntityDoesNotExistError(
+                    message="Team has no members or teamID is not correct", name=None)
 
 
 def format_team_member_record(records):

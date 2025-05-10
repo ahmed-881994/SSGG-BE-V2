@@ -1,8 +1,8 @@
 from collections import defaultdict
 from typing import Optional
-from fastapi import HTTPException
+
+from app.exceptions.exceptions import EntityDoesNotExistError
 from app.util.database import connect
-from app.util.logging import insert_log
 
 
 def search_teams_db(team_name: Optional[str] = None, stage_id: Optional[int] = None, leader_id: Optional[str] = None):
@@ -13,7 +13,7 @@ def search_teams_db(team_name: Optional[str] = None, stage_id: Optional[int] = N
         name (str, optional): The name of the team to search for. Defaults to None.
         teamID (int, optional): The teamID of the team to search for. Defaults to None.
     Raises:
-        HTTPException: _description_
+        EntityDoesNotExistError: _description_
     Returns:
         List[Dict]: A list of teams that match the search criteria.
     """
@@ -25,8 +25,8 @@ def search_teams_db(team_name: Optional[str] = None, stage_id: Optional[int] = N
             cursor.callproc("SearchTeams", [stage_id, leader_id, team_name])
             records = cursor.fetchall()
             if records is None or len(records) == 0:
-                raise HTTPException(
-                    status_code=404, detail="No teams found with the provided criteria.")
+                raise EntityDoesNotExistError(
+                    message="No teams found with the provided criteria.", name=None)
             conn.commit()
             return format_team_records(records)
             # insert_log(cursor, event, response, "SearchTeams")
@@ -53,7 +53,8 @@ def format_team_records(records):
             teams[team_id]["StageName"]["AR"] = entry.get('stage_name_ar')
 
         member = {
-            "MemberID": entry.get('member_id') if entry.get('member_id') else "", # the condition should be removed
+            # the condition should be removed
+            "MemberID": entry.get('member_id') if entry.get('member_id') else "",
             "Name": {
                 "EN": entry.get('name_en'),
                 "AR": entry.get('name_ar')

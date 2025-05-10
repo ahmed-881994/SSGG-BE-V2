@@ -1,6 +1,6 @@
-from fastapi import HTTPException
-from app.util.database import connect
+from app.exceptions.exceptions import ServiceError
 from app.schema.events.events import EventCreate
+from app.util.database import connect
 
 
 def create_event_db(body: EventCreate):
@@ -16,13 +16,12 @@ def create_event_db(body: EventCreate):
             args.append(body.location)
             args.append(body.start_date)
             args.append(body.end_date)
-            args.append(1 if body.is_multi_team== True else 0)
+            args.append(1 if body.is_multi_team == True else 0)
             args.append(body.team_id)
 
             cursor.callproc("CreateEvent", args)
             conn.commit()
             event_record = cursor.fetchone()
             if event_record is None or event_record.get("event_id") is None:
-                raise HTTPException(
-                    status_code=500, detail="Error creating event")
+                raise ServiceError(message="Error creating event", name=None)
             return {"message": f"Event id {event_record.get('event_id')}"}

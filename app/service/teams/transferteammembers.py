@@ -1,7 +1,7 @@
-from fastapi import HTTPException
-from app.util.database import connect
+from app.exceptions.exceptions import (EntityAlreadyExistsError,
+                                       EntityDoesNotExistError)
 from app.schema.teams.teams import TeamTransfer
-from app.util.logging import insert_log
+from app.util.database import connect
 
 
 def transfer_team_members_db(body: list[TeamTransfer]):
@@ -16,7 +16,8 @@ def transfer_team_members_db(body: list[TeamTransfer]):
                 - TransferDate: The date of transfer.
                 - IsLeader: A boolean indicating if the member is a leader in the new team.
     Raises:
-        HTTPException: If the member is not found or if the member is already in the target team.
+        EntityDoesNotExistError: If the member is not found
+        EntityAlreadyExistsError: if the member is already in the target team.
     Returns:
         dict: A dictionary containing a success message if all members are transferred successfully.
     """
@@ -34,11 +35,11 @@ def transfer_team_members_db(body: list[TeamTransfer]):
                 cursor.callproc("GetMember", [member_id])
                 member_object = cursor.fetchone()
                 if member_object is None:
-                    raise HTTPException(
-                        status_code=404, detail=f"Member {member_id} not found")
+                    raise EntityDoesNotExistError(
+                        message=f"Member {member_id} not found", name=None)
                 if member_object.get("team_id") == to_team_id and member_object.get("is_leader") == is_leader:
-                    raise HTTPException(
-                        status_code=400, detail=f"Member {member_id} already in the team")
+                    raise EntityAlreadyExistsError(
+                        message=f"Member {member_id} already in the team", name=None)
 
                 cursor.callproc("TransferTeamMember", [
                                 member_id, from_team_id, to_team_id, transfer_date, is_leader],)

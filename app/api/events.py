@@ -5,6 +5,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pymysql import MySQLError
 
+from app.exceptions.exceptions import ServiceError
 from app.schema.auth.user import User
 from app.schema.common import SuccessResponse
 from app.schema.events.events import (Event, EventAttendance, EventCreate,
@@ -29,7 +30,8 @@ def search_events(teamID: Optional[int] = None, startDate: Optional[str] = None,
     try:
         return search_events_db(teamID, startDate, endDate, name)
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )
 
 @router.post("" , status_code=201, response_model=SuccessResponse, responses={
     200: {"description": "Success", "model": SuccessResponse}})
@@ -40,7 +42,8 @@ def create_event(body: EventCreate):
     try:
         return create_event_db(body)
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )
 
 @router.get("/{event_id}", response_model=Event, responses={
     200: {"description": "Success", "model": Event}})
@@ -51,7 +54,8 @@ def get_event(event_id: int):
     try:
         return get_event_db(event_id)
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )
 
 
 @router.patch("/{event_id}", response_model=SuccessResponse, responses={
@@ -63,7 +67,8 @@ def update_event(event_id: int, body: EventCreate):
     try:
         return update_event_db(event_id, body)
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )
 
 @router.get("/{event_id}/attendance", response_model=EventAttendance, responses={
     200: {"description": "Success", "model": EventAttendance}})
@@ -74,7 +79,8 @@ def get_event_attendance(event_id: int):
     try:
         return get_event_attendance_db(event_id)
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )
 
 @router.patch("/{event_id}/attendance", response_model=SuccessResponse, responses={
     200: {"description": "Success", "model": SuccessResponse}})
@@ -85,4 +91,5 @@ def update_event_attendance(event_id: int, body: UpdateEventAttendance):
     try:
         return update_event_attendance_db(event_id, body)
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )

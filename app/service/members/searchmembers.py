@@ -1,8 +1,7 @@
-import datetime
 from typing import Any, Optional
-from fastapi import HTTPException
+
+from app.exceptions.exceptions import EntityDoesNotExistError
 from app.util.database import connect
-from app.util.logging import insert_log
 
 
 def search_members_db(name: Optional[str] = None, teamID: Optional[int] = None):
@@ -13,7 +12,7 @@ def search_members_db(name: Optional[str] = None, teamID: Optional[int] = None):
         name (str, optional): The name of the member to search for. Defaults to None.
         teamID (int, optional): The teamID of the member to search for. Defaults to None.
     Raises:
-        HTTPException: _description_
+        EntityDoesNotExistError: _description_
     Returns:
         List[Dict]: A list of members that match the search criteria.
     """
@@ -29,15 +28,11 @@ def search_members_db(name: Optional[str] = None, teamID: Optional[int] = None):
                 conn.commit()
                 return format_member_records(records)
             else:
-                raise HTTPException(
-                    status_code=404, detail="No members found with the provided criteria.")
-            # except Exception as error:
-            #     raise HTTPException(status_code=500, detail=error.args)
-            # finally:
-            # insert_log(cursor, event, response, "SearchMembers")
+                raise EntityDoesNotExistError(
+                    message="No members found with the provided criteria.", name=None)
 
 
-def format_member_records(records:tuple[dict[str, Any]]):
+def format_member_records(records: tuple[dict[str, Any]]):
     formatted_entries = []
 
     for record in records:

@@ -1,14 +1,16 @@
 import logging
+from typing import Callable
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pymysql import DataError, IntegrityError
 
 from app.api import auth, events, members, teams
+from app.exceptions.exceptions import AuthenticationFailed, EntityDoesNotExistError, InvalidOperationError, InvalidTokenError, SSGGApiError, ServiceError
 from app.schema.common import ErrorResponse
 
 logger = logging.getLogger('uvicorn.error')
-#logger.setLevel(logging.ERROR)
 
 
 app = FastAPI(title="SSGG", summary="This is the documentation for the backend APIs for the Sporting Scouts and Girl Guides members management app", version="2.0.0", responses={
@@ -70,28 +72,75 @@ def read_root():
     return {"message": "Welcome to the SSGG-V2 API!"}
 
 
-@app.exception_handler(Exception)
-async def http_exception_handler(request, exc):
-    """
-    Custom exception handler for HTTPException.
-    This function handles HTTP exceptions and returns a JSON response with the error details.
+def create_exception_handler(status_code: int, initial_detail: str) -> Callable[[Request, Exception], JSONResponse]:
+    # Using a dictionary to hold the detail
+    detail = {"message": initial_detail}
 
-    Args:
-        request: The HTTP request object.
-        exc: The HTTPException object.
+    def exception_handler(_: Request, exc: Exception) -> JSONResponse:
+        if isinstance(exc, SSGGApiError):
+            if exc.message:
+                detail["message"] = exc.message
 
-    Returns:
-        JSONResponse: A JSON response containing the error details.
-    """
-    logger.error(f"HTTPException: {exc.detail}")
-    logger.info(f"Request: {request.method} {request.url}")
-    logger.info(f"Headers: {request.headers}")
-    logger.info(f"Body: {await request.body()}")
-    logger.info(f"Query Params: {request.query_params}")
-    logger.info(f"Path Params: {request.path_params}")
-    logger.info(f"Client: {request.client.host}:{request.client.port}")
-    logger.info(f"Exception: {exc}")
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"detail": exc.detail},
-    )
+            if exc.name:
+                detail["message"] = f"{detail['message']} [{exc.name}]"
+
+            logger.error(exc)
+            return JSONResponse(
+                status_code=status_code, content={"detail": detail["message"]}
+            )
+        # Default response for other exceptions
+        logger.error(exc)
+        return JSONResponse(
+            status_code=500, content={"detail": "An unexpected error occurred."}
+        )
+
+    return exception_handler
+
+
+app.add_exception_handler(
+    exc_class_or_status_code=EntityDoesNotExistError,
+    handler=create_exception_handler(
+        status.HTTP_404_NOT_FOUND, "Entity does not exist."),
+)
+
+app.add_exception_handler(
+    exc_class_or_status_code=InvalidOperationError,
+    handler=create_exception_handler(
+        status.HTTP_400_BAD_REQUEST, "Can't perform the operation."
+    ),
+)
+
+app.add_exception_handler(
+    exc_class_or_status_code=IntegrityError,
+    handler=create_exception_handler(
+        status.HTTP_400_BAD_REQUEST, "Can't process the request due to integrity error."
+    ),
+)
+
+app.add_exception_handler(
+    exc_class_or_status_code=DataError,
+    handler=create_exception_handler(
+        status.HTTP_400_BAD_REQUEST, "Data can't be processed, check the input."
+    ),
+)
+
+app.add_exception_handler(
+    exc_class_or_status_code=AuthenticationFailed,
+    handler=create_exception_handler(
+        status.HTTP_401_UNAUTHORIZED, "Authentication failed due to invalid credentials.",),
+)
+
+app.add_exception_handler(
+    exc_class_or_status_code=InvalidTokenError,
+    handler=create_exception_handler(
+        status.HTTP_401_UNAUTHORIZED, "Invalid token, please re-authenticate again."
+    ),
+)
+
+app.add_exception_handler(
+    exc_class_or_status_code=ServiceError,
+    handler=create_exception_handler(
+        status.HTTP_500_INTERNAL_SERVER_ERROR,
+        "A service seems to be down, try again later.",
+    ),
+)

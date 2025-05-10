@@ -1,6 +1,6 @@
-from fastapi import HTTPException
-from app.util.database import connect
+from app.exceptions.exceptions import EntityDoesNotExistError
 from app.schema.events.events import EventCreate
+from app.util.database import connect
 
 
 def update_event_db(event_id: int, body: EventCreate):
@@ -14,8 +14,8 @@ def update_event_db(event_id: int, body: EventCreate):
             eventRecord = cursor.fetchone()
             # if event exists
             if eventRecord is None:
-                raise HTTPException(
-                    status_code=404, detail="Event not found")
+                raise EntityDoesNotExistError(
+                    message="Event not found", name=None)
             args = []
             args.append(body.event_type_id)
             args.append(body.name.en)
@@ -23,7 +23,7 @@ def update_event_db(event_id: int, body: EventCreate):
             args.append(body.location)
             args.append(body.start_date)
             args.append(body.end_date)
-            args.append(1 if body.is_multi_team== True else 0)
+            args.append(1 if body.is_multi_team == True else 0)
             args.append(body.team_id)
             cursor.callproc("UpdateEvent", args)
             conn.commit()

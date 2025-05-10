@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pymysql import MySQLError
 
+from app.exceptions.exceptions import ServiceError
 from app.schema.auth.Token import Token
 from app.service.auth.users import authenticate_user
 from app.util.auth import create_access_token
@@ -29,4 +30,5 @@ def get_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
         )
         return Token(access_token=access_token, token_type="bearer")
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )

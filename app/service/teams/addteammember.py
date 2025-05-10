@@ -1,8 +1,9 @@
 from typing import List
-from fastapi import HTTPException
-from app.util.database import connect
+
+from app.exceptions.exceptions import (EntityAlreadyExistsError,
+                                       EntityDoesNotExistError)
 from app.schema.teams.teams import TeamAdd
-from app.util.logging import insert_log
+from app.util.database import connect
 
 
 def add_team_member_db(team_id: int, body: List[TeamAdd]):
@@ -17,11 +18,11 @@ def add_team_member_db(team_id: int, body: List[TeamAdd]):
                 result = cursor.fetchone()
                 if result is not None:
                     if result.get('in_team') == 1:
-                        raise HTTPException(
-                            status_code=400, detail=f"Member {item.member_id} already in the team")
+                        raise EntityAlreadyExistsError(
+                            message=f"Member {item.member_id} already in the team", name=None)
                     elif result.get('in_team') == -1:
-                        raise HTTPException(
-                            status_code=404, detail=f"Member {item.member_id} does not exist")
+                        raise EntityDoesNotExistError(
+                            message=f"Member {item.member_id} does not exist", name=None)
                     else:
                         is_leader = 1 if item.is_leader == True else 0
                         from_date = item.from_date

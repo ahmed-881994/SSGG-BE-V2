@@ -1,6 +1,5 @@
-from fastapi import HTTPException
+from app.exceptions.exceptions import EntityDoesNotExistError
 from app.util.database import connect
-from app.util.logging import insert_log
 
 
 def get_team_attendance_db(team_id: int):
@@ -8,22 +7,16 @@ def get_team_attendance_db(team_id: int):
 
     if conn is not None:
         with conn as conn:
-            # try:
             cursor = conn.cursor()
             args = [team_id]
             cursor.callproc("GetTeamAttendance", args)
             team_attendance = cursor.fetchall()
             if len(team_attendance) == 0:
-                raise HTTPException(
-                    status_code=404, detail="Attendance no found")
+                raise EntityDoesNotExistError(
+                    message="Attendance no found", name=None)
             else:
                 data = format_team_attendance_records(team_attendance)
                 return data
-            # except Exception as error:
-            #     raise HTTPException(status_code=500, detail=error.args)
-            # finally:
-            # insert_log(cursor, event, response, "GetMemberAttendance")
-            conn.commit()
 
 
 def format_team_attendance_records(records):

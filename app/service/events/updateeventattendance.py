@@ -1,6 +1,6 @@
-from fastapi import HTTPException
-from app.util.database import connect
+from app.exceptions.exceptions import EntityDoesNotExistError
 from app.schema.events.events import UpdateEventAttendance
+from app.util.database import connect
 
 
 def update_event_attendance_db(event_id: int, body: UpdateEventAttendance):
@@ -12,11 +12,11 @@ def update_event_attendance_db(event_id: int, body: UpdateEventAttendance):
             # check event exists
             cursor.callproc("GetEvent", [event_id])
             event_record = cursor.fetchone()
-            
+
             # if event does not exists
             if event_record is None:
-                raise HTTPException(
-                    status_code=404, detail="Event not found")
+                raise EntityDoesNotExistError(
+                    message="Event not found", name=None)
 
             attendance_list = body.attendance
 
@@ -25,12 +25,12 @@ def update_event_attendance_db(event_id: int, body: UpdateEventAttendance):
                 attendance_state = attendance.attendance_state_id
                 cursor.callproc("GetMember", [member_id])
                 member = cursor.fetchone()
-                
+
                 # if member does not exists
                 if member is None:
                     conn.rollback()
-                    raise HTTPException(
-                        status_code=404, detail="Member not found")
+                    raise EntityDoesNotExistError(
+                        message="Member not found", name=None)
 
                 cursor.callproc(
                     "TakeAttendance", [

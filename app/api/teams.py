@@ -2,6 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pymysql import MySQLError
 
+from app.exceptions.exceptions import ServiceError
 from app.schema.common import SuccessResponse
 from app.schema.teams.teams import Team, TeamAdd, TeamAttendance, TeamTransfer
 from app.service.teams.addteammember import add_team_member_db
@@ -22,7 +23,8 @@ def get_teams(teamName: Optional[str] = None, stageID: Optional[int] = None, lea
     try:
         return search_teams_db(teamName, stageID, leaderID)
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )
 
 
 @router.post("/transfer", tags=["Teams"], response_model= SuccessResponse, responses={
@@ -34,7 +36,8 @@ def transfer_team(body: List[TeamTransfer]):
     try:
         return transfer_team_members_db(body)
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )
 
 
 @router.get("/{team_id}/members", tags=["Teams"], response_model= Team, responses={
@@ -46,7 +49,8 @@ def get_team_members(team_id: int):
     try:
         return get_team_members_db(team_id)
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )
 
 
 @router.post("/{teamID}/members", tags=["Teams"], response_model= SuccessResponse, responses={
@@ -58,7 +62,8 @@ def add_team_members(teamID: int, body: List[TeamAdd]):
     try:
         return add_team_member_db(teamID ,body)
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )
 
 
 @router.get("/{team_id}/attendance", tags=["Teams"], response_model= List[TeamAttendance], responses={
@@ -70,4 +75,5 @@ def get_team_attendance(team_id: int):
     try:
         return get_team_attendance_db(team_id)
     except MySQLError as error:
-        raise HTTPException(status_code=500, detail=error.args)
+        # raise HTTPException(status_code=500, detail=error.args)
+        raise ServiceError(message=error.args[1], name="Database Error" )

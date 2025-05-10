@@ -1,4 +1,4 @@
-from fastapi import HTTPException
+from app.exceptions.exceptions import EntityDoesNotExistError
 from app.util.database import connect
 
 
@@ -11,8 +11,8 @@ def get_event_attendance_db(event_id: int):
             cursor.callproc("GetEventAttendance", args)
             records = cursor.fetchall()
             if records is None or len(records) == 0:
-                raise HTTPException(
-                    status_code=404, detail="Attendance not found")
+                raise EntityDoesNotExistError(
+                    message="Attendance not found", name=None)
             conn.commit()
             return format_event_attendance_records(records)
 

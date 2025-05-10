@@ -1,5 +1,6 @@
 from typing import Optional
-from fastapi import HTTPException
+
+from app.exceptions.exceptions import EntityDoesNotExistError
 from app.util.database import connect
 
 
@@ -14,7 +15,8 @@ def search_events_db(team_id: Optional[int] = None, start_date: Optional[str] = 
             records = cursor.fetchall()
 
             if records is None or len(records) == 0:
-                raise HTTPException(status_code=404, detail="No events found")
+                raise EntityDoesNotExistError(
+                    message="No events found", name=None)
 
             conn.commit()
             return format_events_records(records)
