@@ -1,10 +1,12 @@
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException
+
+from fastapi import APIRouter, Depends, HTTPException
 from pymysql import MySQLError
 
 from app.exceptions.exceptions import ServiceError
 from app.schema.common import SuccessResponse
 from app.schema.teams.teams import Team, TeamAdd, TeamAttendance, TeamTransfer
+from app.service.auth.users import get_current_active_user
 from app.service.teams.addteammember import add_team_member_db
 from app.service.teams.getteamattendance import get_team_attendance_db
 from app.service.teams.getteammembers import get_team_members_db
