@@ -11,7 +11,7 @@ from app.service.teams.getteammembers import get_team_members_db
 from app.service.teams.searchteams import search_teams_db
 from app.service.teams.transferteammembers import transfer_team_members_db
 
-router = APIRouter(prefix="/teams", tags=["Teams"])
+router = APIRouter(prefix="/teams", tags=["Teams"], dependencies=[Depends(get_current_active_user)])
 
 
 @router.get("", tags=["Teams"], response_model=List[Team], responses={
