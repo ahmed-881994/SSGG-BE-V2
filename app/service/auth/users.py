@@ -6,7 +6,7 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from app.exceptions.exceptions import AuthenticationFailed, InvalidTokenError
-from app.schema.auth.user import User
+from app.schema.users.user import User
 from app.util.auth import verify_password
 from app.util.database import connect
 

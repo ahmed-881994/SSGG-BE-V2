@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pymysql import MySQLError
 
 from app.exceptions.exceptions import ServiceError
-from app.schema.auth.user import User
+from app.schema.users.user import User
 from app.schema.common import SuccessResponse
 from app.schema.events.events import (Event, EventAttendance, EventCreate,
                                       UpdateEventAttendance)
