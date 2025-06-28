@@ -6,3 +6,4 @@ class User(BaseModel):
     password_hash: str
     is_active: int
     password_reset:int
+    user_type: int

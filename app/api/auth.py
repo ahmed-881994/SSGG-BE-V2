@@ -27,10 +27,10 @@ def get_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         refresh_token_expires = timedelta(days=7)
         access_token = create_access_token(
-            data={"sub": user.user_name}, expires_delta=access_token_expires
+            data={"sub": user.user_name, "user_type": user.user_type}, expires_delta=access_token_expires
         )
         refresh_token = create_refresh_token(
-            data={"sub": user.user_name}, expires_delta=refresh_token_expires
+            data={"sub": user.user_name, "user_type": user.user_type}, expires_delta=refresh_token_expires
         )
         return Token(access_token=access_token, token_type="bearer", refresh_token=refresh_token)
     except MySQLError as error:
