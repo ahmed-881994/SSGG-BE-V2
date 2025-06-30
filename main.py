@@ -6,8 +6,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pymysql import DataError, IntegrityError
 
-from app.api import auth, events, members, teams
-from app.exceptions.exceptions import AuthenticationFailed, EntityDoesNotExistError, InvalidOperationError, InvalidTokenError, SSGGApiError, ServiceError
+from app.api import auth, events, lookups, members, teams
+from app.exceptions.exceptions import (AuthenticationFailed,
+                                       EntityDoesNotExistError,
+                                       InvalidOperationError,
+                                       InvalidTokenError, ServiceError,
+                                       SSGGApiError)
 from app.schema.common import ErrorResponse
 
 logger = logging.getLogger('uvicorn.error')
@@ -43,6 +47,10 @@ tags_metadata = [
         "name": "Events",
         "description": "Everything about Events.",
     },
+    {
+        "name": "Authentication",
+        "description": "Get and Refresh the Auth token.",
+    }
 ]
 
 app.openapi_tags = tags_metadata
@@ -55,7 +63,7 @@ app.include_router(auth.router)
 app.include_router(members.router)
 app.include_router(teams.router)
 app.include_router(events.router)
-
+app.include_router(lookups.router)
 
 # ------------------------------#
 # Health check endpoint

@@ -9,9 +9,10 @@ from pymysql import MySQLError
 from app.exceptions.exceptions import ServiceError
 from app.schema.auth.Token import Token
 from app.service.auth.users import authenticate_user
-from app.util.auth import create_access_token, create_refresh_token, verify_refresh_token
+from app.util.auth import (create_access_token, create_refresh_token,
+                           verify_refresh_token)
 
-router = APIRouter(tags=["Auth"])
+router = APIRouter(tags=["Authentication"])
 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("access_token_expires_minutes", 30))
 @router.post("/token", response_model=Token)
