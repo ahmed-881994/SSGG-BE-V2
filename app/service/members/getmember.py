@@ -27,6 +27,10 @@ def format_member_record(records):
             "AR": records[0].get("name_ar"),
         },
         "Teams": [],
+        "TeamsManaging": [],
+        "StagesManaging": [],
+        "AgeGroupsManaging": [],
+        "GenderGroupsManaging": [],
         "PlaceOfBirth": records[0].get("place_of_birth"),
         "DateOfBirth": records[0].get("date_of_birth"),
         "Address": records[0].get("address"),
@@ -62,19 +66,80 @@ def format_member_record(records):
         "PhotoConsent": True if records[0].get("photo_consent") == 1 else False,
         "ConditionsConsent": True if records[0].get("conditions_consent") == 1 else False,
     }
-
+    handled_entities = {"teams": [],
+                        "teams_managing": [],
+                        "stages_managing": [],
+                        "age_groups_managing": [],
+                        "gender_groups_managing": []}
     for record in records:
-        team_entry = {
-            "TeamID": record.get("team_id"),
-            "IsTeamLeader": True if record.get("is_leader") == 1 else False,
-            "DateJoined": record.get("team_join_date"),
-            "DateTransferred": record.get("team_transfer_date"),
-            "IsCurrentTeam": True if record.get("team_transfer_date") is None and record.get("is_leader") == 0 else False,
-            "TeamName": {
-                "EN": record.get("team_name_en"),
-                "AR": record.get("team_name_ar"),
-            },
-        }
-        formatted_entry["Teams"].append(team_entry)
+        if record.get("team_member_in_id") is not None and record.get("team_member_in_id") not in handled_entities["teams"]:
+            team_entry = {
+                "TeamID": record.get("team_member_in_id"),
+                # "IsTeamLeader": True if record.get("is_leader") == 1 else False,
+                "DateJoined": record.get("team_join_date"),
+                "DateTransferred": record.get("team_transfer_date"),
+                "IsCurrentTeam": True if record.get("team_transfer_date") is None else False,
+                "TeamName": {
+                    "EN": record.get("team_member_in_name_en"),
+                    "AR": record.get("team_member_in_name_ar"),
+                },
+            }
+            formatted_entry["Teams"].append(team_entry)
+        if record.get("team_managing_id") is not None:
+            team_managing_entry = {
+                "ID": record.get("team_managing_id"),
+                "Name": {
+                    "EN": record.get("team_managing_name_en"),
+                    "AR": record.get("team_managing_name_ar"),
+                },
+                "RoleID": record.get("role_in_team_managing_id"),
+                "RoleName": {
+                    "EN": record.get("role_in_team_managing_name_en"),
+                    "AR": record.get("role_in_team_managing_name_ar"),
+                }
+            }
+            formatted_entry["TeamsManaging"].append(team_managing_entry)
+        if record.get("stage_managing_id") is not None:
+            stage_managing_entry = {
+                "ID": record.get("stage_managing_id"),
+                "Name": {
+                    "EN": record.get("stage_managing_name_en"),
+                    "AR": record.get("stage_managing_name_ar"),
+                },
+                "RoleID": record.get("role_in_stage_managing_id"),
+                "RoleName": {
+                    "EN": record.get("role_in_stage_managing_name_en"),
+                    "AR": record.get("role_in_stage_managing_name_ar"),
+                }
+            }
+            formatted_entry["StagesManaging"].append(stage_managing_entry)
+        if record.get("age_group_managing_id") is not None:
+            age_group_managing_entry = {
+                "ID": record.get("age_group_managing_id"),
+                "Name": {
+                    "EN": record.get("age_group_managing_name_en"),
+                    "AR": record.get("age_group_managing_name_ar"),
+                },
+                "ID": record.get("role_in_age_group_managing_id"),
+                "Name": {
+                    "EN": record.get("role_in_age_group_managing_name_en"),
+                    "AR": record.get("role_in_age_group_managing_name_ar"),
+                }
+            }
+            formatted_entry["AgeGroupsManaging"].append(age_group_managing_entry)
+        if record.get("gender_group_managing_id") is not None:
+            gender_group_managing_entry = {
+                "ID": record.get("gender_group_managing_id"),
+                "Name": {
+                    "EN": record.get("gender_group_managing_name_en"),
+                    "AR": record.get("gender_group_managing_name_ar"),
+                },
+                "RoleID": record.get("role_in_gender_group_managing_id"),
+                "RoleName": {
+                    "EN": record.get("role_in_gender_group_managing_name_en"),
+                    "AR": record.get("role_in_gender_group_managing_name_ar"),
+                }
+            }
+            formatted_entry["GenderGroupsManaging"].append(gender_group_managing_entry)
 
     return formatted_entry

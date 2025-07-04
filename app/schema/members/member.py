@@ -1,26 +1,34 @@
 import datetime
-from typing import List, Optional 
+from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 from app.schema.common import Name
 
 
-
-
-
 class Team(BaseModel):
     team_id: Optional[int] = Field(alias='TeamID', default=None)
-    is_team_leader: Optional[bool] = Field(alias='IsTeamLeader', default=None)
+    # is_team_leader: Optional[bool] = Field(alias='IsTeamLeader', default=None)
     date_joined: Optional[datetime.date] = Field(alias='DateJoined', default=None)
     date_transferred: Optional[datetime.date] = Field(alias='DateTransferred', default=None)
     is_current_team: Optional[bool] = Field(alias='IsCurrentTeam', default=None)
     team_name: Optional[Name] = Field(alias='TeamName', default=None)
+    
+class ManagementEntity(BaseModel):
+    id: Optional[int] = Field(alias='ID', default=None)
+    name: Optional[Name] = Field(alias='Name', default=None)
+    role_id: Optional[int] = Field(alias='RoleID', default=None)
+    role_name: Optional[Name] = Field(alias='RoleName', default=None)
 
 
 class MemberGet(BaseModel):
     member_id: Optional[str] = Field(alias='MemberID', default=None)
     name: Optional[Name] = Field(alias='Name', default=None)
     teams: Optional[List[Team]]= Field(alias='Teams', default=None)
+    teams_managing: Optional[List[ManagementEntity]]= Field(alias='TeamsManaging', default=None)
+    stages_managing: Optional[List[ManagementEntity]]= Field(alias='StagesManaging', default=None)
+    age_groups_managing: Optional[List[ManagementEntity]]= Field(alias='AgeGroupsManaging', default=None)
+    gender_groups_managing: Optional[List[ManagementEntity]]= Field(alias='GenderGroupsManaging', default=None)
     place_of_birth: Optional[str] = Field(alias='PlaceOfBirth', default=None)
     date_of_birth: Optional[datetime.date] = Field(alias='DateOfBirth', default=None)
     address: Optional[str] = Field(alias='Address', default=None)
