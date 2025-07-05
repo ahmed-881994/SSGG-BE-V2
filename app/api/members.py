@@ -41,7 +41,7 @@ def add_member(body: MemberAddUpdate):
 
 
 @router.get("/{member_id}", response_model=MemberGet, responses={
-    200: {"description": "Success", "model": MemberGet}})
+    200: {"description": "Success", "model": MemberGet}}, response_model_exclude_none=True)
 def get_member(member_id: str):
     """
     Get Member by ID

@@ -101,6 +101,8 @@ def format_member_record(records):
                     "AR": record.get("role_in_team_managing_name_ar"),
                 }
             }
+            if team_managing_entry["RoleName"]["EN"] is None:
+                team_managing_entry["RoleName"] = None
             formatted_entry["TeamsManaging"].append(team_managing_entry)
         if record.get("stage_managing_id") is not None and record.get("stage_managing_id") not in handled_entities["stages_managing"]:
             handled_entities["stages_managing"].append(record.get("stage_managing_id"))
@@ -116,6 +118,8 @@ def format_member_record(records):
                     "AR": record.get("role_in_stage_managing_name_ar"),
                 }
             }
+            if stage_managing_entry["RoleName"]["EN"] is None:
+                stage_managing_entry["RoleName"] = None
             formatted_entry["StagesManaging"].append(stage_managing_entry)
         if record.get("age_group_managing_id") is not None and record.get("age_group_managing_id") not in handled_entities["age_groups_managing"]:
             handled_entities["age_groups_managing"].append(record.get("age_group_managing_id"))
@@ -131,6 +135,8 @@ def format_member_record(records):
                     "AR": record.get("role_in_age_group_managing_name_ar"),
                 }
             }
+            if age_group_managing_entry["RoleName"]["EN"] is None:
+                age_group_managing_entry["RoleName"] = None
             formatted_entry["AgeGroupsManaging"].append(age_group_managing_entry)
         if record.get("gender_group_managing_id") is not None and record.get("gender_group_managing_id") not in handled_entities["gender_groups_managing"]:
             handled_entities["gender_groups_managing"].append(record.get("gender_group_managing_id"))
@@ -146,6 +152,11 @@ def format_member_record(records):
                     "AR": record.get("role_in_gender_group_managing_name_ar"),
                 }
             }
+            if gender_group_managing_entry["RoleName"]["EN"] is None:
+                gender_group_managing_entry["RoleName"]= None
             formatted_entry["GenderGroupsManaging"].append(gender_group_managing_entry)
 
+    for key in ["TeamsManaging", "StagesManaging", "AgeGroupsManaging", "GenderGroupsManaging"]:
+        if not formatted_entry[key]:
+            formatted_entry[key] = None
     return formatted_entry
