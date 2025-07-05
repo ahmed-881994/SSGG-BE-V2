@@ -11,6 +11,7 @@ def get_member_db(member_id: str):
             cursor.callproc("GetMember", [member_id])
             records = cursor.fetchall()
             if records is not None and len(records) > 0:
+                print(f"Found {len(records)} records for member ID: {member_id}")
                 data = format_member_record(records)
                 conn.commit()
                 return data
@@ -73,6 +74,7 @@ def format_member_record(records):
                         "gender_groups_managing": []}
     for record in records:
         if record.get("team_member_in_id") is not None and record.get("team_member_in_id") not in handled_entities["teams"]:
+            handled_entities["teams"].append(record.get("team_member_in_id"))
             team_entry = {
                 "TeamID": record.get("team_member_in_id"),
                 # "IsTeamLeader": True if record.get("is_leader") == 1 else False,
@@ -85,7 +87,8 @@ def format_member_record(records):
                 },
             }
             formatted_entry["Teams"].append(team_entry)
-        if record.get("team_managing_id") is not None:
+        if record.get("team_managing_id") is not None and record.get("team_managing_id") not in handled_entities["teams_managing"]:
+            handled_entities["teams_managing"].append(record.get("team_managing_id"))
             team_managing_entry = {
                 "ID": record.get("team_managing_id"),
                 "Name": {
@@ -99,7 +102,8 @@ def format_member_record(records):
                 }
             }
             formatted_entry["TeamsManaging"].append(team_managing_entry)
-        if record.get("stage_managing_id") is not None:
+        if record.get("stage_managing_id") is not None and record.get("stage_managing_id") not in handled_entities["stages_managing"]:
+            handled_entities["stages_managing"].append(record.get("stage_managing_id"))
             stage_managing_entry = {
                 "ID": record.get("stage_managing_id"),
                 "Name": {
@@ -113,21 +117,23 @@ def format_member_record(records):
                 }
             }
             formatted_entry["StagesManaging"].append(stage_managing_entry)
-        if record.get("age_group_managing_id") is not None:
+        if record.get("age_group_managing_id") is not None and record.get("age_group_managing_id") not in handled_entities["age_groups_managing"]:
+            handled_entities["age_groups_managing"].append(record.get("age_group_managing_id"))
             age_group_managing_entry = {
                 "ID": record.get("age_group_managing_id"),
                 "Name": {
                     "EN": record.get("age_group_managing_name_en"),
                     "AR": record.get("age_group_managing_name_ar"),
                 },
-                "ID": record.get("role_in_age_group_managing_id"),
-                "Name": {
+                "RoleID": record.get("role_in_age_group_managing_id"),
+                "RoleName": {
                     "EN": record.get("role_in_age_group_managing_name_en"),
                     "AR": record.get("role_in_age_group_managing_name_ar"),
                 }
             }
             formatted_entry["AgeGroupsManaging"].append(age_group_managing_entry)
-        if record.get("gender_group_managing_id") is not None:
+        if record.get("gender_group_managing_id") is not None and record.get("gender_group_managing_id") not in handled_entities["gender_groups_managing"]:
+            handled_entities["gender_groups_managing"].append(record.get("gender_group_managing_id"))
             gender_group_managing_entry = {
                 "ID": record.get("gender_group_managing_id"),
                 "Name": {
