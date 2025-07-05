@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pymysql import DataError, IntegrityError
 
-from app.api import auth, events, lookups, members, teams
+from app.api import auth, entities, events, lookups, members, teams
 from app.exceptions.exceptions import (AuthenticationFailed,
                                        EntityDoesNotExistError,
                                        InvalidOperationError,
@@ -29,7 +29,7 @@ app.add_middleware(
     allow_origins=origins,            # required
     allow_credentials=True,           # allow cookies/credentials
     # or ["*"] :contentReference[oaicite:1]{index=1}
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     # or e.g. ["Authorization","Content-Type"] :contentReference[oaicite:2]{index=2}
     allow_headers=["*"],
 )
@@ -47,9 +47,16 @@ tags_metadata = [
         "name": "Events",
         "description": "Everything about Events.",
     },
+    {        "name": "Entities",
+        "description": "Get teams for a specific entity type and ID.",
+    },
     {
         "name": "Authentication",
         "description": "Get and Refresh the Auth token.",
+    },
+    {
+        "name": "Lookups",
+        "description": "Get all the lookup tables and their values.",
     }
 ]
 
@@ -63,6 +70,7 @@ app.include_router(auth.router)
 app.include_router(members.router)
 app.include_router(teams.router)
 app.include_router(events.router)
+app.include_router(entities.router)
 app.include_router(lookups.router)
 
 # ------------------------------#
