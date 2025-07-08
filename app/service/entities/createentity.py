@@ -21,6 +21,7 @@ def create_entity_db(body: CreateEntityRequest):
             args.append(body.entity_name.en)
             args.append(body.entity_name.ar)
             args.append(entityTypes.get(body.entity_type+1))
+            args.append(body.parent_id)
             cursor.callproc("CreateEntity", args)
             conn.commit()
             entity_record = cursor.fetchone()
