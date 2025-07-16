@@ -1,11 +1,11 @@
 import logging
 import json
 from datetime import datetime, timezone
-import os
+# import os
 from typing import Any, Dict
 from app.config.settings import settings
 
-os.makedirs("logs", exist_ok=True)
+# os.makedirs("logs", exist_ok=True)
 
 class StructuredFormatter(logging.Formatter):
     """Custom formatter for structured logging"""
@@ -60,13 +60,13 @@ def setup_logging():
     console_handler.setFormatter(StructuredFormatter())
     
     # Create file handler
-    file_handler = logging.FileHandler("logs/ssgg.log")
-    file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(StructuredFormatter())
+    # file_handler = logging.FileHandler("logs/ssgg.log")
+    # file_handler.setLevel(logging.DEBUG)
+    # file_handler.setFormatter(StructuredFormatter())
     
     # Add handlers to logger
     logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
+    # logger.addHandler(file_handler)
     
     return logger
 
