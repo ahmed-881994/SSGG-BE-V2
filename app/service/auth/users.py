@@ -5,9 +5,10 @@ import jwt
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
+from app.config.settings import settings
 from app.exceptions.exceptions import AuthenticationFailed, InvalidTokenError
 from app.schema.users.user import User
-from app.util.auth import verify_password
+from app.util.token import verify_password
 from app.util.database import connect
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -37,13 +38,13 @@ def get_user_by_id_db(user_name: str):
 
 
 def get_current_user(token: str = Depends(oauth2_scheme)):
-    SECRET_KEY = os.environ.get("secret_key")
-    ALGORITHM = os.environ.get("algorithm")
+    SECRET_KEY = settings.secret_key
+    ALGORITHM = settings.algorithm
     try:
         # Decode the JWT token
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except jwt.PyJWTError:
-        raise InvalidTokenError(message= None, name=None)
+        raise InvalidTokenError(message= "Invalid token", name=None)
     # payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     user_name = payload.get("sub")
 

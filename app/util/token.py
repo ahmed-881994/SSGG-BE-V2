@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta, timezone
-import os
 from typing import Optional
 import jwt
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
+from app.config.settings import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -17,8 +17,8 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    SECRET_KEY = os.environ.get("secret_key")
-    ALGORITHM = os.environ.get("algorithm")
+    SECRET_KEY = settings.secret_key
+    ALGORITHM = settings.algorithm
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -29,8 +29,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
-    SECRET_KEY = os.environ.get("secret_key")
-    ALGORITHM = os.environ.get("algorithm")
+    SECRET_KEY = settings.secret_key
+    ALGORITHM = settings.algorithm
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -41,8 +41,8 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 def verify_refresh_token(token: str):
-    SECRET_KEY = os.environ.get("secret_key")
-    ALGORITHM = os.environ.get("algorithm")
+    SECRET_KEY = settings.secret_key
+    ALGORITHM = settings.algorithm
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         if payload.get("type") != "refresh":
