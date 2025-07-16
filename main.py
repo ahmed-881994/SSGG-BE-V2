@@ -9,16 +9,18 @@ from contextlib import asynccontextmanager
 
 from app.api import auth, events, lookups, members, teams
 from app.config.logging_config import logger
+from app.config.settings import settings
 from app.exceptions.exceptions import (AuthenticationFailed,
                                        EntityDoesNotExistError,
                                        InvalidOperationError,
                                        InvalidTokenError, ServiceError,
                                        SSGGApiError)
 from app.middleware.logging_middleware import logging_middleware
+from app.middleware.rate_limitting import setup_rate_limiting
 from app.schema.common import ErrorResponse
 
 
-
+# Add lifespan to the application
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Application started", extra={"event": "startup"})
@@ -41,15 +43,16 @@ async def add_logging_middleware(request: Request, call_next):
     return await logging_middleware(request, call_next)
 
 
+# Setup rate limiting
+setup_rate_limiting(app)
+
 origins = ['*']
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,            # required
-    allow_credentials=True,           # allow cookies/credentials
-    # or ["*"] :contentReference[oaicite:1]{index=1}
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    # or e.g. ["Authorization","Content-Type"] :contentReference[oaicite:2]{index=2}
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["*"],
 )
 

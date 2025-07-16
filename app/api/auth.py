@@ -7,15 +7,19 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pymysql import MySQLError
 
 from app.exceptions.exceptions import ServiceError
+from app.middleware.rate_limitting import rate_limit
 from app.schema.auth.Token import Token
 from app.service.auth.users import authenticate_user
-from app.util.auth import (create_access_token, create_refresh_token,
+from app.util.token import (create_access_token, create_refresh_token,
                            verify_refresh_token)
 
 router = APIRouter(tags=["Authentication"])
 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("access_token_expires_minutes", 30))
+
+
 @router.post("/token", response_model=Token)
+@rate_limit("10/minute")
 def get_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     try:
         user = authenticate_user(form_data.username, form_data.password)
