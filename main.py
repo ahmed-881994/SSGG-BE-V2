@@ -5,22 +5,41 @@ from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pymysql import DataError, IntegrityError
+from contextlib import asynccontextmanager
 
 from app.api import auth, events, lookups, members, teams
+from app.config.logging_config import logger
 from app.exceptions.exceptions import (AuthenticationFailed,
                                        EntityDoesNotExistError,
                                        InvalidOperationError,
                                        InvalidTokenError, ServiceError,
                                        SSGGApiError)
+from app.middleware.logging_middleware import logging_middleware
 from app.schema.common import ErrorResponse
 
-logger = logging.getLogger('uvicorn.error')
 
 
-app = FastAPI(title="SSGG", summary="This is the documentation for the backend APIs for the Sporting Scouts and Girl Guides members management app", version="2.0.0", responses={
-    400: {"description": "Bad request", "model": ErrorResponse},
-    500: {"description": "Internal server error", "model": ErrorResponse},
-}, on_startup=None)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Application started", extra={"event": "startup"})
+    yield
+    logger.info("Application shutdown", extra={"event": "shutdown"})
+
+app = FastAPI(
+    title="SSGG",
+    summary="This is the documentation for the backend APIs for the Sporting Scouts and Girl Guides members management app",
+    version="2.0.0",
+    responses={
+        400: {"description": "Bad request", "model": ErrorResponse},
+        500: {"description": "Internal server error", "model": ErrorResponse},
+    },
+    lifespan=lifespan
+)
+
+@app.middleware("http")
+async def add_logging_middleware(request: Request, call_next):
+    return await logging_middleware(request, call_next)
+
 
 origins = ['*']
 

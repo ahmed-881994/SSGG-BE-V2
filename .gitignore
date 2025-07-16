@@ -176,3 +176,8 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .DS_Store
+DATABASE_CONNECTION_ANALYSIS.md
+Dump20250715.sql
+ENHANCEMENT_SUGGESTIONS.md
+HIGH_PRIORITY_EXECUTION_PLAN.md
+hash password.py
