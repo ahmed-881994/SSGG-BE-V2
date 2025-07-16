@@ -1,8 +1,11 @@
 import logging
 import json
 from datetime import datetime, timezone
+import os
 from typing import Any, Dict
 from app.config.settings import settings
+
+os.makedirs("logs", exist_ok=True)
 
 class StructuredFormatter(logging.Formatter):
     """Custom formatter for structured logging"""
