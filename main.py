@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from pymysql import DataError, IntegrityError
 from contextlib import asynccontextmanager
 
-from app.api import auth, events, lookups, members, teams
+from app.api import auth, entities, events, lookups, members, teams
 from app.config.logging_config import logger
 from app.config.settings import settings
 from app.exceptions.exceptions import (AuthenticationFailed,
@@ -52,7 +52,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "PATCH", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -69,9 +69,16 @@ tags_metadata = [
         "name": "Events",
         "description": "Everything about Events.",
     },
+    {        "name": "Entities",
+        "description": "Get teams for a specific entity type and ID.",
+    },
     {
         "name": "Authentication",
         "description": "Get and Refresh the Auth token.",
+    },
+    {
+        "name": "Lookups",
+        "description": "Get all the lookup tables and their values.",
     }
 ]
 
@@ -85,6 +92,7 @@ app.include_router(auth.router)
 app.include_router(members.router)
 app.include_router(teams.router)
 app.include_router(events.router)
+app.include_router(entities.router)
 app.include_router(lookups.router)
 
 # ------------------------------#
