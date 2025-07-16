@@ -4,11 +4,18 @@ import os
 
 class Settings(BaseSettings):
     # Database settings
-    host: str
-    port: int = 3306
-    database: str
-    username: str
-    password: str
+    db_host: str
+    db_port: int = 3306
+    db_database: str
+    db_username: str
+    db_password: str
+
+    # Redis settings
+    rds_host: str
+    rds_port: int = 6379
+    rds_database: str
+    rds_username: str
+    rds_password: str
     
     # JWT settings
     secret_key: str
@@ -30,7 +37,7 @@ class Settings(BaseSettings):
             raise ValueError("Secret key must be at least 32 characters long")
         return v
     
-    @validator("password")
+    @validator("db_password")
     def validate_password(cls, v):
         if not v:
             raise ValueError("Database password cannot be empty")
