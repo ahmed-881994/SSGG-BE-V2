@@ -1,16 +1,18 @@
 from fastapi import HTTPException
 import pymysql.cursors
 import os
+
+from app.config.settings import settings
 def connect():
     try:
         # Connect to the database
         cursor = pymysql.cursors.DictCursor
         conn = pymysql.connect(
-            host=os.environ.get("host"),
-            port=int(os.environ["port"]),
-            database=os.environ["database"],
-            user=os.environ["username"],
-            password=os.environ["password"],
+            host=settings.db_host,
+            port=int(settings.db_port),
+            database=settings.db_database,
+            user=settings.db_username,
+            password=settings.db_password,
             cursorclass=cursor,
         )
     except Exception as error:
