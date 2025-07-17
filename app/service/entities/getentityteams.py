@@ -1,5 +1,5 @@
 from app.exceptions.exceptions import EntityDoesNotExistError
-from app.util.database import connect
+from app.util.database import get_connection
 
 
 def get_entity_teams_db(entityType: int, entityID: int):
@@ -16,7 +16,7 @@ def get_entity_teams_db(entityType: int, entityID: int):
     # Placeholder for actual database query
     # return [{"teamID": 1, "teamName": "Team A"}, {"teamID": 2, "teamName": "Team B"}]
 
-    conn = connect()
+    conn = get_connection()
     if conn is not None:
         with conn as conn:
             cursor = conn.cursor()

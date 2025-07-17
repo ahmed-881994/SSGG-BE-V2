@@ -1,7 +1,7 @@
 
 from app.exceptions.exceptions import ServiceError
 from app.schema.entities.createentity import CreateEntityRequest
-from app.util.database import connect
+from app.util.database import get_connection
 
 entityTypes = {
     1: "teams",
@@ -11,7 +11,7 @@ entityTypes = {
 }
 
 def create_entity_db(body: CreateEntityRequest):
-    conn = connect()
+    conn = get_connection()
 
     if conn is not None:
         with conn as conn:

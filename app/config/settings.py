@@ -10,6 +10,11 @@ class Settings(BaseSettings):
     db_username: str
     db_password: str
 
+
+    # Database connection pool settings
+    db_max_connections: int = 20
+    db_min_connections: int = 5
+
     # Redis settings
     rds_host: str
     rds_port: int = 6379

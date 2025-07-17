@@ -1,5 +1,5 @@
 from app.exceptions.exceptions import EntityDoesNotExistError
-from app.util.database import connect
+from app.util.database import get_connection
 
 
 def get_team_members_db(team_id: int):
@@ -12,7 +12,7 @@ def get_team_members_db(team_id: int):
     Returns:
         list[dict]: A list of dictionaries containing the team members' details.
     """
-    conn = connect()
+    conn = get_connection()
 
     if conn is not None:
         with conn as conn:

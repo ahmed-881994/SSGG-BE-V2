@@ -1,6 +1,6 @@
 from app.exceptions.exceptions import EntityDoesNotExistError
 from app.schema.members.member import MemberAddUpdate
-from app.util.database import connect
+from app.util.database import get_connection
 
 
 def update_member_db(member_id: str, member: MemberAddUpdate):
@@ -19,7 +19,7 @@ def update_member_db(member_id: str, member: MemberAddUpdate):
     Returns:
         dict: A dictionary indicating the result of the update operation.
     """
-    conn = connect()
+    conn = get_connection()
 
     if conn is not None:
         with conn as conn:

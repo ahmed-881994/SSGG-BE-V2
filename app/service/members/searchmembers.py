@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from app.exceptions.exceptions import EntityDoesNotExistError
-from app.util.database import connect
+from app.util.database import get_connection
 
 
 def search_members_db(name: Optional[str] = None, teamID: Optional[int] = None):
@@ -16,7 +16,7 @@ def search_members_db(name: Optional[str] = None, teamID: Optional[int] = None):
     Returns:
         List[Dict]: A list of members that match the search criteria.
     """
-    conn = connect()
+    conn = get_connection()
 
     if conn is not None:
         with conn as conn:

@@ -1,9 +1,9 @@
 from app.exceptions.exceptions import EntityDoesNotExistError
-from app.util.database import connect
+from app.util.database import get_connection
 
 
 def get_member_db(member_id: str):
-    conn = connect()
+    conn = get_connection()
 
     if conn is not None:
         with conn as conn:

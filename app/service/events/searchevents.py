@@ -1,11 +1,11 @@
 from typing import Optional
 
 from app.exceptions.exceptions import EntityDoesNotExistError
-from app.util.database import connect
+from app.util.database import get_connection
 
 
 def search_events_db(team_id: Optional[int] = None, start_date: Optional[str] = None, end_date: Optional[str] = None, event_name: Optional[str] = None):
-    conn = connect()
+    conn = get_connection()
 
     if conn is not None:
         with conn as conn:

@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import Optional
 
 from app.exceptions.exceptions import EntityDoesNotExistError
-from app.util.database import connect
+from app.util.database import get_connection
 
 
 def search_teams_db(team_name: Optional[str] = None, stage_id: Optional[int] = None, leader_id: Optional[str] = None):
@@ -17,7 +17,7 @@ def search_teams_db(team_name: Optional[str] = None, stage_id: Optional[int] = N
     Returns:
         List[Dict]: A list of teams that match the search criteria.
     """
-    conn = connect()
+    conn = get_connection()
 
     if conn is not None:
         with conn as conn:

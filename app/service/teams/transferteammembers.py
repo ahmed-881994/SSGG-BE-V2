@@ -1,7 +1,7 @@
 from app.exceptions.exceptions import (EntityAlreadyExistsError,
                                        EntityDoesNotExistError)
 from app.schema.teams.teams import TeamTransfer
-from app.util.database import connect
+from app.util.database import get_connection
 
 
 def transfer_team_members_db(body: list[TeamTransfer]):
@@ -21,7 +21,7 @@ def transfer_team_members_db(body: list[TeamTransfer]):
     Returns:
         dict: A dictionary containing a success message if all members are transferred successfully.
     """
-    conn = connect()
+    conn = get_connection()
     errors = []
     if conn is not None:
         with conn as conn:

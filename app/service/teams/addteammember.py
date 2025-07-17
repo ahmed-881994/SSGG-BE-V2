@@ -3,11 +3,11 @@ from typing import List
 from app.exceptions.exceptions import (EntityAlreadyExistsError,
                                        EntityDoesNotExistError)
 from app.schema.teams.teams import TeamAdd
-from app.util.database import connect
+from app.util.database import get_connection
 
 
 def add_team_member_db(team_id: int, body: List[TeamAdd]):
-    conn = connect()
+    conn = get_connection()
 
     if conn is not None:
         with conn as conn:

@@ -1,10 +1,10 @@
 from app.exceptions.exceptions import EntityDoesNotExistError
 from app.schema.events.events import EventCreate
-from app.util.database import connect
+from app.util.database import get_connection
 
 
 def update_event_db(event_id: int, body: EventCreate):
-    conn = connect()
+    conn = get_connection()
 
     if conn is not None:
         with conn as conn:

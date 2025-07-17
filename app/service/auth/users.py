@@ -9,7 +9,7 @@ from app.config.settings import settings
 from app.exceptions.exceptions import AuthenticationFailed, InvalidTokenError
 from app.schema.users.user import User
 from app.util.token import verify_password
-from app.util.database import connect
+from app.util.database import get_connection
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -24,7 +24,7 @@ def authenticate_user(username: str, password: str):
 
 
 def get_user_by_id_db(user_name: str):
-    conn = connect()
+    conn = get_connection()
     if conn is not None:
         with conn as conn:
             cursor = conn.cursor()

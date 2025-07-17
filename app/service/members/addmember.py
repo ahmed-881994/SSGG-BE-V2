@@ -1,5 +1,5 @@
 from app.schema.members.member import MemberAddUpdate
-from app.util.database import connect
+from app.util.database import get_connection
 
 
 def add_member_db(member: MemberAddUpdate):
@@ -12,7 +12,7 @@ def add_member_db(member: MemberAddUpdate):
     Returns:
         _type_: _description_
     """
-    conn = connect()
+    conn = get_connection()
 
     if conn is not None:
         with conn as conn:
