@@ -53,7 +53,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         
         # Check if token is expired
         exp = payload.get("exp")
-        if exp and datetime.now(timezone.utc).isoformat() > exp:
+        if exp and datetime.now(timezone.utc).timestamp() > exp:
             raise InvalidTokenError(message="Token has expired", name=None)
         
         user_name = payload.get("sub")
