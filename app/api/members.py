@@ -4,14 +4,14 @@ from pymysql import MySQLError
 
 from app.exceptions.exceptions import ServiceError
 from app.schema.members.member import MemberAddUpdate, MemberAttendance, MemberGet
-from app.service.auth.users import get_current_active_user
+from app.service.auth.users import login_user
 from app.service.members.addmember import add_member_db
 from app.service.members.getmember import get_member_db
 from app.service.members.getmemberattendance import get_member_attendance_db
 from app.service.members.searchmembers import search_members_db
 from app.service.members.updatemember import update_member_db
 
-router = APIRouter(prefix="/members", tags=["Members"], dependencies=[Depends(get_current_active_user)])
+router = APIRouter(prefix="/members", tags=["Members"], dependencies=[Depends(login_user)])
 
 
 @router.get("", tags=["Members"], response_model=List[MemberGet], responses={

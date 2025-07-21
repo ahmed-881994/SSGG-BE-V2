@@ -7,10 +7,10 @@ from pymysql import MySQLError
 from app.exceptions.exceptions import ServiceError
 from app.schema.common import SuccessResponse
 from app.schema.entities.createentity import CreateEntityRequest
-from app.service.auth.users import get_current_active_user
+from app.service.auth.users import login_user
 from app.service.entities.createentity import create_entity_db
 
-router = APIRouter(prefix="/entities", tags=["Entities"], dependencies=[Depends(get_current_active_user)])
+router = APIRouter(prefix="/entities", tags=["Entities"], dependencies=[Depends(login_user)])
 
 @router.get("/{entityType}/{entityID}", tags=["Entities"])
 def get_entity_details(entityType: str, entityID: int):

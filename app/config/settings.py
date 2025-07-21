@@ -18,9 +18,7 @@ class Settings(BaseSettings):
     # Redis settings
     rds_host: str
     rds_port: int = 6379
-    rds_database: str
-    rds_username: str
-    rds_password: str
+    rds_database: int = 0
     
     # JWT settings
     secret_key: str

@@ -6,14 +6,14 @@ from pymysql import MySQLError
 from app.exceptions.exceptions import ServiceError
 from app.schema.common import SuccessResponse
 from app.schema.teams.teams import Team, TeamAdd, TeamAttendance, TeamTransfer
-from app.service.auth.users import get_current_active_user
+from app.service.auth.users import login_user
 from app.service.teams.addteammember import add_team_member_db
 from app.service.teams.getteamattendance import get_team_attendance_db
 from app.service.teams.getteammembers import get_team_members_db
 from app.service.teams.searchteams import search_teams_db
 from app.service.teams.transferteammembers import transfer_team_members_db
 
-router = APIRouter(prefix="/teams", tags=["Teams"], dependencies=[Depends(get_current_active_user)])
+router = APIRouter(prefix="/teams", tags=["Teams"], dependencies=[Depends(login_user)])
 
 
 @router.get("", tags=["Teams"], response_model=List[Team], responses={

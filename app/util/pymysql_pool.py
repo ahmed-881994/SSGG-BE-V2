@@ -27,7 +27,7 @@ class PyMySQLPool:
                 port=int(settings.db_port),
                 user=settings.db_username,
                 password=settings.db_password,
-                database=os.environ.get("database"),
+                database=settings.db_database,
                 cursorclass=pymysql.cursors.DictCursor,
                 autocommit=True,
                 charset='utf8mb4',
