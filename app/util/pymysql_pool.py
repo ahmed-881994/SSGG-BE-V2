@@ -21,16 +21,16 @@ class PyMySQLPool:
         #     self._create_connection()
 
         # Initialize minimum connections with retry logic
-        self._initialize_pool_with_retry()
+        self._initialize_pool()
 
-    def _initialize_pool_with_retry(self, max_retries=30, retry_delay=2):
+    def _initialize_pool(self, max_retries=30, retry_delay=2):
         """Initialize the connection pool with retry logic"""
         for attempt in range(max_retries):
             try:
                 logger.info(f"Attempting to initialize database pool (attempt {attempt + 1}/{max_retries})")
                 for _ in range(self.min_connections):
                     self._create_connection()
-                logger.info("Database pool initialized successfully")
+                logger.info(f"Database pool initialized successfully, Active connections: {self.active_connections}")
                 return
             except Exception as e:
                 logger.warning(f"Failed to initialize database pool (attempt {attempt + 1}/{max_retries}): {str(e)}")
@@ -38,7 +38,7 @@ class PyMySQLPool:
                     logger.info(f"Retrying in {retry_delay} seconds...")
                     time.sleep(retry_delay)
                 else:
-                    logger.error("Failed to initialize database pool after all retries")
+                    logger.error("Failed to initialize database pool after all retries", exc_info=True)
                     raise Exception(f"Failed to initialize database pool after {max_retries} attempts: {str(e)}")
     
     def _create_connection(self):
@@ -57,6 +57,7 @@ class PyMySQLPool:
                 read_timeout=30,
                 write_timeout=30,
             )
+            self.active_connections += 1
             return conn
         except Exception as e:
             raise Exception(f"Failed to create database connection: {str(e)}")

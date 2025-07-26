@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from pymysql import DataError, IntegrityError
 from contextlib import asynccontextmanager
 
-from app.api import auth, entities, events, lookups, members, teams
+from app.api import auth, entities, events, health, lookups, members, teams
 from app.config.logging_config import logger
 from app.config.settings import settings
 from app.exceptions.exceptions import (AuthenticationFailed,
@@ -95,20 +95,7 @@ app.include_router(teams.router)
 app.include_router(events.router)
 app.include_router(entities.router)
 app.include_router(lookups.router)
-
-# ------------------------------#
-# Health check endpoint
-# ------------------------------#
-@app.get("/", include_in_schema=False)
-def read_root():
-    """Health check endpoint.
-    This endpoint is used to check if the SSGG-V2 application is running.
-
-    Returns:
-        Dict: A dictionary with a welcome message.
-        - message (str): A welcome message indicating the application is running.
-    """
-    return {"message": "Welcome to the SSGG-V2 API!"}
+app.include_router(health.router)
 
 
 # Mount the static directory
