@@ -5,6 +5,7 @@ from queue import Queue, Empty
 from threading import Lock
 import time
 from typing import Optional
+from app.config.logging_config import logger
 from app.config.settings import settings
 
 class PyMySQLPool:
@@ -15,9 +16,30 @@ class PyMySQLPool:
         self.active_connections = 0
         self.lock = Lock()
         
-        # Initialize minimum connections
-        for _ in range(min_connections):
-            self._create_connection()
+        # # Initialize minimum connections
+        # for _ in range(min_connections):
+        #     self._create_connection()
+
+        # Initialize minimum connections with retry logic
+        self._initialize_pool_with_retry()
+
+    def _initialize_pool_with_retry(self, max_retries=30, retry_delay=2):
+        """Initialize the connection pool with retry logic"""
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Attempting to initialize database pool (attempt {attempt + 1}/{max_retries})")
+                for _ in range(self.min_connections):
+                    self._create_connection()
+                logger.info("Database pool initialized successfully")
+                return
+            except Exception as e:
+                logger.warning(f"Failed to initialize database pool (attempt {attempt + 1}/{max_retries}): {str(e)}")
+                if attempt < max_retries - 1:
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                else:
+                    logger.error("Failed to initialize database pool after all retries")
+                    raise Exception(f"Failed to initialize database pool after {max_retries} attempts: {str(e)}")
     
     def _create_connection(self):
         """Create a new database connection"""
