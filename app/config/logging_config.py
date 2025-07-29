@@ -56,7 +56,7 @@ def setup_logging():
     
     # Create console handler
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
+    console_handler.setLevel(settings.log_level.upper())
     console_handler.setFormatter(StructuredFormatter())
     
     # Create file handler
