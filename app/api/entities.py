@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 
 from fastapi import APIRouter
 from fastapi.params import Depends
@@ -6,9 +6,11 @@ from pymysql import MySQLError
 
 from app.exceptions.exceptions import ServiceError
 from app.schema.common import SuccessResponse
-from app.schema.entities.createentity import CreateEntityRequest
+from app.schema.entities.add_entity_member import AddEntityMemberRequest
+from app.schema.entities.create_entity import CreateEntityRequest
 from app.service.auth.users import login_user
-from app.service.entities.createentity import create_entity_db
+from app.service.entities.add_entity_member import add_entity_member_db
+from app.service.entities.create_entity import create_entity_db
 
 router = APIRouter(prefix="/entities", tags=["Entities"], dependencies=[Depends(login_user)])
 
@@ -46,19 +48,19 @@ def create_entity(body: CreateEntityRequest):
     except MySQLError as error:
         raise ServiceError(message=error.args[1], name="Database Error" )
 
-@router.post("/{entityType}/{entityID}/managers", tags=["Entities"], responses={
+@router.post("/{entityID}/members", tags=["Entities"], responses={
     200: {"description": "Success", "model": SuccessResponse}})
-def assign_entity_manager(body: Dict):
+def add_entity_members(body: List[AddEntityMemberRequest], entity_id: int):
     """
-    Assign a manager to an entity.
+    Add a member to an entity.
     
     Args:
-        entityType (int): The type of the entity (1.Team, 2.Stage, 3.AgeGroup, 4.GenderGroup).
-        entityID (int): The ID of the entity.
-        managerID (int): The ID of the manager to assign.
+        body (List[AddEntityMemberRequest]): The request body containing member details.
     
     Returns:
-        dict: A confirmation message or details about the assignment.
+        dict: A confirmation message or details about the added member.
     """
-    # Placeholder for actual implementation
-    # return assign_entity_manager_db(body)
+    try:
+        return add_entity_member_db(body, entity_id)
+    except MySQLError as error:
+        raise ServiceError(message=error.args[1], name="Database Error" )
