@@ -38,4 +38,5 @@ def add_entity_member_db(body: List[AddEntityMemberRequest], entity_id: int):
                     ]
                     cursor.callproc("AddMemberToEntity", args)
                     conn.commit()
+    db_pool.return_connection(conn)
     return {"message": "Members added successfully"}
