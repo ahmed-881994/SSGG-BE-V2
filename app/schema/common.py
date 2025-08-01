@@ -1,5 +1,7 @@
 from typing import Optional
+
 from pydantic import BaseModel, Field
+
 
 class ErrorResponse(BaseModel):
     detail: str
@@ -20,3 +22,7 @@ class AttendanceItem(BaseModel):
         attendance_id: int = Field(alias='AttendanceID')
         attendance_state_id: int = Field(alias='AttendanceStateID')
         attendance_state_name: Name = Field(alias='AttendanceStateName')
+        
+class Entity(BaseModel):
+    entity_id: int = Field(alias="EntityID", description="The ID of the entity.")
+    entity_name: Name = Field(alias="EntityName", description="The Name of the entity.")

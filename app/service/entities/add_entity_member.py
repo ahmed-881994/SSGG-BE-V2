@@ -11,7 +11,6 @@ def add_entity_member_db(body: List[AddEntityMemberRequest], entity_id: int):
     """
     Add a member to an entity in the database.
     """
-    print(f"input: {body}")
     conn = db_pool.get_connection()
     if conn is None:
         logger.error(
