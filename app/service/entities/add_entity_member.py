@@ -11,7 +11,7 @@ def add_entity_member_db(body: List[AddEntityMemberRequest], entity_id: int):
     """
     Add a member to an entity in the database.
     """
-
+    print(f"input: {body}")
     conn = db_pool.get_connection()
     if conn is None:
         logger.error(
@@ -20,7 +20,7 @@ def add_entity_member_db(body: List[AddEntityMemberRequest], entity_id: int):
     with conn.cursor() as cursor:
         for item in body:
             cursor.callproc("CheckMemberInEntity", [
-                            item.member_id, entity_id])
+                            item.member_id, entity_id, item.role])
             result = cursor.fetchone()
             if result is not None:
                 if result.get('in_entity') == 1:

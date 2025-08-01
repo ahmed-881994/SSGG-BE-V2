@@ -50,7 +50,7 @@ def create_entity(body: CreateEntityRequest):
 
 @router.post("/{entityID}/members", tags=["Entities"], responses={
     200: {"description": "Success", "model": SuccessResponse}})
-def add_entity_members(body: List[AddEntityMemberRequest], entity_id: int):
+def add_entity_members(body: List[AddEntityMemberRequest], entityID: int):
     """
     Add a member to an entity.
     
@@ -61,6 +61,6 @@ def add_entity_members(body: List[AddEntityMemberRequest], entity_id: int):
         dict: A confirmation message or details about the added member.
     """
     try:
-        return add_entity_member_db(body, entity_id)
+        return add_entity_member_db(body, entityID)
     except MySQLError as error:
         raise ServiceError(message=error.args[1], name="Database Error" )
