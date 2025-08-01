@@ -22,7 +22,8 @@ def create_entity_db(body: CreateEntityRequest):
         entity_record = cursor.fetchone()
         if entity_record is None or entity_record.get("entity_id") is None:
             raise ServiceError(message="Error creating entity", name=None)
-        return {"message": f"Entity id {entity_record.get('entity_id')}"}
+    db_pool.return_connection(conn)
+    return {"message": f"Entity id {entity_record.get('entity_id')}"}
 
 # entityTypes = {
 #     1: "teams",
