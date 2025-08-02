@@ -26,3 +26,9 @@ class AttendanceItem(BaseModel):
 class Entity(BaseModel):
     entity_id: int = Field(alias="EntityID", description="The ID of the entity.")
     entity_name: Name = Field(alias="EntityName", description="The Name of the entity.")
+    
+    
+class EntityMember(BaseModel):
+    member_id: str = Field(alias='MemberID', description="The ID of the member.")
+    name: Name = Field(alias='Name', description="The Name of the member.")
+    member_role: Name = Field(alias='MemberRole', description="The role of the member in the entity.")

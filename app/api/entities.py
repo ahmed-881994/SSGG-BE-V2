@@ -5,13 +5,14 @@ from fastapi.params import Depends
 from pymysql import MySQLError
 
 from app.exceptions.exceptions import ServiceError
-from app.schema.common import SuccessResponse
+from app.schema.common import EntityMember, MemberBrief, SuccessResponse
 from app.schema.entities.add_entity_member import AddEntityMemberRequest
 from app.schema.entities.create_entity import CreateEntityRequest
 from app.schema.entities.search_entities import SearchEntitiesResponse
 from app.service.auth.users import login_user
 from app.service.entities.add_entity_member import add_entity_member_db
 from app.service.entities.create_entity import create_entity_db
+from app.service.entities.get_entity_members import get_entity_members_db
 from app.service.entities.search_entities import search_entities_db
 
 router = APIRouter(prefix="/entities",
@@ -68,5 +69,17 @@ def add_entity_members(body: List[AddEntityMemberRequest], entityID: int):
     """
     try:
         return add_entity_member_db(body, entityID)
+    except MySQLError as error:
+        raise ServiceError(message=error.args[1], name="Database Error")
+
+
+@router.get("/{entityID}/members", tags=['Entities'], response_model=list[EntityMember], responses={
+    200: {"description": "Success", "model": list[EntityMember]}})
+def get_entity_members(entityID: int):
+    """
+    Get members of an entity.
+    """
+    try:
+        return get_entity_members_db(entityID)
     except MySQLError as error:
         raise ServiceError(message=error.args[1], name="Database Error")
