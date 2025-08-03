@@ -14,21 +14,20 @@ class Team(BaseModel):
     is_current_team: Optional[bool] = Field(alias='IsCurrentTeam', default=None)
     team_name: Optional[Name] = Field(alias='TeamName', default=None)
     
-class ManagementEntity(BaseModel):
-    id: Optional[int] = Field(alias='ID', default=None)
-    name: Optional[Name] = Field(alias='Name', default=None)
-    role_id: Optional[int] = Field(alias='RoleID', default=None)
-    role_name: Optional[Name] = Field(alias='RoleName', default=None)
+class Entity(BaseModel):
+    id: int = Field(alias='EntityID')
+    name: Name = Field(alias='EntityName')
+    role_id: int = Field(alias='RoleID')
+    role_name: Name = Field(alias='RoleName')
+    date_from: datetime.date = Field(alias='FromDate', default=None)
+    date_to: Optional[datetime.date] = Field(alias='ToDate', default=None)
+    is_current_entity: bool = Field(alias='IsCurrentEntity')
 
 
 class MemberGet(BaseModel):
     member_id: Optional[str] = Field(alias='MemberID', default=None)
     name: Optional[Name] = Field(alias='Name', default=None)
-    teams: Optional[List[Team]]= Field(alias='Teams', default=None)
-    teams_managing: Optional[List[ManagementEntity]]= Field(alias='TeamsManaging', default=None)
-    stages_managing: Optional[List[ManagementEntity]]= Field(alias='StagesManaging', default=None)
-    age_groups_managing: Optional[List[ManagementEntity]]= Field(alias='AgeGroupsManaging', default=None)
-    gender_groups_managing: Optional[List[ManagementEntity]]= Field(alias='GenderGroupsManaging', default=None)
+    entities: Optional[List[Entity]] = Field(alias='Entities', default=None)
     place_of_birth: Optional[str] = Field(alias='PlaceOfBirth', default=None)
     date_of_birth: Optional[datetime.date] = Field(alias='DateOfBirth', default=None)
     address: Optional[str] = Field(alias='Address', default=None)

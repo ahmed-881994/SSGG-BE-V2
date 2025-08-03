@@ -2,6 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pymysql import MySQLError
 
+from app.middleware.logging_middleware import logger
 from app.exceptions.exceptions import ServiceError
 from app.schema.members.member import MemberAddUpdate, MemberAttendance, MemberGet
 from app.service.auth.users import login_user
@@ -50,6 +51,7 @@ def get_member(member_id: str):
         return get_member_db(member_id)
     except MySQLError as error:
         # raise HTTPException(status_code=500, detail=error.args)
+        logger.error(f"Error fetching member {member_id}: {error.args}")
         raise ServiceError(message=error.args[1], name="Database Error" )
 
 
