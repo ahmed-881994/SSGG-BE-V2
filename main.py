@@ -60,26 +60,27 @@ app.add_middleware(
 tags_metadata = [
     {
         "name": "Members",
-        "description": "Everything about Members.",
+        "description": "Operations for managing member profiles, including registration, updates, queries, and membership status management. Handles individual member data and their associated roles.",
     },
     {
         "name": "Teams",
-        "description": "Everything about Teams.",
+        "description": "Operations for team management and organization. Note: This API group is deprecated and will be removed in future versions. Please refer to Entities for the updated endpoints.",
     },
     {
         "name": "Events",
-        "description": "Everything about Events.",
+        "description": "Endpoints for managing SSGG events, including creation, scheduling, registration, attendance tracking, and event reporting. Supports both one-time and recurring events.",
     },
-    {        "name": "Entities",
-        "description": "Get teams for a specific entity type and ID.",
+    {
+        "name": "Entities",
+        "description": "Management of organizational entities such as teams, groups, and workgroups. Includes hierarchy management, entity relationships, and administrative operations.",
     },
     {
         "name": "Authentication",
-        "description": "Get and Refresh the Auth token.",
+        "description": "Security endpoints for user authentication, token management, and authorization. Handles login, token refresh, password reset, and session management.",
     },
     {
         "name": "Lookups",
-        "description": "Get all the lookup tables and their values.",
+        "description": "Reference data endpoints providing access to system-wide lookup tables, including member types, roles, ranks, badges, and other standardized classifications used across the application.",
     }
 ]
 
@@ -91,7 +92,7 @@ app.openapi_tags = tags_metadata
 # ------------------------------#
 app.include_router(auth.router)
 app.include_router(members.router)
-app.include_router(teams.router)
+app.include_router(teams.router, deprecated=True)
 app.include_router(events.router)
 app.include_router(entities.router)
 app.include_router(lookups.router)
