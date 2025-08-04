@@ -10,6 +10,8 @@ from app.schema.entities.add_entity_member import AddEntityMemberRequest
 from app.schema.entities.create_entity import CreateEntityRequest
 from app.schema.entities.search_entities import SearchEntitiesResponse
 from app.schema.entities.transfer_entity_members import EntityTransfer
+from app.schema.entities.update_entity_member_role import \
+    UpdateEntityMemberRoleRequest
 from app.service.auth.users import login_user
 from app.service.entities.add_entity_member import add_entity_member_db
 from app.service.entities.create_entity import create_entity_db
@@ -17,6 +19,8 @@ from app.service.entities.get_entity_members import get_entity_members_db
 from app.service.entities.search_entities import search_entities_db
 from app.service.entities.transfer_entity_members import \
     transfer_entity_members_db
+from app.service.entities.update_entity_member_role import \
+    update_entity_member_role_db
 
 router = APIRouter(prefix="/entities",
                    tags=["Entities"], dependencies=[Depends(login_user)])
@@ -89,5 +93,15 @@ def get_entity_members(entityID: int):
     """
     try:
         return get_entity_members_db(entityID)
+    except MySQLError as error:
+        raise ServiceError(message=error.args[1], name="Database Error")
+    
+@router.post("/{entityID}/members/roles", tags=['Entities'], response_model=SuccessResponse, responses={
+    200: {"description": "Success", "model": SuccessResponse}})
+def update_entity_member_role(entityID: int, body: UpdateEntityMemberRoleRequest):
+    """ Update roles of members in an entity.
+    """
+    try:
+        return update_entity_member_role_db(entityID, body)
     except MySQLError as error:
         raise ServiceError(message=error.args[1], name="Database Error")
