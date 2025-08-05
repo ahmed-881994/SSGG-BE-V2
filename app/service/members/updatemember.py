@@ -33,7 +33,7 @@ def update_member_db(member_id: str, member: MemberAddUpdate):
                 args.append(member_id)
                 args.append(member.name.en if member.name and hasattr(
                     member.name, 'en') else memberRecord.get("name_en"))
-                args.append(member.name.en if member.name and hasattr(
+                args.append(member.name.ar if member.name and hasattr(
                     member.name, 'ar') else memberRecord.get("name_ar"))
                 args.append(member.place_of_birth if member.place_of_birth else memberRecord.get(
                     "place_of_birth"))
