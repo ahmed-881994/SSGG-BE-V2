@@ -1,8 +1,10 @@
 from pydantic import BaseSettings, validator
-from typing import Optional
-import os
+
 
 class Settings(BaseSettings):
+    #APP settings
+    environment: str
+    
     # Database settings
     db_host: str
     db_port: int = 3306
@@ -28,7 +30,6 @@ class Settings(BaseSettings):
     # Security settings
     cors_origins: list = ["*"]
     rate_limit_per_minute: int = 60
-    max_request_size: int = 10 * 1024 * 1024  # 10MB
     
     # Logging settings
     log_level: str = "INFO"
