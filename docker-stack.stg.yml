@@ -79,7 +79,7 @@ services:
     #   - ./.env
     labels:
       - "traefik.enable=true"
-      - "traefik.http.services.whoami.loadbalancer.port=80"
+      - "traefik.http.services.api.loadbalancer.port=8000"
       - "traefik.http.routers.web.rule=Host(`api.sportingscout.org/stg`)"
       - "traefik.http.routers.web.entrypoints=websecure"
       - "traefik.http.services.web.tls.createresolver=letsencrypt"
