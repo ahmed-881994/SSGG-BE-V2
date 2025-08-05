@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# Vsual Studio Code
+.vscode/
+
 # Distribution / packaging
 .Python
 build/
@@ -172,3 +175,13 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+.DS_Store
+DATABASE_CONNECTION_ANALYSIS.md
+Dump20250715.sql
+ENHANCEMENT_SUGGESTIONS.md
+HIGH_PRIORITY_EXECUTION_PLAN.md
+hash password.py
+
+# Other
+#   These files are not part of the Python ecosystem, but are included here for convenience.
+letsencrypt/
