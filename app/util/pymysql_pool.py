@@ -325,13 +325,15 @@ class PyMySQLPool:
         Returns:
             dict: Pool status information including connection counts and pool size
         """
+        pool_qsize = self.connection_pool.qsize()
+        utilization = round((self.active_connections / pool_qsize) * 100, 2) if pool_qsize > 0 else 0.0
         return {
             "active_connections": self.active_connections,
-            "pool_size": self.connection_pool.qsize(),
+            "pool_size": pool_qsize,
             "max_connections": self.max_connections,
             "min_connections": self.min_connections,
-            "available_connections": self.connection_pool.qsize(),
-            "utilization_percentage": round((self.active_connections / self.connection_pool.qsize()) * 100, 2)
+            "available_connections": pool_qsize,
+            "utilization_percentage": utilization
         }
 
 
