@@ -104,7 +104,7 @@ def update_member_db(member_id: str, member: MemberAddUpdate):
                 args.append(
                     1 if photoConsent == True else 0
                 )
-                conditionsConsent = member.photo_consent if member.photo_consent else memberRecord.get(
+                conditionsConsent = member.conditions_consent if member.conditions_consent else memberRecord.get(
                     "conditions_consent")
                 args.append(
                     1 if conditionsConsent == True else 0
