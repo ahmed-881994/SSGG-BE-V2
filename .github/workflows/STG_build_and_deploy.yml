@@ -78,7 +78,7 @@ jobs:
 
         # Logging settings
         log_level=${{ secrets.STAGING_LOG_LEVEL }}
-        log_format=%(asctime)s - %(name)s - %(levelname)s - %(message)s
+        log_format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 
         MYSQL_ROOT_PASSWORD=${{ secrets.STAGING_MYSQL_ROOT_PASSWORD }}
