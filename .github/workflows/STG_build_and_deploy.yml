@@ -34,8 +34,8 @@ jobs:
         file: ./Dockerfile
         push: true
         tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}:${{ env.ENVIRONMENT }}-${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ github.repository }}:${{ env.ENVIRONMENT }}-latest
+            ${{ env.REGISTRY }}/ssgg-be-v2-staging:${{ env.ENVIRONMENT }}-${{ github.sha }}
+            ${{ env.REGISTRY }}/ssgg-be-v2-staging:${{ env.ENVIRONMENT }}-latest
 
   deploy:
     needs: build
@@ -93,7 +93,7 @@ jobs:
     - name: Docker Stack Deploy
       uses: cssnr/stack-deploy-action@v1
       with:
-        name: ssgg-v2-staging
+        name: ssgg-be-v2-staging
         file: docker-stack.staging.yml
         host: ${{ secrets.SSH_HOST }}
         user: ${{ secrets.SSH_USER }}
