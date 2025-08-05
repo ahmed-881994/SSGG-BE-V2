@@ -31,7 +31,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile
+        file: ./dockerfile
         push: true
         tags: |
             ${{ env.REGISTRY }}/ssgg-be-v2-staging:${{ env.ENVIRONMENT }}-${{ github.sha }}
