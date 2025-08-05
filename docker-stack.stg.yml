@@ -53,7 +53,7 @@ services:
         condition: any
 
   api:
-    image: ghcr.io/ahmed-881994/SSGG-BE-V2:staging-${GIT_COMMIT_HASH}
+    image: ghcr.io/ahmed-881994/ssgg-be-v2:staging-${GIT_COMMIT_HASH}
     ports:
       - "8001:8000"
     environment:
