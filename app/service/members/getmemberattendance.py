@@ -41,7 +41,6 @@ def format_member_attendance_records(records):
     for record in records:
         entry = {
             "EventID": record.get('event_id'),
-            "EventNameEN": record.get('event_id'),
             "EventNameEN": record.get('event_name_en'),
             "EventNameAR": record.get('event_name_ar'),
             "EventStartDate": record.get("event_start_date"),
