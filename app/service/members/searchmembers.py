@@ -52,7 +52,6 @@ def format_member_records(records: tuple[dict[str, Any]]):
             # Add team details to the existing entry's 'Teams' list
             team_entry = {
                 "TeamID": record.get("team_id"),
-                "IsTeamLeader": record.get("is_leader"),
                 "IsTeamLeader": True if record.get("is_leader") == 1 else False,
                 "DateJoined": None if record.get("team_join_date") is None else record.get("team_join_date"),
                 "DateTransferred": None if record.get("team_transfer_date") is None else record.get("team_transfer_date"),
