@@ -17,7 +17,7 @@ services:
       timeout: 20s
       retries: 10
     networks:
-      - traefik_network
+      - traefik-public
     deploy:
       restart_policy: 
         condition: any
@@ -47,7 +47,7 @@ services:
     labels:
       - "traefik.enable=true"
     networks:
-      - traefik_network
+      - traefik-public
     deploy:
       restart_policy: 
         condition: any
@@ -91,7 +91,7 @@ services:
       update_config:
         order: start-first
     networks:
-      - traefik_network
+      - traefik-public
 
   redis:
     image: redis:7
@@ -104,7 +104,7 @@ services:
       timeout: 20s
       retries: 10
     networks:
-      - traefik_network
+      - traefik-public
     deploy:
       restart_policy: 
         condition: on-failure
@@ -114,5 +114,5 @@ volumes:
   mysql_data_dev:
 
 networks:
-  traefik_network:
-    driver: overlay
+  traefik-public:
+    external: true
