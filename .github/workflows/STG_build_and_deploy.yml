@@ -100,25 +100,29 @@ jobs:
         ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
         env_file: ./.env
 
+    - name: Cleanup
+      if: always()
+      run: rm -f .env
+  health-check:
+    needs: deploy
+    runs-on: ubuntu-latest
+
+    steps:
     - name: Health Check
       run: |
         echo "Waiting for the application to start..."
         sleep 60
-        
+
         HEALTH_URL="https://${{ secrets.DOMAIN }}/${{ secrets.STAGING_BASE_PATH }}/health"
 
         echo "Testing: $HEALTH_URL"
-          for i in {1..5}; do
-            if curl -f -m 10 "$HEALTH_URL" 2>/dev/null; then
-              echo "✅ Staging deployment successful!"
-              exit 0
-            fi
-            sleep 15
-          done
-        
+        for i in {1..5}; do
+          if curl -f -m 10 "$HEALTH_URL" 2>/dev/null; then
+            echo "✅ Staging deployment successful!"
+            exit 0
+          fi
+          sleep 15
+        done
+
         echo "❌ Staging health check failed"
         exit 1
-
-    - name: Cleanup
-      if: always()
-      run: rm -f .env
