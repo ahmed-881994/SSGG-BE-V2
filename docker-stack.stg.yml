@@ -18,7 +18,7 @@ services:
       timeout: 20s
       retries: 10
     networks:
-      - traefik-public
+      - stg-internal
     deploy:
       restart_policy:
         condition: any
@@ -82,15 +82,15 @@ services:
     #   - "8001:8000"
     environment:
       - environment=stg
-      - db_host=${db_host}
-      - db_port=${db_port}
+      - db_host=mysql
+      - db_port=3316
       - db_database=${db_database}
       - db_username=${db_username}
       - db_password=${db_password}
       - db_max_connections=${db_max_connections}
       - db_min_connections=${db_min_connections}
-      - rds_host=${rds_host}
-      - rds_port=${rds_port}
+      - rds_host=redis
+      - rds_port=6378
       - rds_database=${rds_database}
       - secret_key=${secret_key}
       - algorithm=${algorithm}
@@ -114,6 +114,7 @@ services:
         order: start-first
     networks:
       - traefik-public
+      - stg-internal
 
   #------ redis ------
   redis:
@@ -127,7 +128,7 @@ services:
       timeout: 20s
       retries: 10
     networks:
-      - traefik-public
+      - stg-internal
     deploy:
       restart_policy:
         condition: on-failure
@@ -140,3 +141,5 @@ volumes:
 networks:
   traefik-public:
     external: true
+  stg-internal:
+    driver: overlay
