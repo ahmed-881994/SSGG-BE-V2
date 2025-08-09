@@ -5,7 +5,7 @@ services:
   mysql:
     image: mysql:lts
     ports:
-      - "3316:3306"
+      - "127.0.0.1:3316:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     environment:
