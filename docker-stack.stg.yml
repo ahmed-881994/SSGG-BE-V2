@@ -69,11 +69,11 @@ services:
       - traefik-public
       - stg-internal
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 5s                 # Let the app boot before first check
+      start_period: 10s                 # Let the app boot before first check
 
   #------ redis ------
   redis:
