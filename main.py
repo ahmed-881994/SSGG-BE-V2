@@ -48,8 +48,6 @@ async def add_logging_middleware(request: Request, call_next):
 # Setup rate limiting
 setup_rate_limiting(app)
 
-origins = ['*']
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
