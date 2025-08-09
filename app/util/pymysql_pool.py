@@ -129,8 +129,8 @@ class PyMySQLPool:
                 return
                 
             except Exception as e:
-                logger.warning(f"Failed to initialize database pool (attempt {attempt + 1}/{max_retries}): {str(e)}")
-                
+                logger.warning(f"Failed to initialize database pool on host: {settings.db_host} and port: {settings.db_port} (attempt {attempt + 1}/{max_retries}): {str(e)}")
+
                 if attempt < max_retries - 1:
                     logger.info(f"Retrying in {retry_delay} seconds...")
                     time.sleep(retry_delay)
