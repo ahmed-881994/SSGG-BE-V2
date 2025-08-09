@@ -49,6 +49,16 @@ jobs:
       with:
         ref: stage
 
+    - name: Docker Stack Deploy Traefik
+      uses: cssnr/stack-deploy-action@v1
+      with:
+        name: ssgg-v2-traefik
+        file: docker-stack-traefik.yml
+        host: ${{ secrets.SSH_HOST }}
+        user: ${{ secrets.SSH_USER }}
+        ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+        summary: true
+
     - name: Create environment file
       run: |
         cat > .env << EOF

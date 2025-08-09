@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+  traefik:
+    image: traefik:v3.1
+    command:
+      # Swarm provider
+      - "--providers.swarm=true"
+      - "--providers.swarm.exposedbydefault=false"
+
+      # Entrypoints & redirect
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+
+      # Let's Encrypt
+      - "--certificatesresolvers.letsencrypt.acme.email=dtc@sportingscout.org"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+
+      # Dashboard
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+
+      # Logging
+      - "--log.level=DEBUG"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - traefik-public-certificates:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      # Dashboard route
+      - "traefik.http.routers.traefik.rule=Host(`traefik.sportingscout.org`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+      # Basic auth for dashboard (admin:password)
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$apr1$1MGVVkba$E.RsrV74ReL.G7Qh2qQB4/"
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+
+volumes:
+  traefik-public-certificates:
+
+networks:
+  traefik-public:
+    external: true

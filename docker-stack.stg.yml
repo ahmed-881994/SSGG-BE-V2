@@ -24,62 +24,62 @@ services:
         condition: any
 
   #------ traefik ------
-  traefik:
-    image: traefik:v3.1
-    command:
-      # Docker provider in Swarm
-      - "--providers.swarm=true"
-      # - "--providers.docker.swarmMode=true"
-      - "--providers.docker.exposedbydefault=false"
+  # traefik:
+  #   image: traefik:v3.1
+  #   command:
+  #     # Docker provider in Swarm
+  #     - "--providers.swarm=true"
+  #     # - "--providers.docker.swarmMode=true"
+  #     - "--providers.docker.exposedbydefault=false"
 
-      # Entrypoints & redirect
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+  #     # Entrypoints & redirect
+  #     - "--entrypoints.web.address=:80"
+  #     - "--entrypoints.websecure.address=:443"
+  #     - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+  #     - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
 
-      # Let's Encrypt (HTTP challenge)
-      - "--certificatesresolvers.letsencrypt.acme.email=dtc@sportingscout.org"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+  #     # Let's Encrypt (HTTP challenge)
+  #     - "--certificatesresolvers.letsencrypt.acme.email=dtc@sportingscout.org"
+  #     - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+  #     - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
 
-      # Dashboard
-      - "--api.dashboard=true"
-      - "--api.insecure=false"
+  #     # Dashboard
+  #     - "--api.dashboard=true"
+  #     - "--api.insecure=false"
 
-      # Logging
-      - "--log.level=DEBUG"
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - traefik-public-certificates:/letsencrypt
-      - /var/run/docker.sock:/var/run/docker.sock
-    labels:
-      - "traefik.enable=true"
-      # Dashboard router
-      - "traefik.http.routers.traefik.rule=Host(`traefik.stg.sportingscout.org`)"
-      - "traefik.http.routers.traefik.entrypoints=websecure"
-      - "traefik.http.routers.traefik.tls=true"
-      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
-      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
-      # Basic auth for dashboard (admin:password)
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$2b$12$bWszUa0hK0/BI.hBzYsIHOSRzzgbkzh/0bm7pHoXGqnUYikB975UC"
-      - "traefik.http.routers.traefik.middlewares=traefik-auth"
-    networks:
-      - traefik-public
-    deploy:
-      placement:
-        constraints:
-          - node.role == manager
-      restart_policy:
-        condition: any
+  #     # Logging
+  #     - "--log.level=DEBUG"
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - traefik-public-certificates:/letsencrypt
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   labels:
+  #     - "traefik.enable=true"
+  #     # Dashboard router
+  #     - "traefik.http.routers.traefik.rule=Host(`traefik.stg.sportingscout.org`)"
+  #     - "traefik.http.routers.traefik.entrypoints=websecure"
+  #     - "traefik.http.routers.traefik.tls=true"
+  #     - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+  #     - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+  #     # Basic auth for dashboard (admin:password)
+  #     - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$2b$12$bWszUa0hK0/BI.hBzYsIHOSRzzgbkzh/0bm7pHoXGqnUYikB975UC"
+  #     - "traefik.http.routers.traefik.middlewares=traefik-auth"
+  #   networks:
+  #     - traefik-public
+  #   deploy:
+  #     placement:
+  #       constraints:
+  #         - node.role == manager
+  #     restart_policy:
+  #       condition: any
 
   #------ api ------
   api:
     image: ghcr.io/ahmed-881994/ssgg-be-v2:staging-${GIT_COMMIT_HASH}
-    ports:
-      - "8001:8000"
+    # ports:
+    #   - "8001:8000"
     environment:
       - environment=stg
       - db_host=${db_host}
@@ -102,9 +102,9 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.api.entrypoints=web,websecure"
       - "traefik.http.routers.api.rule=Host(`api.stg.sportingscout.org`) && PathPrefix(`/stg`)"
-      - "traefik.http.services.api.loadbalancer.server.port=8000"
       - "traefik.http.routers.api.tls=true"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.api.loadbalancer.server.port=8000"
     deploy:
       mode: replicated
       replicas: 1
