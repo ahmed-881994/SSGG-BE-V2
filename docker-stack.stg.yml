@@ -71,7 +71,6 @@ services:
       - cors_origins=${cors_origins}
       - rate_limit_per_minute=${rate_limit_per_minute}
       - log_level=${log_level}
-      - log_format=%(asctime)s - %(name)s - %(levelname)s - %(message)s
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.api-https.loadbalancer.port=8000"
