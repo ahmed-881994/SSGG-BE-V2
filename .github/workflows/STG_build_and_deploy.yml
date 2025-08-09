@@ -94,6 +94,12 @@ jobs:
         GIT_COMMIT_HASH=${{ github.sha }}
         EOF
 
+    - name: Debug Environment Variables
+      run: |
+        echo "=== DEBUG: Environment file contents ==="
+        echo "CORS Origins value:"
+        grep "cors_origins" .env || echo "cors_origins not found"
+      
     - name: Docker Stack Deploy
       uses: cssnr/stack-deploy-action@v1
       with:
