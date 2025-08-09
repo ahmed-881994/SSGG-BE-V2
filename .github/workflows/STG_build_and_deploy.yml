@@ -99,10 +99,16 @@ jobs:
       with:
         name: ssgg-be-v2-staging
         file: docker-stack.stg.yml
+        mode: swarm
         host: ${{ secrets.SSH_HOST }}
         user: ${{ secrets.SSH_USER }}
         ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+        registry_host: 'ghcr.io'
+        registry_user: ${{ github.repository_owner }}
+        registry_pass: ${{ secrets.GH_TOKEN }}
         env_file: ./.env
+        registry_auth: true
+        summary: true
 
     - name: Cleanup
       if: always()
