@@ -64,7 +64,7 @@ services:
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
       # Basic auth for dashboard (admin:password)
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$rC6ZfPjv$$JjzQ17eR4evkhyVs2vJQe/"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$2b$12$bWszUa0hK0/BI.hBzYsIHOSRzzgbkzh/0bm7pHoXGqnUYikB975UC"
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
     networks:
       - traefik-public
@@ -101,7 +101,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.entrypoints=web,websecure"
-      - "traefik.http.routers.api.rule=Host(`api.stg.sportingscout.org`)"
+      - "traefik.http.routers.api.rule=Host(`api.stg.sportingscout.org`) && PathPrefix(`/stg`)"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
       - "traefik.http.routers.api.tls=true"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
