@@ -33,12 +33,18 @@ services:
       - --entrypoints.web.address=:80
       - --entrypoints.web.http.redirections.entryPoint.to=websecure
       - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      # Enable the access log, with HTTP requests
+      - --accesslog
+      # Enable the Traefik log, for configurations and errors
+      - --log
+      # Enable the Dashboard and API
+      - --api
     ports:
       - "80:80"
       - "8080:8080"
       - "443:443"
     volumes:
-      -  traefik-public-certificates:/certificates
+      -  traefik-public-certificates:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock
     labels:
       - traefik.enable=true
@@ -74,10 +80,14 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.api-https.loadbalancer.port=8000"
+      - "traefik.http.routers.api-http.entrypoints=web"
+      - "traefik.http.routers.api-http.rule=Host(`api.sportingscout.org`) && PathPrefix(`/stg`)"
+      - "traefik.http.routers.api-http.middlewares=redirect-to-https"
       - "traefik.http.routers.api-https.entrypoints=websecure"
       - "traefik.http.routers.api-https.rule=Host(`api.sportingscout.org`) && PathPrefix(`/stg`)"
-      - "traefik.http.services.api-https.tls=true"
-      - "traefik.http.services.api-https.tls.createresolver=letsencrypt"
+      - "traefik.http.routers.api-https.tls=true"
+      - "traefik.http.routers.api-https.tls.certresolver=letsencrypt"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
     deploy:
       mode: replicated
       replicas: 1
