@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     access_token_expires_minutes: int = 30
     
     # Security settings
-    cors_origins: list[str] = ["*"]
+    cors_origins: str = "*"
     rate_limit_per_minute: int = 60
     
     # Logging settings
