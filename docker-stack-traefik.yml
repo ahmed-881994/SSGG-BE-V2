@@ -33,18 +33,29 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - traefik-public
-    labels:
-      - "traefik.enable=true"
-      # Dashboard route
-      - "traefik.http.routers.traefik.rule=Host(`traefik.sportingscout.org`)"
-      - "traefik.http.routers.traefik.entrypoints=websecure"
-      - "traefik.http.routers.traefik.tls=true"
-      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
-      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
-      # Basic auth for dashboard (admin:password)
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$apr1$1MGVVkba$E.RsrV74ReL.G7Qh2qQB4/"
-      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+    # labels:
+    #   - "traefik.enable=true"
+    #   # Dashboard route
+    #   - "traefik.http.routers.traefik.rule=Host(`traefik.sportingscout.org`)"
+    #   - "traefik.http.routers.traefik.entrypoints=websecure"
+    #   - "traefik.http.routers.traefik.tls=true"
+    #   - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+    #   - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+    #   # Basic auth for dashboard (admin:password)
+    #   - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$apr1$1MGVVkba$E.RsrV74ReL.G7Qh2qQB4/"
+    #   - "traefik.http.routers.traefik.middlewares=traefik-auth"
     deploy:
+      labels:
+        - "traefik.enable=true"
+        # Dashboard route
+        - "traefik.http.routers.traefik.rule=Host(`traefik.sportingscout.org`)"
+        - "traefik.http.routers.traefik.entrypoints=websecure"
+        - "traefik.http.routers.traefik.tls=true"
+        - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+        - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+        # Basic auth for dashboard (admin:password)
+        - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$apr1$1MGVVkba$E.RsrV74ReL.G7Qh2qQB4/"
+        - "traefik.http.routers.traefik.middlewares=traefik-auth"
       placement:
         constraints:
           - node.role == manager

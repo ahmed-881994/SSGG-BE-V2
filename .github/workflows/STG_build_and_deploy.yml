@@ -52,8 +52,9 @@ jobs:
     - name: Docker Stack Deploy Traefik
       uses: cssnr/stack-deploy-action@v1
       with:
-        name: ssgg-v2-traefik
+        name: traefik
         file: docker-stack-traefik.yml
+        mode: swarm
         host: ${{ secrets.SSH_HOST }}
         user: ${{ secrets.SSH_USER }}
         ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
