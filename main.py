@@ -37,7 +37,6 @@ app = FastAPI(
         500: {"description": "Internal server error", "model": ErrorResponse},
     },
     lifespan=lifespan,
-    root_path='/' + settings.environment if settings.environment != "prd" else "",
 )
 
 @app.middleware("http")

@@ -2,8 +2,8 @@ from pydantic import BaseSettings, validator
 
 
 class Settings(BaseSettings):
-    #APP settings
-    environment: str
+    # #APP settings
+    # environment: str
     
     # Database settings
     db_host: str

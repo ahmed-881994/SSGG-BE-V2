@@ -6,6 +6,7 @@ services:
     command:
       # Swarm provider
       - "--providers.swarm=true"
+      - "--providers.swarm.endpoint=unix:///var/run/docker.sock"
       - "--providers.swarm.exposedbydefault=false"
 
       # Entrypoints & redirect
@@ -20,7 +21,7 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
 
       # Dashboard
-      - "--api.dashboard=true"
+      - "--api=true"
       - "--api.insecure=false"
 
       # Logging
@@ -34,29 +35,20 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - traefik-public
-    # labels:
-    #   - "traefik.enable=true"
-    #   # Dashboard route
-    #   - "traefik.http.routers.traefik.rule=Host(`traefik.sportingscout.org`)"
-    #   - "traefik.http.routers.traefik.entrypoints=websecure"
-    #   - "traefik.http.routers.traefik.tls=true"
-    #   - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
-    #   - "traefik.http.services.traefik.loadbalancer.server.port=8080"
-    #   # Basic auth for dashboard (admin:password)
-    #   - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$1MGVVkba$$E.RsrV74ReL.G7Qh2qQB4/"
-    #   - "traefik.http.routers.traefik.middlewares=traefik-auth"
     deploy:
       labels:
         - "traefik.enable=true"
         # Dashboard route
-        - "traefik.http.routers.traefik.rule=Host(`traefik.sportingscout.org`)"
-        - "traefik.http.routers.traefik.entrypoints=websecure"
-        - "traefik.http.routers.traefik.tls=true"
-        - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
-        - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+        - "traefik.http.routers.dashboard.rule=Host(`traefik.sportingscout.org`)"
+        - "traefik.http.routers.dashboard.entrypoints=websecure"
+        - "traefik.http.routers.dashboard.tls=true"
+        - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+        - "traefik.http.routers.dashboard.middlewares=traefik-auth"
+        - "traefik.http.services.dashboard.loadbalancer.server.port=8080"
+        - "traefik.http.routers.dashboard.service=api@internal"
+        # - "traefik.http.services.dummy-svc.loadbalancer.server.port=8080"
         # Basic auth for dashboard (admin:password)
-        - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$1MGVVkba$$E.RsrV74ReL.G7Qh2qQB4/"
-        - "traefik.http.routers.traefik.middlewares=traefik-auth"
+        - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$2y$$05$$ADW88D26tyHY2b3aNU8yPOYPfo7ix6Z8dMbjwBYqh0OAfHEZa9Mam"
       placement:
         constraints:
           - node.role == manager

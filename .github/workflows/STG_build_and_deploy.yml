@@ -145,7 +145,7 @@ jobs:
         echo "Waiting for the application to start..."
         sleep 60
 
-        HEALTH_URL="https://${{ secrets.DOMAIN }}/${{ secrets.STAGING_BASE_PATH }}/health"
+        HEALTH_URL="https://${{ secrets.STAGING_DOMAIN }}/health"
 
         echo "Testing: $HEALTH_URL"
         for i in {1..5}; do
