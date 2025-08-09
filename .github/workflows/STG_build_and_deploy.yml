@@ -97,9 +97,14 @@ jobs:
 
     - name: Debug Environment Variables
       run: |
-        echo "=== DEBUG: Environment file contents ==="
-        echo "CORS Origins value:"
-        grep "cors_origins" .env || echo "cors_origins not found"
+        echo "=== CORS DEBUG ==="
+        echo "Raw variable value: '${{ vars.STG_CORS_VAR }}'"
+        echo "Length: ${#'${{ vars.STG_CORS_VAR }}'}"
+        echo "First char: $(echo '${{ vars.STG_CORS_VAR }}' | head -c 1)"
+        echo "In .env file:"
+        grep "cors_origins" .env
+        echo "Validating JSON:"
+        echo '${{ vars.STG_CORS_VAR }}' | python3 -m json.tool || echo "Invalid JSON"
       
     - name: Docker Stack Deploy
       uses: cssnr/stack-deploy-action@v1
