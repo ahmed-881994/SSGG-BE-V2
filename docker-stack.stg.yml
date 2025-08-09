@@ -62,6 +62,10 @@ services:
     networks:
       - traefik-public
       - stg-internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      timeout: 20s
+      retries: 30
 
   #------ redis ------
   redis:
