@@ -76,7 +76,7 @@ jobs:
 
 
         # Security settings
-        cors_origins=["${{ secrets.STAGING_CORS_ORIGINS }}"]
+        cors_origins=${{ secrets.STAGING_CORS_ORIGINS }}
         rate_limit_per_minute=${{ secrets.STAGING_RATE_LIMIT_PER_MINUTE }}
 
 
