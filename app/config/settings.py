@@ -33,7 +33,6 @@ class Settings(BaseSettings):
     
     # Logging settings
     log_level: str = "INFO"
-    log_format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     
     @validator("secret_key")
     def validate_secret_key(cls, v):
