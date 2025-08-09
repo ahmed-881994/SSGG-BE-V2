@@ -83,7 +83,7 @@ jobs:
 
         # Logging settings
         log_level=${{ secrets.STAGING_LOG_LEVEL }}
-        log_format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        log_format=%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 
         MYSQL_ROOT_PASSWORD=${{ secrets.STAGING_MYSQL_ROOT_PASSWORD }}
@@ -99,6 +99,7 @@ jobs:
       run: |
         echo "=== CORS DEBUG ==="
         echo "Raw variable value: '${{ vars.STG_CORS_VAR }}'"
+        CORS_VAR='${{ vars.STG_CORS_VAR }}'
         echo "Length: ${#CORS_VAR}"
         echo "First char: $(echo '${{ vars.STG_CORS_VAR }}' | head -c 1)"
         echo "In .env file:"
