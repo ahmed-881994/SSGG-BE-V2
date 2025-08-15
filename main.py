@@ -36,7 +36,7 @@ app = FastAPI(
         400: {"description": "Bad request", "model": ErrorResponse},
         500: {"description": "Internal server error", "model": ErrorResponse},
     },
-    lifespan=lifespan,
+    # lifespan=lifespan,
 )
 
 @app.middleware("http")
