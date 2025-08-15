@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from pymysql import DataError, IntegrityError
 from contextlib import asynccontextmanager
 
-from app.api import auth, entities, events, health, lookups, members, teams
+from app.api import auth, entities, events, health, lookups, members, teams, users
 from app.config.logging_config import logger
 from app.config.settings import settings
 from app.exceptions.exceptions import (AuthenticationFailed,
@@ -90,6 +90,7 @@ app.openapi_tags = tags_metadata
 # ------------------------------#
 app.include_router(auth.router)
 app.include_router(members.router)
+app.include_router(users.router)
 app.include_router(teams.router, deprecated=True)
 app.include_router(events.router)
 app.include_router(entities.router)

@@ -26,16 +26,17 @@ def search_entities_db(entity_id: Optional[int], entity_parent_id: Optional[int]
             "Failed to get database connection for user retrieval")
         raise ServiceError(
             message="Database connection error", name="Database Error")
-
-    with conn.cursor() as cursor:
-        cursor.callproc("SearchEntities", [
-                        entity_id, entity_parent_id, entity_name])
-        records = cursor.fetchall()
-        if records is None or len(records) == 0:
-            raise EntityDoesNotExistError(
-                message="No entities found with the provided criteria.", name=None)
+    try:
+        with conn.cursor() as cursor:
+            cursor.callproc("SearchEntities", [
+                            entity_id, entity_parent_id, entity_name])
+            records = cursor.fetchall()
+            if records is None or len(records) == 0:
+                raise EntityDoesNotExistError(
+                    message="No entities found with the provided criteria.", name=None)
+            return format_entity_response(records)
+    finally:
         db_pool.return_connection(conn)
-        return format_entity_response(records)
 
 def format_entity_response(records: dict) -> List[SearchEntitiesResponse]:
     """
