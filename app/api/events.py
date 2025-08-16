@@ -2,15 +2,15 @@
 
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pymysql import MySQLError
 
 from app.exceptions.exceptions import ServiceError
-from app.schema.users.user import User
 from app.schema.common import SuccessResponse
 from app.schema.events.events import (Event, EventAttendance, EventCreate,
                                       UpdateEventAttendance)
-from app.service.auth.users import login_user
+from app.schema.users.user import User
+from app.service.auth.dependencies import get_active_user
 from app.service.events.createevent import create_event_db
 from app.service.events.getevent import get_event_db
 from app.service.events.geteventattenadance import get_event_attendance_db
@@ -18,7 +18,7 @@ from app.service.events.searchevents import search_events_db
 from app.service.events.updateevent import update_event_db
 from app.service.events.updateeventattendance import update_event_attendance_db
 
-router = APIRouter(prefix="/events", tags=["Events"], dependencies=[Depends(login_user)])
+router = APIRouter(prefix="/events", tags=["Events"], dependencies=[Depends(get_active_user)])
 
 
 @router.get("", response_model=List[Event], responses={

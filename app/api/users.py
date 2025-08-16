@@ -8,11 +8,11 @@ from app.schema.common import SuccessResponse
 from app.schema.users.create_user import CreateUserRequest
 from app.schema.users.search_users import SearchUsersResponse
 from app.schema.users.user import User
-from app.service.auth.users import login_user
+from app.service.auth.dependencies import get_active_user
 from app.service.users.create_user import create_user_db
 from app.service.users.search_users import search_users_db
 
-router = APIRouter(prefix="/users", tags=["Users"], dependencies=[Depends(login_user)])
+router = APIRouter(prefix="/users", tags=["Users"], dependencies=[Depends(get_active_user)])
 
 @router.get("", response_model=SearchUsersResponse, responses={200: {"description": "Success", "model": SearchUsersResponse}})
 def search_users(userName: Optional[str]= None, userID: Optional[str]= None):
