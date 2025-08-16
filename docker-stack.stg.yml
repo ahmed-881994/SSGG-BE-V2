@@ -36,8 +36,8 @@ services:
       - db_password=${db_password}
       - db_max_connections=${db_max_connections}
       - db_min_connections=${db_min_connections}
-      - rds_host=redis
-      - rds_port=6378
+      - rds_host=${rds_host}
+      - rds_port=${rds_port}
       - rds_database=${rds_database}
       - secret_key=${secret_key}
       - algorithm=${algorithm}
