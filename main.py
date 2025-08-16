@@ -34,6 +34,7 @@ app = FastAPI(
     version="2.0.0",
     responses={
         400: {"description": "Bad request", "model": ErrorResponse},
+        401: {"description": "Unauthorized", "model": ErrorResponse},
         500: {"description": "Internal server error", "model": ErrorResponse},
     },
     # lifespan=lifespan,
