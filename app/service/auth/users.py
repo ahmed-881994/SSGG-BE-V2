@@ -38,7 +38,7 @@ from app.config.logging_config import logger
 from app.exceptions.exceptions import AuthenticationFailed, InvalidTokenError
 from app.schema.users.user import User
 from app.util.pymysql_pool import db_pool
-from app.util.token import verify_password
+from app.util.password import verify_password
 from app.util.database import get_connection
 from app.util.token_blacklist import token_blacklist
 
@@ -74,7 +74,7 @@ def authenticate_user(username: str, password: str) -> Optional[User]:
             logger.warning(f"Authentication failed: User '{username}' not found")
             return None
             
-        if not verify_password(password, user.password_hash):
+        if not verify_password(password, user.password_hash, user.salt):
             logger.warning(f"Authentication failed: Invalid password for user '{username}'")
             return None
             
