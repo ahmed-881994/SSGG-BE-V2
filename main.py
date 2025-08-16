@@ -11,13 +11,13 @@ from contextlib import asynccontextmanager
 from app.api import auth, entities, events, health, lookups, members, teams, users
 from app.config.logging_config import logger
 from app.config.settings import settings
-from app.exceptions.exceptions import (AuthenticationFailed,
+from app.core.exceptions import (AuthenticationFailed,
                                        EntityDoesNotExistError,
                                        InvalidOperationError,
                                        InvalidTokenError, ServiceError,
                                        SSGGApiError)
-from app.middleware.logging_middleware import logging_middleware
-from app.middleware.rate_limitting import setup_rate_limiting
+from app.core.logging_middleware import logging_middleware
+from app.core.rate_limitting import setup_rate_limiting
 from app.schema.common import ErrorResponse
 
 

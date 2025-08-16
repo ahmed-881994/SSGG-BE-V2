@@ -1,10 +1,10 @@
-from app.exceptions.exceptions import ServiceError
+from app.core.database_connection_pool import db_pool
+from app.core.exceptions import ServiceError
 from app.schema.events.events import EventCreate
-from app.util.database import get_connection
 
 
 def create_event_db(body: EventCreate):
-    conn = get_connection()
+    conn = db_pool.get_connection()
 
     if conn is not None:
         with conn as conn:

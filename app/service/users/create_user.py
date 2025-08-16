@@ -1,8 +1,8 @@
 from app.config.logging_config import logger
-from app.exceptions.exceptions import ServiceError
+from app.core.exceptions import ServiceError
 from app.schema.users.create_user import CreateUserRequest
 from app.util.password import generate_salt, get_password_hash
-from app.util.pymysql_pool import db_pool
+from app.core.database_connection_pool import db_pool
 
 
 def create_user_db(user: CreateUserRequest):

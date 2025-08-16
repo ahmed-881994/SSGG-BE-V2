@@ -1,5 +1,5 @@
-from app.exceptions.exceptions import EntityDoesNotExistError
-from app.util.database import get_connection
+from app.core.database_connection_pool import db_pool
+from app.core.exceptions import EntityDoesNotExistError
 
 
 def get_member_attendance_db(member_id: str):
@@ -15,7 +15,7 @@ def get_member_attendance_db(member_id: str):
     Returns:
         dict: Having the attendance records of the member.
     """
-    conn = get_connection()
+    conn = db_pool.get_connection()
 
     if conn is not None:
         with conn as conn:

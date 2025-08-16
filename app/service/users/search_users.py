@@ -1,9 +1,9 @@
 from typing import Optional
 
 from app.config.logging_config import logger
-from app.exceptions.exceptions import EntityDoesNotExistError, ServiceError
+from app.core.exceptions import EntityDoesNotExistError, ServiceError
 from app.schema.entities.search_entities import SearchEntitiesResponse
-from app.util.pymysql_pool import db_pool
+from app.core.database_connection_pool import db_pool
 
 
 def search_users_db(user_name: Optional[str] = None, user_id: Optional[str] = None):

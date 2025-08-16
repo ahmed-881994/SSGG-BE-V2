@@ -2,9 +2,9 @@ from collections import defaultdict
 from typing import List, Optional
 
 from app.config.logging_config import logger
-from app.exceptions.exceptions import EntityDoesNotExistError, ServiceError
+from app.core.exceptions import EntityDoesNotExistError, ServiceError
 from app.schema.entities.search_entities import SearchEntitiesResponse
-from app.util.pymysql_pool import db_pool
+from app.core.database_connection_pool import db_pool
 
 
 def search_entities_db(entity_id: Optional[int], entity_parent_id: Optional[int], entity_name: Optional[str]):

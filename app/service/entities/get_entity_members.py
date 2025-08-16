@@ -1,6 +1,6 @@
 from app.config.logging_config import logger
-from app.exceptions.exceptions import EntityDoesNotExistError, ServiceError
-from app.util.pymysql_pool import db_pool
+from app.core.exceptions import EntityDoesNotExistError, ServiceError
+from app.core.database_connection_pool import db_pool
 
 
 def get_entity_members_db(entity_id: int):

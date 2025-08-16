@@ -1,13 +1,13 @@
 from typing import List
 
-from app.exceptions.exceptions import (EntityAlreadyExistsError,
-                                       EntityDoesNotExistError)
+from app.core.database_connection_pool import db_pool
+from app.core.exceptions import (EntityAlreadyExistsError,
+                                 EntityDoesNotExistError)
 from app.schema.teams.teams import TeamAdd
-from app.util.database import get_connection
 
 
 def add_team_member_db(team_id: int, body: List[TeamAdd]):
-    conn = get_connection()
+    conn = db_pool.get_connection()
 
     if conn is not None:
         with conn as conn:

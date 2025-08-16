@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from fastapi.params import Depends
 from pymysql import MySQLError
 
-from app.exceptions.exceptions import ServiceError
+from app.core.exceptions import ServiceError
 from app.schema.common import EntityMember, SuccessResponse
 from app.schema.entities.add_entity_member import AddEntityMemberRequest
 from app.schema.entities.create_entity import CreateEntityRequest

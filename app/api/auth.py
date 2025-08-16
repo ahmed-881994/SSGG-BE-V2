@@ -13,8 +13,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pymysql import MySQLError
 
 from app.config.logging_config import logger
-from app.exceptions.exceptions import AuthenticationFailed, ServiceError
-from app.middleware.rate_limitting import rate_limit
+from app.core.exceptions import AuthenticationFailed, ServiceError
+from app.core.rate_limitting import rate_limit
 from app.schema.auth.Token import Token
 from app.service.auth.auth_service import auth_service
 from app.service.auth.dependencies import oauth2_scheme

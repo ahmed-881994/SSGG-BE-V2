@@ -1,10 +1,10 @@
 from typing import List
 
 from app.config.logging_config import logger
-from app.exceptions.exceptions import (EntityAlreadyExistsError,
+from app.core.exceptions import (EntityAlreadyExistsError,
                                        EntityDoesNotExistError, ServiceError)
 from app.schema.entities.add_entity_member import AddEntityMemberRequest
-from app.util.pymysql_pool import db_pool
+from app.core.database_connection_pool import db_pool
 
 
 def add_entity_member_db(body: List[AddEntityMemberRequest], entity_id: int):

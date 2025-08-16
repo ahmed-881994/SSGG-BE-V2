@@ -1,8 +1,8 @@
 
 from app.config.logging_config import logger
-from app.exceptions.exceptions import ServiceError
+from app.core.exceptions import ServiceError
 from app.schema.entities.create_entity import CreateEntityRequest
-from app.util.pymysql_pool import db_pool
+from app.core.database_connection_pool import db_pool
 
 
 def create_entity_db(body: CreateEntityRequest):

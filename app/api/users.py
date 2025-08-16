@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from pymysql import MySQLError
 
-from app.exceptions.exceptions import ServiceError
+from app.core.exceptions import ServiceError
 from app.schema.common import SuccessResponse
 from app.schema.users.create_user import CreateUserRequest
 from app.schema.users.search_users import SearchUsersResponse

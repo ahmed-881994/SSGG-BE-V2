@@ -1,7 +1,7 @@
 from datetime import datetime
 import json
 
-def insert_log(cursor, event, response, function_name):
+def insert_audit(cursor, event, response, function_name):
     request_payload = response_payload = {}
     request_id = event.get('requestContext').get('requestId')
     request_payload['queryStringParameters'] = event.get("queryStringParameters")

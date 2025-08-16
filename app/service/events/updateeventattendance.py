@@ -1,10 +1,10 @@
-from app.exceptions.exceptions import EntityDoesNotExistError
+from app.core.database_connection_pool import db_pool
+from app.core.exceptions import EntityDoesNotExistError
 from app.schema.events.events import UpdateEventAttendance
-from app.util.database import get_connection
 
 
 def update_event_attendance_db(event_id: int, body: UpdateEventAttendance):
-    conn = get_connection()
+    conn = db_pool.get_connection()
 
     if conn is not None:
         with conn as conn:

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from typing import Dict, Any
-from app.util.pymysql_pool import db_pool
+from app.core.database_connection_pool import db_pool
 from app.config.logging_config import logger
 
 def check_database_health() -> Dict[str, Any]:

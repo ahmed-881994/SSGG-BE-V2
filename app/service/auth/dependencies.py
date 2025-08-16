@@ -11,7 +11,7 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from app.config.logging_config import logger
-from app.exceptions.exceptions import AuthenticationFailed, InvalidTokenError
+from app.core.exceptions import AuthenticationFailed, InvalidTokenError
 from app.schema.users.user import User
 from app.service.auth.auth_service import auth_service
 from app.service.auth.token_service import token_service

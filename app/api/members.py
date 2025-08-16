@@ -3,8 +3,8 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends
 from pymysql import MySQLError
 
-from app.exceptions.exceptions import ServiceError
-from app.middleware.logging_middleware import logger
+from app.core.exceptions import ServiceError
+from app.core.logging_middleware import logger
 from app.schema.members.member import (MemberAddUpdate, MemberAttendance,
                                        MemberGet)
 from app.service.auth.dependencies import get_active_user

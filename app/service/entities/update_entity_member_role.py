@@ -1,8 +1,8 @@
-from app.exceptions.exceptions import (EntityAlreadyExistsError,
+from app.core.exceptions import (EntityAlreadyExistsError,
                                        EntityDoesNotExistError)
 from app.schema.entities.update_entity_member_role import \
     UpdateEntityMemberRoleRequest
-from app.util.pymysql_pool import db_pool
+from app.core.database_connection_pool import db_pool
 
 
 def update_entity_member_role_db(entityID: int, body: UpdateEntityMemberRoleRequest):

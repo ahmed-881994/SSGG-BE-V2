@@ -1,9 +1,9 @@
-from app.exceptions.exceptions import EntityDoesNotExistError
-from app.util.database import get_connection
+from app.core.database_connection_pool import db_pool
+from app.core.exceptions import EntityDoesNotExistError
 
 
 def get_team_attendance_db(team_id: int):
-    conn = get_connection()
+    conn = db_pool.get_connection()
 
     if conn is not None:
         with conn as conn:

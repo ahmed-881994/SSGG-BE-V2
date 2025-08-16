@@ -1,5 +1,5 @@
+from app.core.database_connection_pool import db_pool
 from app.schema.members.member import MemberAddUpdate
-from app.util.database import get_connection
 
 
 def add_member_db(member: MemberAddUpdate):
@@ -12,7 +12,7 @@ def add_member_db(member: MemberAddUpdate):
     Returns:
         _type_: _description_
     """
-    conn = get_connection()
+    conn = db_pool.get_connection()
 
     if conn is not None:
         with conn as conn:

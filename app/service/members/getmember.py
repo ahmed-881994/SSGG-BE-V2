@@ -1,6 +1,6 @@
-from app.exceptions.exceptions import EntityDoesNotExistError
-from app.middleware.logging_middleware import logger
-from app.util.pymysql_pool import db_pool
+from app.core.exceptions import EntityDoesNotExistError
+from app.core.logging_middleware import logger
+from app.core.database_connection_pool import db_pool
 
 
 def get_member_db(member_id: str):

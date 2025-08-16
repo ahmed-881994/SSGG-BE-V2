@@ -13,7 +13,7 @@ import jwt
 
 from app.config.logging_config import logger
 from app.config.settings import settings
-from app.exceptions.exceptions import InvalidTokenError
+from app.core.exceptions import InvalidTokenError
 from app.util.token_blacklist import token_blacklist
 
 

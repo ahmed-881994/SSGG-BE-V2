@@ -9,10 +9,10 @@ import time
 from typing import Optional
 
 from app.config.logging_config import logger
-from app.exceptions.exceptions import AuthenticationFailed
+from app.core.exceptions import AuthenticationFailed
 from app.schema.users.user import User
 from app.util.password import verify_password
-from app.util.pymysql_pool import db_pool
+from app.core.database_connection_pool import db_pool
 
 
 class AuthService:

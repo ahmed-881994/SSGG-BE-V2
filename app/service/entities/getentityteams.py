@@ -1,4 +1,4 @@
-from app.exceptions.exceptions import EntityDoesNotExistError
+from app.core.exceptions import EntityDoesNotExistError
 from app.util.database import get_connection
 
 

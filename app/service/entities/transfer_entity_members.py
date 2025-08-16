@@ -1,7 +1,7 @@
-from app.exceptions.exceptions import (EntityAlreadyExistsError,
+from app.core.exceptions import (EntityAlreadyExistsError,
                                        EntityDoesNotExistError)
 from app.schema.entities.transfer_entity_members import EntityTransfer
-from app.util.pymysql_pool import db_pool
+from app.core.database_connection_pool import db_pool
 
 
 def transfer_entity_members_db(body: list[EntityTransfer]):

@@ -3,7 +3,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends
 from pymysql import MySQLError
 
-from app.exceptions.exceptions import ServiceError
+from app.core.exceptions import ServiceError
 from app.schema.common import SuccessResponse
 from app.schema.teams.teams import Team, TeamAdd, TeamAttendance, TeamTransfer
 from app.service.auth.dependencies import get_active_user
