@@ -87,8 +87,7 @@ class UserRepository(BaseRepository[User]):
                 message=f"Failed to search users: {str(e)}",
                 name="Database Error"
             )
-
-    def update_user(self, id: int, **kwargs) -> User:
+    
     def update_user(self, id: int, **kwargs) -> User:
         """
         Update fields of a user with the given ID.
