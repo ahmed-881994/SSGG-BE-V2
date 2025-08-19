@@ -160,7 +160,7 @@ class UserService:
             # Store hashed password and salt in user_data
             user_data['password_hash'] = hashed_password
             user_data['salt'] = salt
-            del user_data['password']  # Remove plain password
+            user_data.pop('password', None)  # Remove plain password safely
             user = self.user_repository.create_user(**user_data)
             return user
         except EntityAlreadyExistsError:
