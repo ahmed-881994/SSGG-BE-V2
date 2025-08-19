@@ -106,7 +106,7 @@ class TokenService:
             InvalidTokenError: If token is invalid, expired, or blacklisted
         """
         logger.debug(f"Verifying {token_type} token")
-        start_time = time.time()
+        # start_time = time.time()
         
         try:
             # Check if token is blacklisted
@@ -122,26 +122,28 @@ class TokenService:
                 logger.warning(f"Token verification failed: Invalid token type. Expected {token_type}")
                 raise InvalidTokenError(message=f"Invalid token type. Expected {token_type}", name=None)
             
-            # Check expiration
-            exp = payload.get("exp")
-            if exp and datetime.now(timezone.utc).timestamp() > exp:
-                logger.warning("Token verification failed: Token has expired")
-                raise InvalidTokenError(message="Token has expired", name=None)
-            
-            verification_time = round((time.time() - start_time) * 1000, 2)
-            logger.debug(f"Token verification successful in {verification_time}ms")
+            # # Check expiration
+            # exp = payload.get("exp")
+            # if exp and datetime.now(timezone.utc).timestamp() > exp:
+            #     logger.warning("Token verification failed: Token has expired")
+            #     raise InvalidTokenError(message="Token has expired", name=None)
+            # verification_time = round((time.time() - start_time) * 1000, 2)
+            logger.debug(f"Token verification successful")
             return payload
-            
+
+        except jwt.ExpiredSignatureError:
+            logger.warning("Token verification failed: Token has expired")
+            raise InvalidTokenError(message="Token has expired", name='TokenService')
         except jwt.PyJWTError as e:
-            verification_time = round((time.time() - start_time) * 1000, 2)
-            logger.warning(f"Token verification failed after {verification_time}ms: Invalid JWT format - {str(e)}")
-            raise InvalidTokenError(message="Invalid token format", name=None)
+            # verification_time = round((time.time() - start_time) * 1000, 2)
+            logger.warning(f"Token verification failed Invalid JWT format - {str(e)}")
+            raise InvalidTokenError(message="Invalid token format", name='TokenService')
         except InvalidTokenError:
             # Re-raise custom exceptions without additional logging
             raise
         except Exception as e:
-            verification_time = round((time.time() - start_time) * 1000, 2)
-            logger.error(f"Unexpected error during token verification after {verification_time}ms: {str(e)}", exc_info=True)
+            # verification_time = round((time.time() - start_time) * 1000, 2)
+            logger.error(f"Unexpected error during token verification: {str(e)}", exc_info=True)
             raise InvalidTokenError(message="Token verification error", name=None)
     
     def blacklist_token(self, token: str) -> bool:

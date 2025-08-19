@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from fastapi.params import Depends
 from pymysql import MySQLError
 
+from app.core.dependencies import get_user_in_token
 from app.core.exceptions import ServiceError
 from app.schema.common import EntityMember, SuccessResponse
 from app.schema.entities.add_entity_member import AddEntityMemberRequest
@@ -12,7 +13,6 @@ from app.schema.entities.search_entities import SearchEntitiesResponse
 from app.schema.entities.transfer_entity_members import EntityTransfer
 from app.schema.entities.update_entity_member_role import \
     UpdateEntityMemberRoleRequest
-from app.service.auth.dependencies import get_active_user
 from app.service.entities.add_entity_member import add_entity_member_db
 from app.service.entities.create_entity import create_entity_db
 from app.service.entities.get_entity_members import get_entity_members_db
@@ -23,7 +23,7 @@ from app.service.entities.update_entity_member_role import \
     update_entity_member_role_db
 
 router = APIRouter(prefix="/entities",
-                   tags=["Entities"], dependencies=[Depends(get_active_user)])
+                   tags=["Entities"], dependencies=[Depends(get_user_in_token)])
 
 
 @router.get("", tags=["Entities"], response_model=List[SearchEntitiesResponse], responses={
