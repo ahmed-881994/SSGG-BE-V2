@@ -21,11 +21,7 @@ class AuthService:
     def __init__(self, db_session: Session):
         """Initialize AuthService with database session."""
         self.db_session = db_session
-        self.oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-
-    
-    
     def authenticate_user(self, login: str, password: str) -> User:
         """
         Authenticate user with login and password

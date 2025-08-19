@@ -25,7 +25,6 @@ engine = create_engine(
     pool_recycle=3600,                      # Recycle connections every hour
     
     # Debug configuration
-    echo=settings.log_level == settings.log_level,     # Log SQL queries in debug mode
     echo=settings.log_level == "DEBUG",     # Log SQL queries in debug mode
     echo_pool=settings.log_level == "DEBUG", # Log pool events in debug mode
     

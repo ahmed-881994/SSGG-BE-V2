@@ -25,7 +25,7 @@ class UserRepository(BaseRepository[User]):
             if not user:
                 raise EntityDoesNotExistError(
                     message=f"User with ID {id} not found",
-                    name="User"
+                    name="User Retrieval Error"
                 )
             return User.strip_sensitive_info(user)
         except SQLAlchemyError as e:
@@ -45,7 +45,7 @@ class UserRepository(BaseRepository[User]):
             if not user:
                 raise EntityDoesNotExistError(
                     message=f"User with login {login} not found",
-                    name="User"
+                    name="User Auth Retrieval Error"
                 )
             return user
         except SQLAlchemyError as e:
@@ -66,13 +66,19 @@ class UserRepository(BaseRepository[User]):
                 filters.append(User.user_name.ilike(f"%{user_name}%"))
             if user_id:
                 filters.append(User.user_id.ilike(f"%{user_id}%"))
+                
+            if not filters:
+                raise InvalidOperationError(
+                    message="At least one search criteria must be provided",
+                    name="User Search Error"
+                )
 
             users = query.filter(or_(*filters)).all()
 
             if not users:
                 raise EntityDoesNotExistError(
                     message="No users found with the provided criteria",
-                    name="User"
+                    name="User Search Error"
                 )
 
             return users
@@ -90,7 +96,7 @@ class UserRepository(BaseRepository[User]):
             if not user:
                 raise EntityDoesNotExistError(
                     message=f"User with ID {id} not found",
-                    name="User"
+                    name="User Update Error"
                 )
 
             # Update provided fields
@@ -116,7 +122,7 @@ class UserRepository(BaseRepository[User]):
             if not user:
                 raise EntityDoesNotExistError(
                     message=f"User with ID {id} not found",
-                    name="User"
+                    name="User Delete Error"
                 )
             return super().delete(user)
         except SQLAlchemyError as e:
@@ -159,7 +165,7 @@ class UserRepository(BaseRepository[User]):
                 filters.append(User.user_id == user_id)
 
             # Check if user already exists
-            existing_user = len(query.filter(or_(*filters)).all())
+            existing_user = query.filter(or_(*filters)).count()
             if existing_user > 0:
                 raise EntityAlreadyExistsError(
                     message="User with this username already exists.",
@@ -183,6 +189,3 @@ class UserRepository(BaseRepository[User]):
         except SQLAlchemyError as e:
             self.db.rollback()
             raise ServiceError(message=f"Failed to create user: {str(e)}",name="Database Error")
-        except Exception as e:
-            self.db.rollback()
-            raise ServiceError(message=f"Unexpected error: {str(e)}", name="User Creation Error")
