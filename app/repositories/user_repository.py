@@ -26,7 +26,7 @@ class UserRepository(BaseRepository[User]):
                     message=f"User with ID {id} not found",
                     name="User"
                 )
-            return user
+            return user.strip_sensitive_info(user)
         except SQLAlchemyError as e:
             raise ServiceError(
                 message=f"Failed to retrieve user: {str(e)}",
@@ -92,7 +92,7 @@ class UserRepository(BaseRepository[User]):
 
             super().update(user)
 
-            return user
+            return user.strip_sensitive_info(user)
             
         except EntityDoesNotExistError:
             raise
@@ -169,7 +169,7 @@ class UserRepository(BaseRepository[User]):
 
             super().create(user)
 
-            return user
+            return user.strip_sensitive_info(user)
             
         except SQLAlchemyError as e:
             self.db.rollback()

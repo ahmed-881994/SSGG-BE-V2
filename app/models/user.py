@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from sqlalchemy import Date, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -52,3 +54,9 @@ class User(Base):
             "password_reset": self.password_reset,
             # "user_type": self.user_type
         }
+
+    def strip_sensitive_info(self, user_obj: User) -> User:
+        """Remove sensitive information from User instance."""
+        del user_obj.password_hash
+        del user_obj.salt
+        return user_obj
