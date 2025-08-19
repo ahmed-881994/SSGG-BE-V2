@@ -26,7 +26,8 @@ engine = create_engine(
     
     # Debug configuration
     echo=settings.log_level == settings.log_level,     # Log SQL queries in debug mode
-    echo_pool=settings.log_level == settings.log_level, # Log pool events in debug mode
+    echo=settings.log_level == "DEBUG",     # Log SQL queries in debug mode
+    echo_pool=settings.log_level == "DEBUG", # Log pool events in debug mode
     
     # Connection arguments passed to PyMySQL
     connect_args={
