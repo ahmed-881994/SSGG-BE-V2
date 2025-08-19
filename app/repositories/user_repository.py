@@ -89,7 +89,21 @@ class UserRepository(BaseRepository[User]):
             )
 
     def update_user(self, id: int, **kwargs) -> User:
+    def update_user(self, id: int, **kwargs) -> User:
+        """
+        Update fields of a user with the given ID.
 
+        Parameters:
+            id (int): The ID of the user to update.
+            **kwargs: Arbitrary keyword arguments representing fields to update.
+
+        Returns:
+            User: The updated user object with sensitive information stripped.
+
+        Raises:
+            EntityDoesNotExistError: If the user with the given ID does not exist.
+            ServiceError: If a database error occurs during the update.
+        """
         try:
             user = self.get_by_id(id)
 
