@@ -55,8 +55,17 @@ class User(Base):
             # "user_type": self.user_type
         }
 
-    def strip_sensitive_info(self, user_obj: User) -> User:
-        """Remove sensitive information from User instance."""
-        del user_obj.password_hash
-        del user_obj.salt
-        return user_obj
+    @staticmethod
+    def strip_sensitive_info(user_obj: User) -> User:
+        """Create a copy of User instance without sensitive information."""
+        # Create a new user object without sensitive data
+        clean_user = User(
+            id=user_obj.id,
+            user_name=user_obj.user_name,
+            user_id=user_obj.user_id,
+            is_active=user_obj.is_active,
+            password_reset=user_obj.password_reset,
+            password_hash="",  # Empty values instead of deleting
+            salt=""
+        )
+        return clean_user

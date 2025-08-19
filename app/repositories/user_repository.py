@@ -13,6 +13,7 @@ from app.repositories.base_repository import BaseRepository
 
 class UserRepository(BaseRepository[User]):
     """Repository for User database operations."""
+
     def __init__(self, db_session: Session):
         """Initialize UserRepository with database session."""
         super().__init__(db_session, User)
@@ -26,19 +27,20 @@ class UserRepository(BaseRepository[User]):
                     message=f"User with ID {id} not found",
                     name="User"
                 )
-            return user.strip_sensitive_info(user)
+            return User.strip_sensitive_info(user)
         except SQLAlchemyError as e:
             raise ServiceError(
                 message=f"Failed to retrieve user: {str(e)}",
                 name="Database Error"
             )
-               
+
     def get_user_auth(self, login: str) -> User:
         """Search for users by a query string."""
         try:
             # Create a base query
             query = self.db.query(User)
-            query = query.filter(or_(User.user_name == login, User.user_id == login))
+            query = query.filter(
+                or_(User.user_name == login, User.user_id == login))
             user = query.first()
             if not user:
                 raise EntityDoesNotExistError(
@@ -66,13 +68,13 @@ class UserRepository(BaseRepository[User]):
                 filters.append(User.user_id.ilike(f"%{user_id}%"))
 
             users = query.filter(or_(*filters)).all()
-            
+
             if not users:
                 raise EntityDoesNotExistError(
                     message="No users found with the provided criteria",
                     name="User"
                 )
-            
+
             return users
         except SQLAlchemyError as e:
             raise ServiceError(
@@ -83,8 +85,14 @@ class UserRepository(BaseRepository[User]):
     def update_user(self, id: int, **kwargs) -> User:
 
         try:
-            user = self.get_user_by_id(id)
-            
+            user = self.get_by_id(id)
+
+            if not user:
+                raise EntityDoesNotExistError(
+                    message=f"User with ID {id} not found",
+                    name="User"
+                )
+
             # Update provided fields
             for field, value in kwargs.items():
                 if hasattr(user, field):
@@ -92,24 +100,25 @@ class UserRepository(BaseRepository[User]):
 
             super().update(user)
 
-            return user.strip_sensitive_info(user)
-            
-        except EntityDoesNotExistError:
-            raise
+            return User.strip_sensitive_info(user)
+
         except SQLAlchemyError as e:
             self.db.rollback()
             raise ServiceError(
                 message=f"Failed to update user: {str(e)}",
-                name="Database Error" 
+                name="Database Error"
             )
 
     def delete_user(self, id: int) -> bool:
         """Delete a user by ID."""
         try:
-            user = self.get_user_by_id(id)
+            user = self.get_by_id(id)
+            if not user:
+                raise EntityDoesNotExistError(
+                    message=f"User with ID {id} not found",
+                    name="User"
+                )
             return super().delete(user)
-        except EntityDoesNotExistError:
-            raise
         except SQLAlchemyError as e:
             self.db.rollback()
             raise ServiceError(
@@ -117,11 +126,11 @@ class UserRepository(BaseRepository[User]):
                 name="Database Error"
             )
 
-    def create_user(self, user_name: str, user_id: Optional[str], password_hash: str, 
-                   user_type: int, salt: str, is_active: bool = True, 
-                   password_reset: bool = False) -> User:
+    def create_user(self, user_name: str, user_id: Optional[str], password_hash: str,
+                    user_type: int, salt: str, is_active: bool = True,
+                    password_reset: bool = False) -> User:
         """Create a new user in the database.
-        
+
         Args:
             user_name: Unique username for login
             user_id: Optional external user identifier
@@ -130,15 +139,15 @@ class UserRepository(BaseRepository[User]):
             salt: Password salt
             is_active: Whether user account is active
             password_reset: Whether user needs to reset password
-            
+
         Returns:
             User: Created user instance
-            
+
         Raises:
             ServiceError: If user creation fails
         """
         try:
-            
+
             # Create a base query
             query = self.db.query(User)
 
@@ -169,11 +178,11 @@ class UserRepository(BaseRepository[User]):
 
             super().create(user)
 
-            return user.strip_sensitive_info(user)
-            
+            return User.strip_sensitive_info(user)
+
         except SQLAlchemyError as e:
             self.db.rollback()
-            raise ServiceError(
-                message=f"Failed to create user: {str(e)}",
-                name="Database Error"
-            )
+            raise ServiceError(message=f"Failed to create user: {str(e)}",name="Database Error")
+        except Exception as e:
+            self.db.rollback()
+            raise ServiceError(message=f"Unexpected error: {str(e)}", name="User Creation Error")
