@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends
 from pymysql import MySQLError
 
+from app.core.dependencies import get_user_in_token
 from app.core.exceptions import ServiceError
 from app.schema.lookups.lookups import Lookup
-from app.service.auth.dependencies import get_active_user
 from app.service.lookups.getlookups import get_lookups as get_lookups_service
 
-router = APIRouter(prefix="/lookups", tags=["Lookups"], dependencies=[Depends(get_active_user)])
+router = APIRouter(prefix="/lookups", tags=["Lookups"], dependencies=[Depends(get_user_in_token)])
 
 
 @router.get("", tags=["Lookups"], responses={

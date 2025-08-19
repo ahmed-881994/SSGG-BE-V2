@@ -3,18 +3,18 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends
 from pymysql import MySQLError
 
+from app.core.dependencies import get_user_in_token
 from app.core.exceptions import ServiceError
 from app.core.logging_middleware import logger
 from app.schema.members.member import (MemberAddUpdate, MemberAttendance,
                                        MemberGet)
-from app.service.auth.dependencies import get_active_user
 from app.service.members.addmember import add_member_db
 from app.service.members.getmember import get_member_db
 from app.service.members.getmemberattendance import get_member_attendance_db
 from app.service.members.searchmembers import search_members_db
 from app.service.members.updatemember import update_member_db
 
-router = APIRouter(prefix="/members", tags=["Members"], dependencies=[Depends(get_active_user)])
+router = APIRouter(prefix="/members", tags=["Members"], dependencies=[Depends(get_user_in_token)])
 
 
 @router.get("", tags=["Members"], response_model=List[MemberGet], responses={
