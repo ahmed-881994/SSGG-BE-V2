@@ -81,7 +81,7 @@ class UserService:
         """
         try:
             users = self.user_repository.search_users(user_name=user_name, user_id=user_id)
-            return [user for user in users]
+            return users
         except EntityDoesNotExistError:
             raise
         except Exception as e:
