@@ -51,6 +51,10 @@ class UserService:
 
         Returns:
             User: User instance
+
+        Raises:
+            EntityDoesNotExistError: If user not found
+            ServiceError: If retrieval fails
         """
         try:
             user = self.user_repository.get_user_auth(login=login)
