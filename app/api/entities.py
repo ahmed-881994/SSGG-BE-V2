@@ -7,14 +7,14 @@ from app.core.database import get_db
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import EntityAlreadyExistsError, EntityDoesNotExistError, ServiceError
 from app.schemas.common_schema import SuccessResponse
-from app.schemas.entity_schema import EntityCreate, EntityTransfer, RoleUpdate
+from app.schemas.entity_schema import EntityAssign, EntityCreate, EntityHierarchicalResponse, EntityMembersResponse, EntityResponse, EntitySearchResponse, EntityTransfer, RoleUpdate
 from app.services.entity_service import EntityService
 
 router = APIRouter(prefix="/entities",
                    tags=["Entities"], dependencies=[Depends(get_user_in_token)])
 
 
-@router.get("", tags=["Entities"])
+@router.get("", tags=["Entities"], response_model=EntitySearchResponse)
 def search_entities(entityID: Optional[int] = None, entityParentID: Optional[int] = None, entityName: Optional[str] = None, db: Session = Depends(get_db)):
     """ 
     Search entities by ID, Parent ID, and Name.
@@ -34,7 +34,7 @@ def search_entities(entityID: Optional[int] = None, entityParentID: Optional[int
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@router.post("", tags=["Entities"])
+@router.post("", tags=["Entities"], response_model=EntityResponse)
 def create_entity(body: EntityCreate, db: Session = Depends(get_db)):
     """
     Create a new entity.
@@ -70,9 +70,9 @@ def transfer_entity(body: List[EntityTransfer], db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-@router.post("/{entityID}/members", tags=["Entities"], responses={
+@router.post("/{entityID}/members", tags=["Entities"],response_model=SuccessResponse, responses={
     200: {"description": "Success", "model": SuccessResponse}})
-def add_entity_members(body: List[dict], entityID: int, db: Session = Depends(get_db)):
+def add_entity_members(body: EntityAssign, entityID: int, db: Session = Depends(get_db)):
     """
     Add a member to an entity.
 
@@ -84,7 +84,8 @@ def add_entity_members(body: List[dict], entityID: int, db: Session = Depends(ge
     """
     try:
         entity_service = EntityService(db)
-        if entity_service.assign_member_to_entity(memberships=body, entity_id=entityID):
+        memberships_data = [membership.model_dump() for membership in body.memberships]
+        if entity_service.assign_member_to_entity(memberships=memberships_data, entity_id=entityID):
             return {"message": "Members added successfully"}
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -93,7 +94,7 @@ def add_entity_members(body: List[dict], entityID: int, db: Session = Depends(ge
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-@router.get("/{entityID}", tags=['Entities'])
+@router.get("/{entityID}", tags=['Entities'], response_model=EntityHierarchicalResponse)
 def get_entity(entityID: int, db: Session = Depends(get_db)):
     try:
         entity_service = EntityService(db)
@@ -104,7 +105,7 @@ def get_entity(entityID: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-@router.get("/{entityID}/members", tags=['Entities'])
+@router.get("/{entityID}/members", tags=['Entities'], response_model=EntityMembersResponse)
 def get_entity_members(entityID: int, includeInactive: Optional[bool] = False, roleId: Optional[int] = None, db: Session = Depends(get_db)):
     """
     Get members of an entity.

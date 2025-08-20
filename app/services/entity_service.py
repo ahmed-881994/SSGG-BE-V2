@@ -38,7 +38,65 @@ class EntityService:
                     message=f"Entity with ID {id} not found",
                     name="Entity Retrieval Error"
                 )
-            return entity.to_dict(include_relationships=True)
+            # Build the hierarchical response structure
+            result = {
+                "entity_id": entity.entity_id,
+                "entity_name": {
+                    "en": entity.entity_name_en,
+                    "ar": entity.entity_name_ar
+                },
+                "entity_parent_id": entity.entity_parent_id,
+                "entity_type": {
+                    "entity_type_id": entity.entity_type.entity_type_id,
+                    "entity_type_name": {
+                        "en": entity.entity_type.entity_type_name_en,
+                        "ar": entity.entity_type.entity_type_name_ar
+                } if entity.entity_type else None
+            }}
+            
+            # Add children if they exist
+            if hasattr(entity, 'children') and entity.children:
+                result["children"] = [
+                    {
+                        "entity_id": child.entity_id,
+                        "entity_name": {
+                            "en": child.entity_name_en,
+                            "ar": child.entity_name_ar
+                        },
+                        "entity_parent_id": child.entity_parent_id,
+                        "entity_type": {
+                            "entity_type_id": child.entity_type.entity_type_id,
+                            "entity_type_name": {
+                                "en": child.entity_type.entity_type_name_en,
+                                "ar": child.entity_type.entity_type_name_ar
+                        } if child.entity_type else None
+                    }
+                    }
+                    for child in entity.children
+                ]
+            else:
+                result["children"] = []
+            
+            # Add parent if it exists
+            if hasattr(entity, 'parent') and entity.parent:
+                result["parent"] = {
+                    "entity_id": entity.parent.entity_id,
+                    "entity_name": {
+                        "en": entity.parent.entity_name_en,
+                        "ar": entity.parent.entity_name_ar
+                    },
+                    "entity_parent_id": entity.parent.entity_parent_id,
+                    "entity_type": {
+                        "entity_type_id": entity.parent.entity_type.entity_type_id,
+                        "entity_type_name": {
+                            "en": entity.parent.entity_type.entity_type_name_en,
+                            "ar": entity.parent.entity_type.entity_type_name_ar
+                        } if entity.parent.entity_type else None
+                }}
+            else:
+                result["parent"] = None
+            
+            return result
         except EntityDoesNotExistError:
             raise
         except Exception as e:
@@ -53,7 +111,7 @@ class EntityService:
         entity_id: int, 
         include_inactive: bool = False,
         role_id: Optional[int] = None
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, List[Dict[str, Any]]]:
         """Get all members for an entity."""
         
         logger.info(f"Getting members for entity {entity_id}")
@@ -66,22 +124,26 @@ class EntityService:
                 )
 
             entity_members = self.entity_repository.get_entity_members(entity_id, include_inactive, role_id)
-            
-            return [
+
+            return {'members': [
                 {
                     'member_id': em.member_id,
-                    'member_name_en': f"{em.member.name_en}".strip() if em.member else None,
-                    'member_name_ar': f"{em.member.name_ar}".strip() if em.member else None,
+                    'member_name': {
+                        'en': f"{em.member.name_en}".strip() if em.member else None,
+                        'ar': f"{em.member.name_ar}".strip() if em.member else None
+                    },
                     'role_id': em.member_entity_role_id,
-                    'role_name_en': em.role.entity_role_name_en if hasattr(em, 'role') and em.role else None,
-                    'role_name_ar': em.role.entity_role_name_ar if hasattr(em, 'role') and em.role else None,
-                    'date_from': em.date_from if em.date_from else None,
-                    'date_to': em.date_to if em.date_to else None,
+                    'role_name': {
+                        'en': em.role.entity_role_name_en if hasattr(em, 'role') and em.role else None,
+                        'ar': em.role.entity_role_name_ar if hasattr(em, 'role') and em.role else None
+                    },
+                    'date_from': em.date_from.strftime("%Y-%m-%d") if em.date_from else None,
+                    'date_to': em.date_to.strftime("%Y-%m-%d") if em.date_to else None,
                     'is_active': em.date_to is None
                 }
                 for em in entity_members
-            ]
-        
+            ]}
+
         except EntityDoesNotExistError:
             raise
         except Exception as e:
@@ -91,7 +153,7 @@ class EntityService:
                 name="Entity Members Retrieval Error"
             )
 
-    def search_entities(self, entity_id: Optional[int] = None, entity_parent_id: Optional[int] = None, entity_name: Optional[str] = None) -> List[Dict[str, Any]]:
+    def search_entities(self, entity_id: Optional[int] = None, entity_parent_id: Optional[int] = None, entity_name: Optional[str] = None) -> Dict[str, List[Dict[str, Any]]]:
         """Search for entities based on various criteria."""
         logger.info(f"Searching entities with ID: {entity_id}, Parent ID: {entity_parent_id}, Name: {entity_name}")
         try:
@@ -101,7 +163,21 @@ class EntityService:
                     message="No entities found matching the search criteria",
                     name="Entity Search Error"
                 )
-            return [entity.to_dict() for entity in entities]
+            return {"entities":[{
+                "entity_id": entity.entity_id,
+                "entity_name": {
+                    "en": entity.entity_name_en,
+                    "ar": entity.entity_name_ar
+                },
+                "parent_id": entity.entity_parent_id,
+                "entity_type": {
+                    "entity_type_id": entity.entity_type_id,
+                    "entity_type_name": {
+                        "en": entity.entity_type.entity_type_name_en,
+                        "ar": entity.entity_type.entity_type_name_ar
+                    }
+                }
+            } for entity in entities]}
         except EntityDoesNotExistError:
             raise
         except Exception as e:
@@ -139,7 +215,21 @@ class EntityService:
                 entity_parent_id=entity_data["parent_id"],
                 entity_type_id=entity_data["entity_type"]
             )
-            return entity.to_dict()
+            return {
+                "entity_id": entity.entity_id,
+                "entity_name": {
+                    "en": entity.entity_name_en,
+                    "ar": entity.entity_name_ar
+                },
+                "parent_id": entity.entity_parent_id,
+                "entity_type": {
+                    "entity_type_id": entity.entity_type_id,
+                    "entity_type_name": {
+                        "en": entity.entity_type.entity_type_name_en,
+                        "ar": entity.entity_type.entity_type_name_ar
+                    }
+                }
+            }
         except EntityAlreadyExistsError:
             raise
         except EntityDoesNotExistError:
