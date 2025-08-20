@@ -5,7 +5,7 @@ from pymysql import MySQLError
 
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import ServiceError
-from app.schemas.common import SuccessResponse
+from app.schemas.common_schema import SuccessResponse
 from app.service.events.createevent import create_event_db
 from app.service.events.getevent import get_event_db
 from app.service.events.geteventattenadance import get_event_attendance_db

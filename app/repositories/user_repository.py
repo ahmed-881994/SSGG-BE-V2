@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError,
                                  InvalidOperationError, ServiceError)
-from app.models.user import User
+from app.models.user_model import User
 from app.repositories.base_repository import BaseRepository
 
 

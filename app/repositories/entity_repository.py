@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
-from app.models.entity import Entity
-from app.models.entity_member import EntityMember
+from app.models.entity_model import Entity
+from app.models.entity_member_model import EntityMember
 from app.repositories.base_repository import BaseRepository
 
 logger = getLogger(__name__)

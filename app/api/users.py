@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
-from app.schemas.common import SuccessResponse
+from app.schemas.common_schema import SuccessResponse
 from app.services.user_service import UserService
 
 router = APIRouter(

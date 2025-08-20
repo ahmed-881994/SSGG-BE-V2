@@ -18,7 +18,7 @@ from app.core.exceptions import (AuthenticationFailed,
                                        SSGGApiError)
 from app.core.logging_middleware import logging_middleware
 from app.core.rate_limitting import setup_rate_limiting
-from app.schemas.common import ErrorResponse
+from app.schemas.common_schema import ErrorResponse
 
 
 # Add lifespan to the application

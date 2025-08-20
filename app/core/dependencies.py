@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.config.logging_config import logger
 from app.core.database import get_db
 from app.core.exceptions import AuthenticationFailed, ServiceError
-from app.models.user import User
+from app.models.user_model import User
 from app.services.token_service import token_service
 from app.services.user_service import UserService
 

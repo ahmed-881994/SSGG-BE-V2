@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import EntityAlreadyExistsError, EntityDoesNotExistError, ServiceError
-from app.models.member import Member
+from app.models.member_model import Member
 from app.repositories.base_repository import BaseRepository
 
 

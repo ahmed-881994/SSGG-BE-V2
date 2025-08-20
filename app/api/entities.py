@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import EntityAlreadyExistsError, EntityDoesNotExistError, ServiceError
-from app.schemas.common import SuccessResponse
-from app.schemas.entity import EntityTransfer
+from app.schemas.common_schema import SuccessResponse
+from app.schemas.entity_schema import EntityTransfer
 from app.services.entity_service import EntityService
 
 router = APIRouter(prefix="/entities",
