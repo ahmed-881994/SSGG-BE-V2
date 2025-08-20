@@ -1,8 +1,7 @@
 from app.core.database_connection_pool import db_pool
-from app.schema.members.member import MemberAddUpdate
 
 
-def add_member_db(member: MemberAddUpdate):
+def add_member_db(member: dict):
     """adds a new member to the database.
     This method allows you to add a new member to the database.
 

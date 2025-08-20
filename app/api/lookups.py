@@ -1,16 +1,16 @@
+from typing import List
 from fastapi import APIRouter, Depends
 from pymysql import MySQLError
 
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import ServiceError
-from app.schema.lookups.lookups import Lookup
 from app.service.lookups.getlookups import get_lookups as get_lookups_service
 
 router = APIRouter(prefix="/lookups", tags=["Lookups"], dependencies=[Depends(get_user_in_token)])
 
 
 @router.get("", tags=["Lookups"], responses={
-    200: {"description": "Success", "model": Lookup}})
+    200: {"description": "Success", "model": List[dict]}})
 def get_lookups():
     """
     Get all lookup tables and their values.

@@ -17,7 +17,7 @@ from app.config.logging_config import logger
 from app.core.database import get_db
 from app.core.exceptions import AuthenticationFailed, ServiceError
 from app.core.rate_limitting import rate_limit
-from app.schema.auth.Token import Token
+from app.schemas.auth import Token
 from app.services.auth import AuthService, oauth2_scheme
 from app.services.token_service import token_service
 

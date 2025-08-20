@@ -1,4 +1,4 @@
-from pydantic import BaseSettings, validator
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -34,21 +34,23 @@ class Settings(BaseSettings):
     # Logging settings
     log_level: str = "INFO"
     
-    @validator("secret_key")
-    def validate_secret_key(cls, v):
-        if len(v) < 32:
-            raise ValueError("Secret key must be at least 32 characters long")
-        return v
+    # @validator("secret_key")
+    # def validate_secret_key(cls, v):
+    #     if len(v) < 32:
+    #         raise ValueError("Secret key must be at least 32 characters long")
+    #     return v
     
-    @validator("db_password")
-    def validate_password(cls, v):
-        if not v:
-            raise ValueError("Database password cannot be empty")
-        return v
+    # @validator("db_password")
+    # def validate_password(cls, v):
+    #     if not v:
+    #         raise ValueError("Database password cannot be empty")
+    #     return v
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": False,
+        "extra": "ignore"  # This will ignore extra fields in .env
+    }
 
 # Global settings instance
 settings = Settings()

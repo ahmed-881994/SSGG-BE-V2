@@ -8,10 +8,7 @@ from app.core.database import get_db
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
-from app.schema.common import SuccessResponse
-from app.schema.users.create_user import CreateUserRequest
-from app.schema.users.search_users import SearchUsersResponse
-from app.schema.users.user import User
+from app.schemas.common import SuccessResponse
 from app.services.user_service import UserService
 
 router = APIRouter(
@@ -36,11 +33,11 @@ def search_users(userName: Optional[str] = None, userID: Optional[str] = None, d
 
 
 @router.post("", responses={200: {"description": "Success", "model": SuccessResponse}})
-def create_user(user: CreateUserRequest, db: Session = Depends(get_db)):
+def create_user(user: dict, db: Session = Depends(get_db)):
     """Create a new user."""
     try:
         user_service = UserService(db)
-        return user_service.create_user(user_data=user.dict())
+        return user_service.create_user(user_data=user)
     except EntityAlreadyExistsError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except ServiceError as e:

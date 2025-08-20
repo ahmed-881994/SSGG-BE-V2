@@ -1,9 +1,8 @@
 from app.core.database_connection_pool import db_pool
 from app.core.exceptions import EntityDoesNotExistError
-from app.schema.members.member import MemberAddUpdate
 
 
-def update_member_db(member_id: str, member: MemberAddUpdate):
+def update_member_db(member_id: str, member: dict):
     """Updates a member in the database.
     This method allows you to update an existing member's information in the database.
     It checks if the member exists and updates the relevant fields with the provided data.
