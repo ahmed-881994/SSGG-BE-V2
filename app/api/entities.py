@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import EntityAlreadyExistsError, EntityDoesNotExistError, ServiceError
 from app.schemas.common_schema import SuccessResponse
-from app.schemas.entity_schema import EntityTransfer
+from app.schemas.entity_schema import EntityCreate, EntityTransfer, RoleUpdate
 from app.services.entity_service import EntityService
 
 router = APIRouter(prefix="/entities",
@@ -35,13 +35,13 @@ def search_entities(entityID: Optional[int] = None, entityParentID: Optional[int
 
 
 @router.post("", tags=["Entities"])
-def create_entity(body: dict, db: Session = Depends(get_db)):
+def create_entity(body: EntityCreate, db: Session = Depends(get_db)):
     """
     Create a new entity.
     """
     try:
         entity_service = EntityService(db)
-        return entity_service.create_entity(entity_data=body)
+        return entity_service.create_entity(entity_data=body.model_dump())
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except EntityAlreadyExistsError as e:
@@ -61,7 +61,8 @@ def transfer_entity(body: List[EntityTransfer], db: Session = Depends(get_db)):
     
     try:
         entity_service = EntityService(db)
-        return entity_service.transfer_entity_members(entity_transfer_data=body)
+        if entity_service.transfer_entity_members(entity_transfer_data=body):
+            return SuccessResponse(message="Members transferred successfully.")
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except ServiceError as e:
@@ -83,7 +84,8 @@ def add_entity_members(body: List[dict], entityID: int, db: Session = Depends(ge
     """
     try:
         entity_service = EntityService(db)
-        return entity_service.assign_member_to_entity(memberships=body, entity_id=entityID)
+        if entity_service.assign_member_to_entity(memberships=body, entity_id=entityID):
+            return {"message": "Members added successfully"}
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except ServiceError as e:
@@ -119,12 +121,13 @@ def get_entity_members(entityID: int, includeInactive: Optional[bool] = False, r
     
 @router.post("/{entityID}/members/roles", tags=['Entities'], response_model=SuccessResponse, responses={
     200: {"description": "Success", "model": SuccessResponse}})
-def update_entity_member_role(entityID: int, body: dict, db: Session = Depends(get_db)):
+def update_entity_member_role(entityID: int, body: RoleUpdate, db: Session = Depends(get_db)):
     """ Update roles of members in an entity.
     """
     try:
         entity_service = EntityService(db)
-        return entity_service.update_entity_member_role(entity_id=entityID, body=body)
+        if entity_service.update_entity_member_role(entity_id=entityID, body=body.model_dump()):
+            return {"message": "Roles updated successfully"}
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except ServiceError as e:

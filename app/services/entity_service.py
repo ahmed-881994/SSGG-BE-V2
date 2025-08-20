@@ -116,26 +116,28 @@ class EntityService:
         logger.info(f"Creating entity with data: {entity_data}")
         try:
             # Check entity existence
-            if self._entity_exists(entity_data["entity_id"]):
-                raise EntityAlreadyExistsError(
-                    message=f"Entity with ID {entity_data['entity_id']} already exists",
-                    name="Entity Creation Error"
-                )
-                
+            # if self._entity_exists(entity_data["entity_id"]):
+            #     raise EntityAlreadyExistsError(
+            #         message=f"Entity with ID {entity_data['entity_id']} already exists",
+            #         name="Entity Creation Error"
+            #     )
+
+            entity_id = self.entity_repository.get_next_entity_id()
+
             # Check parent entity exists if provided
-            if entity_data.get("entity_parent_id"):
-                if not self._entity_exists(entity_data["entity_parent_id"]):
+            if entity_data.get("parent_id"):
+                if not self._entity_exists(entity_data["parent_id"]):
                     raise EntityDoesNotExistError(
-                        message=f"Parent entity with ID {entity_data['entity_parent_id']} not found",
+                        message=f"Parent entity with ID {entity_data['parent_id']} not found",
                         name="Entity Creation Error"
                     )
                     
             entity = self.entity_repository.create_entity(
-                entity_id=entity_data["entity_id"],
-                entity_name_en=entity_data["entity_name_en"],
-                entity_name_ar=entity_data["entity_name_ar"],
-                entity_parent_id=entity_data["entity_parent_id"],
-                entity_type_id=entity_data["entity_type_id"]
+                entity_id=entity_id,
+                entity_name_en=entity_data["entity_name"]["en"],
+                entity_name_ar=entity_data["entity_name"]["ar"],
+                entity_parent_id=entity_data["parent_id"],
+                entity_type_id=entity_data["entity_type"]
             )
             return entity.to_dict()
         except EntityAlreadyExistsError:
@@ -306,7 +308,7 @@ class EntityService:
                 .first()
             )
 
-            if not self._member_exists_in_entity(entity_id, member_id):
+            if not existing_assignment:
                 logger.warning(f"Member {member_id} is not part of entity {entity_id}.")
                 raise EntityDoesNotExistError(
                     message=f"Member {member_id} is not part of entity {entity_id}.",
