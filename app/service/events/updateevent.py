@@ -1,9 +1,8 @@
 from app.core.database_connection_pool import db_pool
 from app.core.exceptions import EntityDoesNotExistError
-from app.schema.events.events import EventCreate
 
 
-def update_event_db(event_id: int, body: EventCreate):
+def update_event_db(event_id: int, body: dict):
     conn = db_pool.get_connection()
 
     if conn is not None:

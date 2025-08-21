@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.config.logging_config import logger
 from app.core.exceptions import (AuthenticationFailed, EntityDoesNotExistError,
                                  ServiceError)
-from app.models.user import User
+from app.models.user_model import User
 from app.services.user_service import UserService
 from app.util.password import verify_password
 

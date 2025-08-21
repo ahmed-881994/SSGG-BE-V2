@@ -6,8 +6,6 @@ from pymysql import MySQLError
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import ServiceError
 from app.core.logging_middleware import logger
-from app.schema.members.member import (MemberAddUpdate, MemberAttendance,
-                                       MemberGet)
 from app.service.members.addmember import add_member_db
 from app.service.members.getmember import get_member_db
 from app.service.members.getmemberattendance import get_member_attendance_db
@@ -17,8 +15,8 @@ from app.service.members.updatemember import update_member_db
 router = APIRouter(prefix="/members", tags=["Members"], dependencies=[Depends(get_user_in_token)])
 
 
-@router.get("", tags=["Members"], response_model=List[MemberGet], responses={
-    200: {"description": "Success", "model": List[MemberGet]}})
+@router.get("", tags=["Members"], response_model=List[dict], responses={
+    200: {"description": "Success", "model": List[dict]}})
 def search_members(name: Optional[str] = None, teamID: Optional[int] = None):
     """
     Search members by (Name, Team)
@@ -31,8 +29,8 @@ def search_members(name: Optional[str] = None, teamID: Optional[int] = None):
 
 
 @router.post("", status_code=201, responses={
-    201: {"description": "Member created successfully", "model": MemberAddUpdate}})
-def add_member(body: MemberAddUpdate):
+    201: {"description": "Member created successfully", "model": dict}})
+def add_member(body: dict):
     """
     Creates a new member
     """
@@ -43,8 +41,8 @@ def add_member(body: MemberAddUpdate):
         raise ServiceError(message=error.args[1], name="Database Error" )
 
 
-@router.get("/{member_id}", response_model=MemberGet, responses={
-    200: {"description": "Success", "model": MemberGet}}, response_model_exclude_none=True)
+@router.get("/{member_id}", response_model=dict, responses={
+    200: {"description": "Success", "model": dict}}, response_model_exclude_none=True)
 def get_member(member_id: str):
     """
     Get Member by ID
@@ -58,8 +56,8 @@ def get_member(member_id: str):
 
 
 @router.patch("/{member_id}", responses={
-    200: {"description": "Member updated successfully", "model": MemberAddUpdate}})
-def update_member(member_id: str, body: MemberAddUpdate):
+    200: {"description": "Member updated successfully", "model": dict}})
+def update_member(member_id: str, body: dict):
     """
     Updates a member
     """
@@ -71,7 +69,7 @@ def update_member(member_id: str, body: MemberAddUpdate):
 
 
 @router.get("/{member_id}/attendance", responses={
-    200: {"description": "Success", "model": MemberAttendance}})
+    200: {"description": "Success", "model": dict}})
 def get_member_attendance(member_id: str):
     """
     Gets member attendance by ID

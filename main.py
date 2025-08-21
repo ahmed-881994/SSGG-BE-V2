@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from pymysql import DataError, IntegrityError
 from contextlib import asynccontextmanager
 
-from app.api import auth, entities, events, health, lookups, members, teams, users
+from app.api import auth, entities, events, health, lookups, members, users
 from app.config.logging_config import logger
 from app.config.settings import settings
 from app.core.exceptions import (AuthenticationFailed,
@@ -18,7 +18,7 @@ from app.core.exceptions import (AuthenticationFailed,
                                        SSGGApiError)
 from app.core.logging_middleware import logging_middleware
 from app.core.rate_limitting import setup_rate_limiting
-from app.schema.common import ErrorResponse
+from app.schemas.common_schema import ErrorResponse
 
 
 # Add lifespan to the application
@@ -62,10 +62,6 @@ tags_metadata = [
         "description": "Operations for managing member profiles, including registration, updates, queries, and membership status management. Handles individual member data and their associated roles.",
     },
     {
-        "name": "Teams",
-        "description": "Operations for team management and organization. Note: This API group is deprecated and will be removed in future versions. Please refer to Entities for the updated endpoints.",
-    },
-    {
         "name": "Events",
         "description": "Endpoints for managing SSGG events, including creation, scheduling, registration, attendance tracking, and event reporting. Supports both one-time and recurring events.",
     },
@@ -92,7 +88,6 @@ app.openapi_tags = tags_metadata
 app.include_router(auth.router)
 app.include_router(members.router)
 app.include_router(users.router)
-app.include_router(teams.router, deprecated=True)
 app.include_router(events.router)
 app.include_router(entities.router)
 app.include_router(lookups.router)

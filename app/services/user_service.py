@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.config.logging_config import logger
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
-from app.models.user import User
+from app.models.user_model import User
 from app.repositories.user_repository import UserRepository
 from app.util.password import generate_salt, get_password_hash
 
