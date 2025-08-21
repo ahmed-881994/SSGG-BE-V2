@@ -27,7 +27,7 @@ class EntityService:
 
     def _member_exists_in_entity(self, entity_id: int, member_id: str) -> bool:
         """Check if a member exists in an entity - private method for internal use."""
-        return self.db_session.query(EntityMember).filter(EntityMember.entity_id == entity_id).filter(EntityMember.member_id == member_id).filter(EntityMember.date_to == None).first() is not None
+        return self.db_session.query(EntityMember).filter(EntityMember.entity_id == entity_id).filter(EntityMember.member_id == member_id).filter(EntityMember.date_to.is_(None)).first() is not None
 
     def get_entity(self, entity_id: int) -> Dict[str, Any]:
         """Retrieve an entity by its ID with entity type names."""

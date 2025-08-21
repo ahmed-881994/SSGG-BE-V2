@@ -34,7 +34,7 @@ class EntityRepository(BaseRepository[Entity]):
     def get_next_entity_id(self) -> int:
         """Get the next available entity ID."""
         try:
-            return self.db.query(func.max(Entity.entity_id)).scalar() + 1
+            return (self.db.query(func.max(Entity.entity_id)).scalar() or 0) + 1
         except SQLAlchemyError as e:
             raise ServiceError(
                 message=f"Failed to retrieve next entity ID: {str(e)}",

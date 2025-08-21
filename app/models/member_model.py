@@ -11,7 +11,7 @@ class Member(Base):
     
     # Unique member identifier - This is the business key used throughout the system
     # Indexed for fast lookups, unique constraint ensures no duplicates
-    member_id: Mapped[int] = mapped_column(Integer, nullable=False, unique=True, index=True)
+    member_id: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
 
     # Member names in English and Arabic
     # Supports bilingual member management
@@ -89,8 +89,8 @@ class Member(Base):
     # attendance_records = relationship("Attendance", back_populates="member")
     
     def __repr__(self):
-        return f"<Member(member_id={self.member_id}, entity_id={self.name_en})>"
-    
+        return f"<Member(member_id={self.member_id}, name_en={self.name_en})>"
+
     def to_dict(self) -> dict:
         """
         Convert member to dictionary.
