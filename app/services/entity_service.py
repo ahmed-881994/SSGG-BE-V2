@@ -100,7 +100,7 @@ class EntityService:
         except EntityDoesNotExistError:
             raise
         except Exception as e:
-            logger.error(f"Error retrieving user {id}: {str(e)}")
+            logger.error(f"Error retrieving entity: {entity_id}: {str(e)}")
             raise ServiceError(
                 message=f"Failed to retrieve entity: {str(e)}",
                 name="Entity Retrieval Error"
@@ -137,8 +137,8 @@ class EntityService:
                         'en': em.role.entity_role_name_en if hasattr(em, 'role') and em.role else None,
                         'ar': em.role.entity_role_name_ar if hasattr(em, 'role') and em.role else None
                     },
-                    'date_from': em.date_from.strftime("%Y-%m-%d") if em.date_from else None,
-                    'date_to': em.date_to.strftime("%Y-%m-%d") if em.date_to else None,
+                    'date_from': em.date_from if em.date_from else None,
+                    'date_to': em.date_to if em.date_to else None,
                     'is_active': em.date_to is None
                 }
                 for em in entity_members
@@ -304,22 +304,7 @@ class EntityService:
                 # If member already has this exact role actively, skip this assignment
                 if existing_same_role_assignment:
                     logger.warning(f"Member {member_id} already has an active assignment with role {role_id} in entity {entity_id}. Skipping.")
-                    continue
-                
-                
-                
-                # Parse from_date or use today
-                if from_date:
-                    try:
-                        parsed_from_date = datetime.strptime(from_date, "%Y-%m-%d").date()
-                    except ValueError:
-                        raise ServiceError(
-                            message=f"Invalid date format: {from_date}. Expected YYYY-MM-DD",
-                            name="Date Format Error"
-                        )
-                else:
-                    parsed_from_date = date.today()
-                    
+                    continue    
                 
                 # Check for existing active assignment
                 existing_any_role_assignment = (
@@ -336,7 +321,7 @@ class EntityService:
                 # If there's an existing active assignment, update its end date
                 if existing_any_role_assignment:
                     # Update the existing assignment's end date
-                    existing_any_role_assignment.date_to = parsed_from_date
+                    existing_any_role_assignment.date_to = from_date
                     self.db_session.commit()  # Ensure the update is committed
                     self.db_session.refresh(existing_any_role_assignment)  # Refresh to get updated fields
 
@@ -346,7 +331,7 @@ class EntityService:
                         entity_id=entity_id,
                         member_id=member_id,
                         role_id=role_id,
-                        from_date=parsed_from_date
+                        from_date=from_date
                     )
                     
                     logger.info(f"Created new assignment for member {member_id} in entity {entity_id} with role {role_id}")
@@ -355,7 +340,7 @@ class EntityService:
                         entity_id=entity_id,
                         member_id=member_id,
                         role_id=role_id,
-                        from_date=parsed_from_date
+                        from_date=from_date
                     )
             return True
         except EntityDoesNotExistError:
@@ -452,10 +437,6 @@ class EntityService:
                 if not self._member_exists_in_entity(source_entity_id, member_id):
                     logger.warning(f"Member {member_id} is not part of entity {source_entity_id}.")
                     continue
-                    # raise EntityDoesNotExistError(
-                    #         message=f"Member {member_id} is not part of entity {entity_id}.",
-                    #         name="Entity Transfer Error"
-                    #     )
 
                 # End membership in the source entity
                 self.entity_repository.end_member_membership(

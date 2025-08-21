@@ -1,3 +1,4 @@
+from datetime import date
 from typing import List, Optional
 
 from pydantic import Field
@@ -22,7 +23,7 @@ class EntityTransfer(BaseSchema):
 class Membership(BaseSchema):
     member_id: str = Field(alias='MemberID')
     role_id: Optional[int] = Field(alias='RoleID', default=5)
-    from_date: str = Field(alias='FromDate')
+    from_date: date = Field(alias='FromDate')
 
 class EntityAssign(BaseSchema):
 
@@ -60,8 +61,8 @@ class EntityMemberResponse(BaseSchema):
     member_name: NameObject = Field(alias='MemberName')
     role_id: int = Field(alias='RoleID')
     role_name: NameObject = Field(alias='RoleName')
-    date_from: str = Field(alias='DateFrom')
-    date_to: Optional[str] = Field(alias='DateTo', default=None)
+    date_from: date = Field(alias='DateFrom')
+    date_to: Optional[date] = Field(alias='DateTo', default=None)
     is_active: bool = Field(alias='IsActive')
 
 
