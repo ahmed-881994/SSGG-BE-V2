@@ -11,7 +11,7 @@ class Entity(Base):
     entity_id: Mapped[int] = mapped_column(Integer, nullable=False, unique=True, index=True)
     entity_name_en: Mapped[str] = mapped_column(String(100), nullable=False)
     entity_name_ar: Mapped[str] = mapped_column(String(100), nullable=True)
-    entity_parent_id: Mapped[int] = mapped_column(ForeignKey("entities.id"), nullable=True)
+    entity_parent_id: Mapped[int] = mapped_column(ForeignKey("entities.entity_id"), nullable=True)
     entity_type_id: Mapped[int] = mapped_column(Integer, ForeignKey("entity_types.entity_type_id"), nullable=False)    
     
     # Relationships
@@ -28,7 +28,7 @@ class Entity(Base):
     parent: Mapped["Entity"] = relationship(
         "Entity", 
         back_populates="children", 
-        remote_side=[id]
+        remote_side=[entity_id]  # This is the parent entity in the relationship
     )
     # Each Entity can have multiple Members
     members: Mapped[list["EntityMember"]] = relationship("EntityMember", back_populates="entity")

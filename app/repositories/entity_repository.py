@@ -170,7 +170,7 @@ class EntityRepository(BaseRepository[Entity]):
                 )
 
             # Update the end date
-            assignment.date_to = end_date if end_date else datetime.strptime(datetime.now(), "%Y-%m-%d").date()
+            assignment.date_to = end_date if end_date else datetime.now().date()
             self.db.commit()
             logger.info(f"Successfully ended membership for member {member_id} in entity {entity_id}")
         except SQLAlchemyError as e:
