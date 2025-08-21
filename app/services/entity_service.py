@@ -35,7 +35,7 @@ class EntityService:
             entity = self.entity_repository.get_entity_by_id(entity_id=entity_id)
             if not entity:
                 raise EntityDoesNotExistError(
-                    message=f"Entity with ID {id} not found",
+                    message=f"Entity with ID {entity_id} not found",
                     name="Entity Retrieval Error"
                 )
             # Build the hierarchical response structure
