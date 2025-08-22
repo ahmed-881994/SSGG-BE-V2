@@ -501,6 +501,9 @@ class EntityService:
                     name="Entity Delete Error"
                 )
 
+            self.db_session.query(EntityMember).filter(EntityMember.entity_id == entity_id).delete()
+            self.db_session.commit()
+            
             return self.entity_repository.delete_entity(entity_id)
         except EntityDoesNotExistError:
             raise

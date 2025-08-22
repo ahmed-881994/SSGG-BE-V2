@@ -202,13 +202,13 @@ class EntityRepository(BaseRepository[Entity]):
                 name="Database Error"
             )
             
-    def delete_entity(self, entity_id: int) -> None:
+    def delete_entity(self, entity_id: int) -> bool:
         """Delete an entity."""
         try:
             entity = self.get_entity_by_id(entity_id)
 
-            self.delete(entity)
-        
+            return super().delete(entity)
+
         except Exception as e:
             self.db.rollback()
             raise ServiceError(
