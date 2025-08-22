@@ -179,3 +179,39 @@ class EntityRepository(BaseRepository[Entity]):
                 message=f"Failed to end member membership: {str(e)}",
                 name="Database Error"
             )
+
+    def update_entity(self, entity_id: int, entity_name_en: str, entity_name_ar: str, entity_parent_id: int, entity_type_id: int) -> Entity | None:
+        """Update an existing entity."""
+        try:
+            entity = (
+                self.db.query(Entity)
+                .filter(Entity.entity_id == entity_id)
+                .first()
+            )
+            entity.entity_name_en = entity_name_en
+            entity.entity_name_ar = entity_name_ar
+            entity.entity_parent_id = entity_parent_id
+            entity.entity_type_id = entity_type_id
+
+            
+            return self.update(entity)
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise ServiceError(
+                message=f"Failed to update entity: {str(e)}",
+                name="Database Error"
+            )
+            
+    def delete_entity(self, entity_id: int) -> None:
+        """Delete an entity."""
+        try:
+            entity = self.get_entity_by_id(entity_id)
+
+            self.delete(entity)
+        
+        except Exception as e:
+            self.db.rollback()
+            raise ServiceError(
+                message=f"Failed to delete entity: {str(e)}",
+                name="Database Error"
+            )

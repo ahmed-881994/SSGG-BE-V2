@@ -7,6 +7,7 @@ from sqlalchemy import and_, or_, func
 from app.config.logging_config import logger
 from app.core.exceptions import EntityAlreadyExistsError, EntityDoesNotExistError, ServiceError
 from app.models.entity_member_model import EntityMember
+from app.models.entity_model import Entity
 from app.models.entity_role_model import EntityRole
 from app.models.member_model import Member
 from app.repositories.entity_repository import EntityRepository
@@ -461,4 +462,51 @@ class EntityService:
             raise ServiceError(
                 message=f"Failed to transfer entity members: {str(e)}",
                 name="Entity Member Transfer Error"
+            )
+
+
+    def update_entity(self, entity_id: int, entity_data: dict) -> Dict[str, Any]:
+        """Update an existing entity."""
+        try:
+            if not self._entity_exists(entity_id):
+                raise EntityDoesNotExistError(
+                    message=f"Entity with ID {entity_id} does not exist.",
+                    name="Entity Update Error"
+                )
+
+            # Update entity fields
+            self.entity_repository.update_entity(
+                entity_id=entity_id,
+                entity_name_en=entity_data.get("entity_name", {}).get("en", ''),
+                entity_name_ar=entity_data.get("entity_name", {}).get("ar", ''),
+                entity_parent_id=entity_data.get("parent_id", None),
+                entity_type_id=entity_data.get("entity_type", None)
+            )
+            return self.get_entity(entity_id) 
+        except EntityDoesNotExistError:
+            raise
+        except Exception as e:
+            logger.error(f"Error updating entity: {str(e)}")
+            raise ServiceError(
+                message=f"Failed to update entity: {str(e)}",
+                name="Entity Update Error"
+            )
+
+    def delete_entity(self, entity_id: int) -> bool:
+        """Delete an entity."""
+        try:
+            if not self._entity_exists(entity_id):
+                raise EntityDoesNotExistError(
+                    message=f"Entity with ID {entity_id} does not exist.",
+                    name="Entity Delete Error"
+                )
+
+            return self.entity_repository.delete_entity(entity_id)
+        except EntityDoesNotExistError:
+            raise
+        except Exception as e:
+            logger.error(f"Error deleting entity: {str(e)}")
+            raise ServiceError(
+                message=f"Failed to delete entity: {str(e)}",
+                name="Entity Delete Error"
             )

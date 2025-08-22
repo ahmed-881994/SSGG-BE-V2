@@ -10,6 +10,7 @@ from app.schemas.common_schema import SuccessResponse
 from app.schemas.entity_schema import EntityAssign, EntityCreate, EntityHierarchicalResponse, EntityMembersResponse, EntityResponse, EntitySearchResponse, EntityTransfer, RoleUpdate
 from app.services.entity_service import EntityService
 
+
 router = APIRouter(prefix="/entities",
                    tags=["Entities"], dependencies=[Depends(get_user_in_token)])
 
@@ -34,7 +35,7 @@ def search_entities(entityID: Optional[int] = None, entityParentID: Optional[int
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@router.post("", tags=["Entities"], response_model=EntityResponse)
+@router.post("", tags=["Entities"], response_model=EntityResponse, status_code=201)
 def create_entity(body: EntityCreate, db: Session = Depends(get_db)):
     """
     Create a new entity.
@@ -105,6 +106,33 @@ def get_entity(entityID: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    
+@router.put("/{entityID}", tags=['Entities'], response_model=EntityResponse)
+def update_entity(entityID: int, body: EntityCreate, db: Session = Depends(get_db)):
+    try:
+        entity_service = EntityService(db)
+        return entity_service.update_entity(entity_id=entityID, entity_data=body.model_dump())
+    except EntityDoesNotExistError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
+@router.delete("/{entityID}", status_code=204, tags=['Entities'], responses={
+    204: {"description": "No Content"}
+})
+def delete_entity(entityID: int, db: Session = Depends(get_db)):
+    try:
+        entity_service = EntityService(db)
+        entity_service.delete_entity(entity_id=entityID)
+    except EntityDoesNotExistError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
 @router.get("/{entityID}/members", tags=['Entities'], response_model=EntityMembersResponse)
 def get_entity_members(entityID: int, includeInactive: Optional[bool] = False, roleId: Optional[int] = None, db: Session = Depends(get_db)):
     """
