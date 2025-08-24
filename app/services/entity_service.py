@@ -280,51 +280,24 @@ class EntityService:
                     )
                     
                 # Validate role existence
-                role = self.db_session.query(EntityRole).filter(EntityRole.id == role_id).first()
-                if not role:
+                if not self.entity_repository.role_exists(role_id):
                     raise EntityDoesNotExistError(
                         message=f"Role with ID {role_id} not found",
                         name="Role ID"
                     )
                     
-                
-                # Check for existing active assignment with the SAME ROLE
-                existing_same_role_assignment = (
-                    self.db_session.query(EntityMember)
-                    .filter(
-                        and_(
-                            EntityMember.entity_id == entity_id,
-                            EntityMember.member_id == member_id,
-                            EntityMember.member_entity_role_id == role_id,  # Same role check
-                            EntityMember.date_to.is_(None)  # Active assignment
-                        )
-                    )
-                    .first()
-                )
-                
+
                 # If member already has this exact role actively, skip this assignment
-                if existing_same_role_assignment:
+                if self.entity_repository.get_active_member_assignment(entity_id, member_id, role_id):
                     logger.warning(f"Member {member_id} already has an active assignment with role {role_id} in entity {entity_id}. Skipping.")
                     continue    
                 
                 # Check for existing active assignment
-                existing_any_role_assignment = (
-                    self.db_session.query(EntityMember)
-                    .filter(
-                        and_(
-                            EntityMember.entity_id == entity_id,
-                            EntityMember.member_id == member_id,
-                            EntityMember.date_to.is_(None)  # Active assignment
-                        )
-                    )
-                    .first()
-                )
+                existing_any_role_assignment = self.entity_repository.get_active_member_assignment(entity_id, member_id)
                 # If there's an existing active assignment, update its end date
                 if existing_any_role_assignment:
                     # Update the existing assignment's end date
-                    existing_any_role_assignment.date_to = from_date
-                    self.db_session.commit()  # Ensure the update is committed
-                    self.db_session.refresh(existing_any_role_assignment)  # Refresh to get updated fields
+                    self.entity_repository.update_member_assignment_end_date(existing_any_role_assignment, from_date)
 
                     logger.info(f"Ended existing assignment for member {member_id} in entity {entity_id} on {from_date}")
 
@@ -374,15 +347,7 @@ class EntityService:
 
         try:
             # Check if the member is part of the entity
-            existing_assignment = (
-                self.db_session.query(EntityMember)
-                .filter(
-                    EntityMember.entity_id == entity_id,
-                    EntityMember.member_id == member_id,
-                    EntityMember.date_to.is_(None)  # Active assignment
-                )
-                .first()
-            )
+            existing_assignment = self.entity_repository.get_active_member_assignment(entity_id, member_id)
 
             if not existing_assignment:
                 logger.warning(f"Member {member_id} is not part of entity {entity_id}.")
@@ -391,13 +356,20 @@ class EntityService:
                     name="Entity Member Role Update Error"
                 )
 
-            # Update the role ID
-            existing_assignment.member_entity_role_id = new_role_id
-            self.db_session.commit()
-            self.db_session.refresh(existing_assignment)
-
-            logger.info(f"Updated role for member {member_id} in entity {entity_id} to {new_role_id}.")
-            return True
+            # Update the role through repository
+            success = self.entity_repository.update_member_role(entity_id, member_id, new_role_id)
+            
+            if success:
+                logger.info(f"Updated role for member {member_id} in entity {entity_id} to {new_role_id}.")
+                return True
+            else:
+                raise ServiceError(
+                    message=f"Failed to update role for member {member_id} in entity {entity_id}",
+                    name="Entity Member Role Update Error"
+                )
+                
+        except EntityDoesNotExistError:
+            raise
         except Exception as e:
             logger.error(f"Error updating member role in entity: {str(e)}")
             raise ServiceError(
@@ -501,10 +473,10 @@ class EntityService:
                     name="Entity Delete Error"
                 )
 
-            self.db_session.query(EntityMember).filter(EntityMember.entity_id == entity_id).delete()
-            self.db_session.commit()
-            
-            return self.entity_repository.delete_entity(entity_id)
+            self.entity_repository.delete_entity_members(entity_id)
+            self.entity_repository.delete_entity(entity_id)
+
+            return True
         except EntityDoesNotExistError:
             raise
         except Exception as e:
