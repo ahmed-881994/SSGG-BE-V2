@@ -32,7 +32,7 @@ def search_users(userName: Optional[str] = None, userID: Optional[str] = None, d
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@router.post("", responses={200: {"description": "Success", "model": SuccessResponse}})
+@router.post("", status_code=201, responses={201: {"description": "Success", "model": SuccessResponse}})
 def create_user(user: dict, db: Session = Depends(get_db)):
     """Create a new user."""
     try:

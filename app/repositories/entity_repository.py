@@ -10,6 +10,7 @@ from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
 from app.models.entity_model import Entity
 from app.models.entity_member_model import EntityMember
+from app.models.entity_role_model import EntityRole
 from app.repositories.base_repository import BaseRepository
 
 logger = getLogger(__name__)
@@ -19,6 +20,51 @@ class EntityRepository(BaseRepository[Entity]):
     
     def __init__(self, db_session: Session):
         super().__init__(db_session, Entity)
+        
+    def member_exists(self, member_id: str) -> bool:
+        """Check if a member exists."""
+        return self.db.query(EntityMember).filter(EntityMember.member_id == member_id).first() is not None
+    
+    def get_active_member_assignment(self, entity_id: int, member_id: str, role_id: Optional[int] = None) -> Optional[EntityMember]:
+        """Get active assignment for a member in an entity, optionally filtered by role."""
+        query = self.db.query(EntityMember).filter(
+            and_(
+                EntityMember.entity_id == entity_id,
+                EntityMember.member_id == member_id,
+                EntityMember.date_to.is_(None)
+            )
+        )
+        
+        if role_id:
+            query = query.filter(EntityMember.member_entity_role_id == role_id)
+        
+        return query.first()
+
+    def role_exists(self, role_id: int) -> bool:
+        """Check if an entity role exists."""
+        return self.db.query(EntityRole).filter(EntityRole.id == role_id).first() is not None
+    
+    
+    def update_member_assignment_end_date(self, assignment: EntityMember, end_date) -> None:
+        """Update the end date of a member assignment."""
+        assignment.date_to = end_date
+        self.db.commit()
+        self.db.refresh(assignment)
+        
+    def update_member_role(self, entity_id: int, member_id: str, new_role_id: int) -> bool:
+        """Update the role of an active member in an entity."""
+        assignment = self.get_active_member_assignment(entity_id, member_id)
+        if assignment:
+            assignment.member_entity_role_id = new_role_id
+            self.db.commit()
+            self.db.refresh(assignment)
+            return True
+        return False
+
+    def delete_entity_members(self, entity_id: int) -> None:
+        """Delete all entity members for a given entity. (consider soft delete e.g. setting a 'deleted' flag or setting date_to)"""
+        self.db.query(EntityMember).filter(EntityMember.entity_id == entity_id).delete()
+        self.db.commit()
 
     def get_entity_by_id(self, entity_id: int) -> Entity | None:
 
@@ -177,5 +223,41 @@ class EntityRepository(BaseRepository[Entity]):
             self.db.rollback()
             raise ServiceError(
                 message=f"Failed to end member membership: {str(e)}",
+                name="Database Error"
+            )
+
+    def update_entity(self, entity_id: int, entity_name_en: str, entity_name_ar: str, entity_parent_id: int, entity_type_id: int) -> Entity | None:
+        """Update an existing entity."""
+        try:
+            entity = (
+                self.db.query(Entity)
+                .filter(Entity.entity_id == entity_id)
+                .first()
+            )
+            entity.entity_name_en = entity_name_en
+            entity.entity_name_ar = entity_name_ar
+            entity.entity_parent_id = entity_parent_id
+            entity.entity_type_id = entity_type_id
+
+            
+            return self.update(entity)
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise ServiceError(
+                message=f"Failed to update entity: {str(e)}",
+                name="Database Error"
+            )
+            
+    def delete_entity(self, entity_id: int) -> bool:
+        """Delete an entity."""
+        try:
+            entity = self.get_entity_by_id(entity_id)
+
+            return super().delete(entity)
+
+        except Exception as e:
+            self.db.rollback()
+            raise ServiceError(
+                message=f"Failed to delete entity: {str(e)}",
                 name="Database Error"
             )
