@@ -445,12 +445,21 @@ class EntityService:
                     message=f"Entity with ID {entity_id} does not exist.",
                     name="Entity Update Error"
                 )
+                
+            # Fetch existing entity to use current names as defaults
+            existing_entity = self.entity_repository.get_entity_by_id(entity_id)
+            entity_name_en = entity_data.get("entity_name", {}).get("en")
+            if not entity_name_en:
+                entity_name_en = getattr(existing_entity, "entity_name_en", None)
+            entity_name_ar = entity_data.get("entity_name", {}).get("ar")
+            if not entity_name_ar:
+                entity_name_ar = getattr(existing_entity, "entity_name_ar", None)
 
             # Update entity fields
             self.entity_repository.update_entity(
                 entity_id=entity_id,
-                entity_name_en=entity_data.get("entity_name", {}).get("en", ''),
-                entity_name_ar=entity_data.get("entity_name", {}).get("ar", ''),
+                entity_name_en=entity_name_en,
+                entity_name_ar=entity_name_ar,
                 entity_parent_id=entity_data.get("parent_id", None),
                 entity_type_id=entity_data.get("entity_type", None)
             )

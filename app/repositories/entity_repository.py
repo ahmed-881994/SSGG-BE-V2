@@ -62,7 +62,7 @@ class EntityRepository(BaseRepository[Entity]):
         return False
 
     def delete_entity_members(self, entity_id: int) -> None:
-        """Delete all entity members for a given entity."""
+        """Delete all entity members for a given entity. (consider soft delete e.g. setting a 'deleted' flag or setting date_to)"""
         self.db.query(EntityMember).filter(EntityMember.entity_id == entity_id).delete()
         self.db.commit()
 
