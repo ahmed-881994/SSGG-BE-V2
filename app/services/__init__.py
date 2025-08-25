@@ -6,8 +6,8 @@ between repositories and API layers.
 """
 
 from .auth_service import AuthService
-# from .member_service import MemberService
 from .entity_service import EntityService
+from .member_service import MemberService
 from .user_service import UserService
 
 # from .event_service import EventService
@@ -15,7 +15,7 @@ from .user_service import UserService
 __all__ = [
     "AuthService",
     "UserService",
-    # "MemberService",
+    "MemberService",
     "EntityService",
     # "EventService"
 ]

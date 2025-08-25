@@ -1,81 +1,108 @@
-from typing import List, Optional
+from typing import Optional
 
-from fastapi import APIRouter, Depends
-from pymysql import MySQLError
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
+from app.core.database import get_db
 from app.core.dependencies import get_user_in_token
-from app.core.exceptions import ServiceError
-from app.core.logging_middleware import logger
-from app.service.members.addmember import add_member_db
-from app.service.members.getmember import get_member_db
-from app.service.members.getmemberattendance import get_member_attendance_db
-from app.service.members.searchmembers import search_members_db
-from app.service.members.updatemember import update_member_db
+from app.core.exceptions import (EntityAlreadyExistsError,
+                                 EntityDoesNotExistError, ServiceError)
+from app.schemas.member_schema import (MemberRequest, MemberResponse,
+                                       SearchMembersResponse)
+from app.services.member_service import MemberService
 
 router = APIRouter(prefix="/members", tags=["Members"], dependencies=[Depends(get_user_in_token)])
 
 
-@router.get("", tags=["Members"], response_model=List[dict], responses={
-    200: {"description": "Success", "model": List[dict]}})
-def search_members(name: Optional[str] = None, teamID: Optional[int] = None):
+@router.get("", tags=["Members"], response_model=SearchMembersResponse, responses={
+    200: {"description": "Success", "model": SearchMembersResponse}})
+def search_members(name: Optional[str] = None, entityID: Optional[int] = None, db: Session = Depends(get_db)):
     """
-    Search members by (Name, Team)
+    Search members by (Name, Entity)
     """
     try:
-        return search_members_db(name, teamID)
-    except MySQLError as error:
-        # raise HTTPException(status_code=500, detail=error.args)
-        raise ServiceError(message=error.args[1], name="Database Error" )
+        member_service = MemberService(db)
+        return member_service.search_members(name=name, entity_id=entityID)
+    except EntityDoesNotExistError as e:
+        raise HTTPException(status_code=404, detail=str(e.message))
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e.message))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
 @router.post("", status_code=201, responses={
-    201: {"description": "Member created successfully", "model": dict}})
-def add_member(body: dict):
+    201: {"description": "Member created successfully", "model": MemberResponse}})
+def create_member(body: MemberRequest, db: Session = Depends(get_db)):
     """
     Creates a new member
     """
     try:
-        return add_member_db(body)
-    except MySQLError as error:
-        # raise HTTPException(status_code=500, detail=error.args)
-        raise ServiceError(message=error.args[1], name="Database Error" )
+        member_service = MemberService(db)
+        return member_service.create_member(body.model_dump())
+    except EntityAlreadyExistsError as e:
+        raise HTTPException(status_code=400, detail=str(e.message))
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e.message))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@router.get("/{member_id}", response_model=dict, responses={
-    200: {"description": "Success", "model": dict}}, response_model_exclude_none=True)
-def get_member(member_id: str):
+@router.get("/{member_id}", response_model=MemberResponse, responses={
+    200: {"description": "Success", "model": MemberResponse}})
+def get_member(member_id: str, db: Session = Depends(get_db)):
     """
     Get Member by ID
     """
     try:
-        return get_member_db(member_id)
-    except MySQLError as error:
-        # raise HTTPException(status_code=500, detail=error.args)
-        logger.error(f"Error fetching member {member_id}: {error.args}")
-        raise ServiceError(message=error.args[1], name="Database Error" )
+        member_service = MemberService(db)
+        return member_service.get_member_by_member_id(member_id)
+    except EntityDoesNotExistError as e:
+        raise HTTPException(status_code=404, detail=str(e.message))
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e.message))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@router.patch("/{member_id}", responses={
-    200: {"description": "Member updated successfully", "model": dict}})
-def update_member(member_id: str, body: dict):
+@router.put("/{member_id}", response_model=MemberResponse, responses={
+    200: {"description": "Member updated successfully", "model": MemberResponse}})
+def update_member(member_id: str, body: MemberRequest, db: Session = Depends(get_db)):
     """
     Updates a member
     """
     try:
-        return update_member_db(member_id, body)
-    except MySQLError as error:
-        # raise HTTPException(status_code=500, detail=error.args)
-        raise ServiceError(message=error.args[1], name="Database Error" )
+        member_service = MemberService(db)
+        return member_service.update_member(member_id, body.model_dump( exclude_none=True))
+    except EntityDoesNotExistError as e:
+        raise HTTPException(status_code=404, detail=str(e.message))
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e.message))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    
+
+@router.delete("/{member_id}", status_code=204, responses={
+    204: {"description": "No Content"}})
+def delete_member(member_id: str, db: Session = Depends(get_db)):
+    """
+    Deletes a member
+    """
+    try:
+        member_service = MemberService(db)
+        member_service.delete_member(member_id)
+    except EntityDoesNotExistError as e:
+        raise HTTPException(status_code=404, detail=str(e.message))
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e.message))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
 @router.get("/{member_id}/attendance", responses={
     200: {"description": "Success", "model": dict}})
 def get_member_attendance(member_id: str):
     """
-    Gets member attendance by ID
+    Gets member attendance by ID (To be implemented)
     """
-    try:
-        return get_member_attendance_db(member_id)
-    except MySQLError as error:
-        # raise HTTPException(status_code=500, detail=error.args)
-        raise ServiceError(message=error.args[1], name="Database Error" )
+    pass
