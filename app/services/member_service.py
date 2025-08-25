@@ -15,7 +15,15 @@ class MemberService:
     def __init__(self, db_session: Session):
         self.db_session = db_session
         self.member_repository = MemberRepository(db_session)
-        
+
+
+    def _transform_name_fields(self, member_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Transform name fields to separate English and Arabic names."""
+        member_data['name_en'] = member_data.get('name', {}).get('en', '').strip()
+        member_data['name_ar'] = member_data.get('name', {}).get('ar', '').strip()
+        member_data.pop('name', None)
+        return member_data
+
     def format_member_data(self, member: Member) -> Dict[str, Any]:
         """Format member data to include entities and roles."""
         member_dict = member.to_dict()
@@ -82,9 +90,7 @@ class MemberService:
             # TODO Generate member_id if not provided
             
             # format member_data as needed
-            member_data['name_en'] = member_data.get('name', {}).get('en', '').strip()
-            member_data['name_ar'] = member_data.get('name', {}).get('ar', '').strip()
-            member_data.pop('name', None)
+            member_data = self._transform_name_fields(member_data)
             # If member does not exist, create a new record
             member = self.member_repository.create_member(member_data)
             return self.format_member_data(member)
@@ -104,9 +110,7 @@ class MemberService:
                 raise EntityDoesNotExistError("Member not found", name="Member Update Error")
 
             # format member_data as needed
-            update_data['name_en'] = update_data.get('name', {}).get('en', '').strip()
-            update_data['name_ar'] = update_data.get('name', {}).get('ar', '').strip()
-            update_data.pop('name', None)
+            update_data = self._transform_name_fields(update_data)
 
             member = self.member_repository.update_member(member_id, update_data)
             return self.format_member_data(member)
