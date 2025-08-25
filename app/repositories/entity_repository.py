@@ -6,10 +6,9 @@ from sqlalchemy import and_, func, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import (EntityAlreadyExistsError,
-                                 EntityDoesNotExistError, ServiceError)
-from app.models.entity_model import Entity
+from app.core.exceptions import EntityDoesNotExistError, ServiceError
 from app.models.entity_member_model import EntityMember
+from app.models.entity_model import Entity
 from app.models.entity_role_model import EntityRole
 from app.repositories.base_repository import BaseRepository
 
