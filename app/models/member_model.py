@@ -100,8 +100,11 @@ class Member(Base):
         """
         return {
             "member_id": self.member_id,
-            "name_en": self.name_en,
-            "name_ar": self.name_ar,
+            "name": {
+                "en": self.name_en,
+                "ar": self.name_ar
+            },
+            # "entities": [self.entity.to_dict() for self in self.entity_memberships],
             "place_of_birth": self.place_of_birth,
             "date_of_birth": self.date_of_birth,
             "address": self.address,
