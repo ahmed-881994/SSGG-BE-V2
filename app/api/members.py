@@ -103,6 +103,6 @@ def delete_member(member_id: str, db: Session = Depends(get_db)):
     200: {"description": "Success", "model": dict}})
 def get_member_attendance(member_id: str):
     """
-    Gets member attendance by ID
+    Gets member attendance by ID (To be implemented)
     """
     pass
