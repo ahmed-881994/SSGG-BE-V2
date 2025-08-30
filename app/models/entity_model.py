@@ -31,7 +31,7 @@ class Entity(Base):
         remote_side=[entity_id]  # This is the parent entity in the relationship
     )
     # Each Entity can have multiple Members
-    members: Mapped[list["EntityMember"]] = relationship("EntityMember", back_populates="entity")
+    members: Mapped[list["Member"]] = relationship("EntityMember", back_populates="entity")
 
     # Events organized by this entity
     organized_events = relationship("Event", foreign_keys="Event.organizing_entity_id", back_populates="organizing_entity")

@@ -8,8 +8,8 @@ from app.core.database import get_db
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import EntityDoesNotExistError, ServiceError
 from app.schemas.common_schema import SuccessResponse
-from app.schemas.event_schema import EventResponse, SearchEventsResponse
-from app.service.events.createevent import create_event_db
+from app.schemas.event_schema import (EventCreate, EventResponse,
+                                      SearchEventsResponse)
 from app.service.events.geteventattenadance import get_event_attendance_db
 from app.service.events.updateevent import update_event_db
 from app.service.events.updateeventattendance import update_event_attendance_db
@@ -34,17 +34,19 @@ def search_events(entityID: Optional[int] = None, startDate: Optional[str] = Non
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-@router.post("" , status_code=201, response_model=SuccessResponse, responses={
-    200: {"description": "Success", "model": SuccessResponse}})
-def create_event(body: dict):
+@router.post("" , status_code=201, response_model=EventResponse, responses={
+    200: {"description": "Success", "model": EventResponse}})
+def create_event(body: EventCreate, db: Session = Depends(get_db), current_user = Depends(get_user_in_token)):
     """
     Creates a new event
     """
     try:
-        return create_event_db(body)
-    except MySQLError as error:
-        # raise HTTPException(status_code=500, detail=error.args)
-        raise ServiceError(message=error.args[1], name="Database Error" )
+        event_service = EventService(db)
+        return event_service.create_event(body.model_dump(), current_user_id=current_user.id)
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e.message))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 @router.get("/{event_id}", response_model=EventResponse, responses={
     200: {"description": "Success", "model": EventResponse}})

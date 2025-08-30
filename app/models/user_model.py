@@ -10,8 +10,8 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    user_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    user_name: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
+    user_id: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
     is_active: Mapped[bool] = mapped_column(default=True)
     password_reset: Mapped[bool] = mapped_column(default=False)
     password_hash: Mapped[str] = mapped_column(String(100), nullable=False)

@@ -17,7 +17,7 @@ class Event(Base):
     id:Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, comment="Unique identifier for the event")
     
     # Event identification
-    event_id:Mapped[int] = mapped_column(Integer, nullable=False, unique=True, index=True, autoincrement=True, comment="External event identifier")
+    event_id:Mapped[int] = mapped_column(Integer, nullable=False, unique=True, index=True, comment="External event identifier")
 
     # Event type (foreign key reference)
     event_type_id:Mapped[int] = mapped_column(Integer, ForeignKey("event_types.event_type_id"), nullable=False, comment="Type of event (meeting, training, etc.)")
@@ -35,6 +35,11 @@ class Event(Base):
     is_multi_team: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False, comment="Whether the event involves multiple teams")
     organizing_entity_id: Mapped[int] = mapped_column(Integer, ForeignKey("entities.entity_id"), nullable=False, comment="Primary entity associated with the event")
 
+    # Timestamps
+    created_at: Mapped[Date] = mapped_column(Date, nullable=False, comment="Creation date of the event")
+    created_by: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, comment="User who created the event")
+    updated_at: Mapped[Date] = mapped_column(Date, nullable=True, comment="Last update date of the event")
+    updated_by: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=True, comment="User who last updated the event")
 
     # Relationships
     event_type = relationship("EventType", back_populates="events")

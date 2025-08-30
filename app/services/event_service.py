@@ -20,7 +20,7 @@ class EventService:
     def _format_event_data(self, event: Any) -> Dict[str, Any]:
         """Format event data for output."""
         return {
-            "event_id": event.id,
+            "event_id": event.event_id,
             "event_name": {
                 "en": event.event_name_en,
                 "ar": event.event_name_ar
@@ -87,4 +87,17 @@ class EventService:
             raise ServiceError(
                 message=f"Failed to search events: {str(e)}",
                 name="Event Search Error"
+            )
+
+    def create_event(self, event_data: Dict[str, Any], current_user_id: int) -> Dict[str, Any]:
+        """Create a new event."""
+        logger.info(f"Creating event: {event_data}")
+        try:
+            new_event = self.event_repository.create_event(event_data, current_user_id=current_user_id)
+            return self._format_event_data(new_event)
+        except Exception as e:
+            logger.error(f"Error creating event: {str(e)}")
+            raise ServiceError(
+                message=f"Failed to create event: {str(e)}",
+                name="Event Creation Error"
             )
