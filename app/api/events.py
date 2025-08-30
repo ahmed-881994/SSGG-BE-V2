@@ -18,8 +18,7 @@ from app.services.event_service import EventService
 router = APIRouter(prefix="/events", tags=["Events"], dependencies=[Depends(get_user_in_token)])
 
 
-@router.get("", response_model=SearchEventsResponse, responses={
-    200: {"description": "Success", "model": SearchEventsResponse}})
+@router.get("", response_model=SearchEventsResponse)
 def search_events(entityID: Optional[int] = None, startDate: Optional[str] = None, endDate: Optional[str] = None, name: Optional[str] = None, db: Session = Depends(get_db)):
     """
     Search events by (Name, Team, Start and End dates)
@@ -34,8 +33,7 @@ def search_events(entityID: Optional[int] = None, startDate: Optional[str] = Non
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-@router.post("" , status_code=201, response_model=EventResponse, responses={
-    200: {"description": "Success", "model": EventResponse}})
+@router.post("" , status_code=201, response_model=EventResponse)
 def create_event(body: EventCreate, db: Session = Depends(get_db), current_user = Depends(get_user_in_token)):
     """
     Creates a new event
@@ -48,8 +46,7 @@ def create_event(body: EventCreate, db: Session = Depends(get_db), current_user 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-@router.get("/{event_id}", response_model=EventResponse, responses={
-    200: {"description": "Success", "model": EventResponse}})
+@router.get("/{event_id}", response_model=EventResponse)
 def get_event(event_id: int, db: Session = Depends(get_db)):
     """
     Gets event by ID
