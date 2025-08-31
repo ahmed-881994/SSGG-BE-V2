@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import EntityDoesNotExistError, ServiceError
 from app.schemas.common_schema import SuccessResponse
-from app.schemas.event_schema import (EventCreate, EventResponse,
+from app.schemas.event_schema import (EventCreate, EventResponse, EventUpdate,
                                       SearchEventsResponse)
 from app.service.events.geteventattenadance import get_event_attendance_db
 from app.service.events.updateevent import update_event_db
@@ -62,17 +62,20 @@ def get_event(event_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@router.patch("/{event_id}", response_model=SuccessResponse, responses={
-    200: {"description": "Success", "model": SuccessResponse}})
-def update_event(event_id: int, body: dict):
+@router.put("/{event_id}", response_model=EventResponse)
+def update_event(event_id: int, body: EventUpdate, db: Session = Depends(get_db), current_user = Depends(get_user_in_token)):
     """
     Updates event by ID
     """
     try:
-        return update_event_db(event_id, body)
-    except MySQLError as error:
-        # raise HTTPException(status_code=500, detail=error.args)
-        raise ServiceError(message=error.args[1], name="Database Error" )
+        event_service = EventService(db)
+        return event_service.update_event(event_id, body.model_dump(exclude_none=True), current_user.id)
+    except EntityDoesNotExistError as e:
+        raise HTTPException(status_code=404, detail=str(e.message))
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e.message))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 @router.get("/{event_id}/attendance", response_model=dict, responses={
     200: {"description": "Success", "model": dict}})

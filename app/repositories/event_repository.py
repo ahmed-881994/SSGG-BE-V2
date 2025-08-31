@@ -122,3 +122,27 @@ class EventRepository(BaseRepository[Event]):
             logger.error(f"Error creating event: {e}")
             raise ServiceError(message=f"Failed to create event: {str(e)}",
                                name="Database Error")
+
+    def update_event(self, event_id: int, event: dict, current_user_id: int) -> Event:
+        """Update an existing event."""
+        try:
+            existing_event = self.db.query(Event).filter(Event.event_id == event_id).first()
+            
+            existing_event.event_name_en = event.get("event_name", {}).get("en", existing_event.event_name_en)
+            existing_event.event_name_ar = event.get("event_name", {}).get("ar", existing_event.event_name_ar)
+            existing_event.event_start_date = event.get("event_start_date", existing_event.event_start_date)
+            existing_event.event_end_date = event.get("event_end_date", existing_event.event_end_date)
+            existing_event.event_location = event.get("event_location", existing_event.event_location)
+            existing_event.is_multi_team = event.get("is_multi_team", existing_event.is_multi_team)
+            existing_event.event_type_id = event.get("event_type_id", existing_event.event_type_id)
+            existing_event.organizing_entity_id = event.get("organizing_entity_id", existing_event.organizing_entity_id)
+            existing_event.participating_entities = event.get("participating_entities", existing_event.participating_entities)
+            existing_event.updated_at = datetime.now().date()
+            existing_event.updated_by = current_user_id
+
+            super().update(existing_event)
+            return existing_event
+        except SQLAlchemyError as e:
+            logger.error(f"Error updating event: {e}")
+            raise ServiceError(message=f"Failed to update event: {str(e)}",
+                               name="Database Error")

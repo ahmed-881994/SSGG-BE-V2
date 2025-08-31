@@ -101,3 +101,23 @@ class EventService:
                 message=f"Failed to create event: {str(e)}",
                 name="Event Creation Error"
             )
+            
+    def update_event(self, event_id: int, update_data: Dict[str, Any], current_user_id: int) -> Dict[str, Any]:
+        """Update an existing event."""
+        logger.info(f"Updating event {event_id} with data: {update_data}")
+        try:
+            existing_event = self.event_repository.get_event_by_event_id(event_id)
+            if not existing_event:
+                raise EntityDoesNotExistError(
+                    f"Event with ID {event_id} does not exist.", name="Event Retrieval Error"
+                )
+            updated_event = self.event_repository.update_event(event_id, update_data, current_user_id)
+            return self._format_event_data(updated_event)
+        except EntityDoesNotExistError:
+            raise
+        except Exception as e:
+            logger.error(f"Error updating event {event_id}: {str(e)}")
+            raise ServiceError(
+                message=f"Failed to update event: {str(e)}",
+                name="Event Update Error"
+            )
