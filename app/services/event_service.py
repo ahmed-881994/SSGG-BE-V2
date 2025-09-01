@@ -43,7 +43,7 @@ class EventService:
                 }
             },
             "participating_entities": [{
-                "entity_id": entity.id,
+                "entity_id": entity.entity_id,
                 "entity_name": {
                     "en": entity.entity_name_en,
                     "ar": entity.entity_name_ar

@@ -31,7 +31,7 @@ class Entity(Base):
         remote_side=[entity_id]  # This is the parent entity in the relationship
     )
     # Each Entity can have multiple Members
-    members: Mapped[list["Member"]] = relationship("EntityMember", back_populates="entity")
+    entity_members: Mapped[list["EntityMember"]] = relationship("EntityMember", back_populates="entity")
 
     # Events organized by this entity
     organized_events = relationship("Event", foreign_keys="Event.organizing_entity_id", back_populates="organizing_entity")
@@ -40,6 +40,11 @@ class Entity(Base):
     # Events this entity is participating in
     participated_events = relationship("Event", secondary="event_entities", back_populates="participating_entities", viewonly=True)
 
+    @property
+    def members(self):
+        """Get all members of this entity"""
+        return [em.member for em in self.entity_members]
+    
     @property
     def all_events(self):
         """Get all events this entity is involved in (organized + participated)"""

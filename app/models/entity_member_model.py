@@ -30,7 +30,7 @@ class EntityMember(Base):
     
     # Many-to-one relationship to Entity
     # Each membership record belongs to one entity
-    entity = relationship("Entity", back_populates="members")
+    entity = relationship("Entity", back_populates="entity_members")
     
     # Many-to-one relationship to Member
     # Each membership record belongs to one member

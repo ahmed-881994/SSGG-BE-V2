@@ -89,18 +89,12 @@ class EntityRepository(BaseRepository[Entity]):
     def get_entity_members(self, entity_id: int, include_inactive: bool = False, role_id: Optional[int] = None) -> List[EntityMember]:
         """Get all members for an entity with optional filters."""
         try:
-            query = (
-                self.db.query(EntityMember)
-                .filter(EntityMember.entity_id == entity_id)
-            )
-            
-            if not include_inactive:
-                query = query.filter(EntityMember.date_to.is_(None))
-            
-            if role_id:
-                query = query.filter(EntityMember.member_entity_role_id == role_id)
-
-            return query.all()
+            entity = self.db.query(Entity).filter(Entity.entity_id == entity_id).first()
+            if entity:
+                # Access members through the relationship
+                members = entity.entity_members  # This will lazy load the members
+                return members
+            return []
         except SQLAlchemyError as e:
             raise ServiceError(
                 message=f"Failed to retrieve entity: {str(e)}",
