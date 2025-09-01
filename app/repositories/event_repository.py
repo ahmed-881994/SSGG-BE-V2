@@ -1,6 +1,6 @@
 from datetime import datetime
 from logging import getLogger
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy import func, or_
 from sqlalchemy.exc import SQLAlchemyError
@@ -36,7 +36,7 @@ class EventRepository(BaseRepository[Event]):
     def get_event_by_event_id(self, event_id: int) -> Event | None:
         """Get an event by its ID."""
         try:
-            return self.db.query(Event).filter(Event.id == event_id).first()
+            return self.db.query(Event).filter(Event.event_id == event_id).first()
         except SQLAlchemyError as e:
             logger.error(f"Error fetching event by ID {event_id}: {e}")
             raise ServiceError(message=f"Failed to retrieve event: {str(e)}",
@@ -79,7 +79,7 @@ class EventRepository(BaseRepository[Event]):
             new_event.is_multi_team = event["is_multi_team"]
             new_event.event_type_id = event["event_type_id"]
             new_event.organizing_entity_id = event["organizing_entity_id"]
-            new_event.created_at = datetime.now().date()
+            new_event.created_at = datetime.now()
             new_event.created_by = current_user_id
 
             super().create(new_event)
@@ -137,7 +137,7 @@ class EventRepository(BaseRepository[Event]):
             existing_event.event_type_id = event.get("event_type_id", existing_event.event_type_id)
             existing_event.organizing_entity_id = event.get("organizing_entity_id", existing_event.organizing_entity_id)
             existing_event.participating_entities = event.get("participating_entities", existing_event.participating_entities)
-            existing_event.updated_at = datetime.now().date()
+            existing_event.updated_at = datetime.now()
             existing_event.updated_by = current_user_id
 
             super().update(existing_event)
@@ -145,4 +145,44 @@ class EventRepository(BaseRepository[Event]):
         except SQLAlchemyError as e:
             logger.error(f"Error updating event: {e}")
             raise ServiceError(message=f"Failed to update event: {str(e)}",
+                               name="Database Error")
+            
+    def delete_event(self, event_id: int) -> None:
+        """Delete an event."""
+        try:
+            event_to_delete = self.db.query(Event).filter(Event.event_id == event_id).first()
+
+            attendance_records = self.db.query(Attendance).filter(Attendance.event_id == event_id).all()
+
+            for attendance in attendance_records:
+                super().delete(attendance)
+            
+            super().delete(event_to_delete)
+        except SQLAlchemyError as e:
+            logger.error(f"Error deleting event: {e}")
+            raise ServiceError(message=f"Failed to delete event: {str(e)}",
+                               name="Database Error")
+
+    def get_event_attendance(self, event_id: int) -> List[Attendance]:
+        """Get attendance records for an event."""
+        try:
+            return self.db.query(Attendance).filter(Attendance.event_id == event_id).all()
+        except SQLAlchemyError as e:
+            logger.error(f"Error fetching event attendance: {e}")
+            raise ServiceError(message=f"Failed to fetch event attendance: {str(e)}",
+                               name="Database Error")
+
+    def update_event_attendance(self, event_id: int, member_id: str, attendance_state_id: int, current_user_id: int) -> None:
+        """Update attendance records for an event."""
+        try:
+            attendance_record = self.db.query(Attendance).filter(Attendance.event_id == event_id,
+                                                                    Attendance.member_id == member_id).first()
+            if attendance_record:
+                attendance_record.attendance_state_id = attendance_state_id
+                attendance_record.updated_at = datetime.now()
+                attendance_record.updated_by = current_user_id
+                super().update(attendance_record)
+        except SQLAlchemyError as e:
+            logger.error(f"Error updating event attendance: {e}")
+            raise ServiceError(message=f"Failed to update event attendance: {str(e)}",
                                name="Database Error")

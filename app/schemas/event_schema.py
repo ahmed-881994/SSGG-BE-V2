@@ -15,9 +15,21 @@ class EventType(BaseSchema):
 class EventEntity(BaseSchema):
     entity_id: int = Field(alias="EntityID")
     entity_name: NameObject = Field(alias="EntityName")
-    
-# Requests
 
+class AttendanceState(BaseSchema):
+    attendance_state_id: int = Field(alias="AttendanceStateID")
+    attendance_state_name: NameObject = Field(alias="AttendanceStateName")
+
+class AttendanceRecord(BaseSchema):
+    member_id: str = Field(alias="MemberID")
+    member_name: NameObject = Field(alias="MemberName")
+    attendance_state: AttendanceState = Field(alias="AttendanceState")
+    
+class AttendanceUpdateRecord(BaseSchema):
+    member_id: str = Field(alias="MemberID")
+    attendance_state_id: int = Field(alias="AttendanceStateID")
+
+# Requests
 class EventCreate(BaseSchema):
     event_name: NameObject = Field(alias="EventName")
     event_start_date: date = Field(alias="EventStartDate")
@@ -51,6 +63,9 @@ class EventUpdate(BaseSchema):
         if v is None:
             return None
         return v
+    
+class EventAttendanceUpdate(BaseSchema):
+    attendance: list[AttendanceUpdateRecord] = Field(alias="Attendance")
 
 
 # Responses
@@ -68,3 +83,10 @@ class EventResponse(BaseSchema):
 
 class SearchEventsResponse(BaseSchema):
     events: list[EventResponse] = Field(alias="Events")
+    
+    
+class EventAttendanceResponse(BaseSchema):
+    event_id: int = Field(alias="EventID")
+    event_name: NameObject = Field(alias="EventName")
+    attendance_records: list[AttendanceRecord] = Field(alias="AttendanceRecords")
+

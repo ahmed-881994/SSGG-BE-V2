@@ -1,4 +1,6 @@
-from sqlalchemy import Boolean, Date, ForeignKey, Integer, String
+from datetime import datetime
+
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base_model import Base
@@ -36,9 +38,9 @@ class Event(Base):
     organizing_entity_id: Mapped[int] = mapped_column(Integer, ForeignKey("entities.entity_id"), nullable=False, comment="Primary entity associated with the event")
 
     # Timestamps
-    created_at: Mapped[Date] = mapped_column(Date, nullable=False, comment="Creation date of the event")
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, comment="Creation date of the event")
     created_by: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, comment="User who created the event")
-    updated_at: Mapped[Date] = mapped_column(Date, nullable=True, comment="Last update date of the event")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=True, comment="Last update date of the event")
     updated_by: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=True, comment="User who last updated the event")
 
     # Relationships

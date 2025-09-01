@@ -8,11 +8,10 @@ from app.core.database import get_db
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import EntityDoesNotExistError, ServiceError
 from app.schemas.common_schema import SuccessResponse
-from app.schemas.event_schema import (EventCreate, EventResponse, EventUpdate,
+from app.schemas.event_schema import (EventAttendanceResponse,
+                                      EventAttendanceUpdate, EventCreate,
+                                      EventResponse, EventUpdate,
                                       SearchEventsResponse)
-from app.service.events.geteventattenadance import get_event_attendance_db
-from app.service.events.updateevent import update_event_db
-from app.service.events.updateeventattendance import update_event_attendance_db
 from app.services.event_service import EventService
 
 router = APIRouter(prefix="/events", tags=["Events"], dependencies=[Depends(get_user_in_token)])
@@ -77,26 +76,49 @@ def update_event(event_id: int, body: EventUpdate, db: Session = Depends(get_db)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-@router.get("/{event_id}/attendance", response_model=dict, responses={
-    200: {"description": "Success", "model": dict}})
-def get_event_attendance(event_id: int):
+@router.delete("/{event_id}", status_code=204)
+def delete_event(event_id: int, db: Session = Depends(get_db)):
+    """
+    Deletes event by ID
+    """
+    try:
+        event_service = EventService(db)
+        event_service.delete_event(event_id)
+        return {"detail": "Event deleted successfully"}
+    except EntityDoesNotExistError as e:
+        raise HTTPException(status_code=404, detail=str(e.message))
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e.message))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
+@router.get("/{event_id}/attendance", response_model=EventAttendanceResponse)
+def get_event_attendance(event_id: int, db: Session = Depends(get_db)):
     """
     Gets the attendance list of an event
     """
     try:
-        return get_event_attendance_db(event_id)
-    except MySQLError as error:
-        # raise HTTPException(status_code=500, detail=error.args)
-        raise ServiceError(message=error.args[1], name="Database Error" )
+        event_service = EventService(db)
+        return event_service.get_event_attendance(event_id)
+    except EntityDoesNotExistError as e:
+        raise HTTPException(status_code=404, detail=str(e.message))
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e.message))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-@router.patch("/{event_id}/attendance", response_model=SuccessResponse, responses={
-    200: {"description": "Success", "model": SuccessResponse}})
-def update_event_attendance(event_id: int, body: dict):
+@router.put("/{event_id}/attendance", response_model=SuccessResponse)
+def update_event_attendance(event_id: int, body: EventAttendanceUpdate, db: Session = Depends(get_db), current_user = Depends(get_user_in_token)):
     """
     Updates members attendance in an event
     """
     try:
-        return update_event_attendance_db(event_id, body)
-    except MySQLError as error:
-        # raise HTTPException(status_code=500, detail=error.args)
-        raise ServiceError(message=error.args[1], name="Database Error" )
+        event_service = EventService(db)
+        event_service.update_event_attendance(event_id, body.model_dump(), current_user.id)
+        return {"message": "Event attendance updated successfully"}
+    except EntityDoesNotExistError as e:
+        raise HTTPException(status_code=404, detail=str(e.message))
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e.message))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")

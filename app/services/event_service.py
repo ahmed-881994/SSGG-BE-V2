@@ -3,8 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import (EntityAlreadyExistsError,
-                                 EntityDoesNotExistError, ServiceError)
+from app.core.exceptions import EntityDoesNotExistError, ServiceError
 from app.repositories.event_repository import EventRepository
 
 logger = getLogger(__name__)
@@ -120,4 +119,90 @@ class EventService:
             raise ServiceError(
                 message=f"Failed to update event: {str(e)}",
                 name="Event Update Error"
+            )
+            
+    def delete_event(self, event_id: int) -> None:
+        """Delete an event."""
+        logger.info(f"Deleting event: {event_id}")
+        try:
+            event_to_delete = self.event_repository.get_event_by_event_id(event_id)
+            if not event_to_delete:
+                raise EntityDoesNotExistError(message="Event not found", name="Not Found Error")
+
+            self.event_repository.delete_event(event_id)
+        except EntityDoesNotExistError:
+            raise
+        except Exception as e:
+            logger.error(f"Error deleting event {event_id}: {str(e)}")
+            raise ServiceError(
+                message=f"Failed to delete event: {str(e)}",
+                name="Event Deletion Error"
+            )
+
+    def get_event_attendance(self, event_id: int) -> Dict[str, Any]:
+        """Get attendance records for an event."""
+        logger.info(f"Getting attendance for event: {event_id}")
+        try:
+            event = self.event_repository.get_event_by_event_id(event_id)
+            if not event:
+                raise EntityDoesNotExistError(
+                    f"Event with ID {event_id} does not exist.", name="Event Retrieval Error"
+                )
+            attendance_records = self.event_repository.get_event_attendance(event_id)
+            return {
+                "event_id": event.event_id,
+                "event_name": {
+                    "en": event.event_name_en,
+                    "ar": event.event_name_ar
+                },
+                "attendance_records": [
+                    {
+                        "member_id": record.member.member_id,
+                        "member_name": {
+                            "en": record.member.name_en,
+                            "ar": record.member.name_ar
+                        },
+                        "attendance_state": {
+                            "attendance_state_id": record.attendance_state.attendance_state_id,
+                            "attendance_state_name": {
+                                "en": record.attendance_state.attendance_state_name_en,
+                                "ar": record.attendance_state.attendance_state_name_ar
+                            }
+                        }
+                    } for record in attendance_records
+                ]
+            }
+        except EntityDoesNotExistError:
+            raise
+        except Exception as e:
+            logger.error(f"Error retrieving attendance for event {event_id}: {str(e)}")
+            raise ServiceError(
+                message=f"Failed to retrieve event attendance: {str(e)}",
+                name="Event Attendance Retrieval Error"
+            )
+
+    def update_event_attendance(self, event_id: int, attendance_data: dict, current_user_id: int) -> None:
+        """Update attendance records for an event."""
+        logger.info(f"Updating attendance for event: {event_id}")
+        try:
+            event = self.event_repository.get_event_by_event_id(event_id)
+            if not event:
+                raise EntityDoesNotExistError(
+                    f"Event with ID {event_id} does not exist.", name="Event Retrieval Error"
+                )
+
+            for record in attendance_data.get("attendance", []):
+                member_id = record.get("member_id")
+                attendance_state_id = record.get("attendance_state_id")
+                if not member_id or not attendance_state_id:
+                    continue
+
+                self.event_repository.update_event_attendance(event_id, member_id, attendance_state_id, current_user_id)
+        except EntityDoesNotExistError:
+            raise
+        except Exception as e:
+            logger.error(f"Error updating attendance for event {event_id}: {str(e)}")
+            raise ServiceError(
+                message=f"Failed to update event attendance: {str(e)}",
+                name="Event Attendance Update Error"
             )
