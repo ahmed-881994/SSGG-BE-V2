@@ -84,7 +84,6 @@ def delete_event(event_id: int, db: Session = Depends(get_db)):
     try:
         event_service = EventService(db)
         event_service.delete_event(event_id)
-        return {"detail": "Event deleted successfully"}
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e.message))
     except ServiceError as e:
