@@ -38,8 +38,13 @@ class Entity(Base):
     # Events this entity is participating in
     event_entities = relationship("EventEntity", back_populates="entity")
     # Events this entity is participating in
-    participated_events = relationship("Event", secondary="event_entities", back_populates="participating_entities", viewonly=True)
+    # participated_events = relationship("Event", secondary="event_entities", back_populates="participating_entities", viewonly=True)
 
+    @property
+    def participated_events(self) -> list["Event"]:
+        """Get all events this entity is participating in"""
+        return [ee.event for ee in self.event_entities]
+        
     @property
     def members(self):
         """Get all members of this entity"""

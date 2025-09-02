@@ -49,10 +49,16 @@ class Event(Base):
 
     # Many-to-many relationship for all participating entities
     event_entities: Mapped[list["EventEntity"]] = relationship("EventEntity", back_populates="event", cascade="all, delete-orphan")
-    participating_entities: Mapped[list["Entity"]] = relationship("Entity", secondary="event_entities", back_populates="participated_events", viewonly=True)
+    # participating_entities: Mapped[list["Entity"]] = relationship("Entity", secondary="event_entities", back_populates="participated_events")
 
     # Attendance records for the event
     attendance_records = relationship("Attendance", back_populates="event")
+    
+    
+    @property
+    def participating_entities(self) -> list["Entity"]:
+        """Get all participating entities"""
+        return [ee.entity for ee in self.event_entities]
 
     def __repr__(self) -> str:
         return f"<Event(id={self.id}, name={self.event_name_en})>"

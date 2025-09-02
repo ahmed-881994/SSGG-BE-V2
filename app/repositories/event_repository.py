@@ -10,6 +10,7 @@ from app.core.exceptions import ServiceError
 from app.models.attendance_model import Attendance
 from app.models.attendance_state_model import AttendanceState
 from app.models.entity_model import Entity
+from app.models.event_entity_model import EventEntity
 from app.models.event_model import Event
 from app.repositories.base_repository import BaseRepository
 
@@ -56,7 +57,7 @@ class EventRepository(BaseRepository[Event]):
                 query = query.filter(
                     or_(
                         Event.organizing_entity_id == entity_id,
-                        Event.participating_entities.any(Entity.entity_id == entity_id)
+                        Event.event_entities.any(Entity.entity_id == entity_id)
                     )
                 )
             return query.all()
@@ -136,7 +137,18 @@ class EventRepository(BaseRepository[Event]):
             existing_event.is_multi_team = event.get("is_multi_team", existing_event.is_multi_team)
             existing_event.event_type_id = event.get("event_type_id", existing_event.event_type_id)
             existing_event.organizing_entity_id = event.get("organizing_entity_id", existing_event.organizing_entity_id)
-            existing_event.participating_entities = event.get("participating_entities", existing_event.participating_entities)
+            # Update participating_entities via IDs if provided
+            participating_entities_ids = event.get("participating_entities_ids", None)
+            if participating_entities_ids is not None:
+                # Clear existing participating entities
+                existing_event.event_entities.clear()
+                
+                # Add new participating entities
+                for entity_id in participating_entities_ids:
+                    event_entity = EventEntity()
+                    event_entity.event_id = existing_event.event_id
+                    event_entity.entity_id = entity_id
+                    existing_event.event_entities.append(event_entity)
             existing_event.updated_at = datetime.now()
             existing_event.updated_by = current_user_id
 
