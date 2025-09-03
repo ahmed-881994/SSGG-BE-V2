@@ -195,6 +195,7 @@ class EventService:
                 member_id = record.get("member_id")
                 attendance_state_id = record.get("attendance_state_id")
                 if not member_id or not attendance_state_id:
+                    logger.warning(f"Skipping attendance record for event {event_id} due to missing required fields: {record}")
                     continue
 
                 self.event_repository.update_event_attendance(event_id, member_id, attendance_state_id, current_user_id)
