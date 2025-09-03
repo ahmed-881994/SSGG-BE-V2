@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from logging import getLogger
 from typing import List, Optional
 
@@ -93,11 +93,22 @@ class EntityRepository(BaseRepository[Entity]):
             if entity:
                 # Access members through the relationship
                 members = entity.entity_members  # This will lazy load the members
-                return members
+                # Apply filters
+                filtered_members = members
+                
+                if not include_inactive:
+                    # Filter out inactive members
+                    filtered_members = [member for member in filtered_members if member.date_to is None]
+                    
+                if role_id:
+                    # Filter by role
+                    filtered_members = [member for member in filtered_members if member.member_entity_role_id == role_id]
+
+                return filtered_members
             return []
         except SQLAlchemyError as e:
             raise ServiceError(
-                message=f"Failed to retrieve entity: {str(e)}",
+                message=f"Failed to retrieve entity members: {str(e)}",
                 name="Database Error"
             )
 
@@ -123,13 +134,12 @@ class EntityRepository(BaseRepository[Entity]):
     def create_entity(self, entity_id: int, entity_name_en: str, entity_name_ar: str, entity_parent_id: int, entity_type_id: int) -> Entity:
         """Create a new entity."""
         try:
-            entity = Entity(
-                entity_id=entity_id,
-                entity_name_en=entity_name_en,
-                entity_name_ar=entity_name_ar,
-                entity_parent_id=entity_parent_id,
-                entity_type_id=entity_type_id
-            )
+            entity = Entity()
+            entity.entity_id = entity_id
+            entity.entity_name_en = entity_name_en
+            entity.entity_name_ar = entity_name_ar
+            entity.entity_parent_id = entity_parent_id
+            entity.entity_type_id = entity_type_id
             super().create(entity)
             return entity
         except SQLAlchemyError as e:
@@ -144,7 +154,7 @@ class EntityRepository(BaseRepository[Entity]):
         entity_id: int,
         member_id: str, 
         role_id: int,
-        from_date: Optional[str] = None
+        from_date: Optional[date] = None
     ) -> EntityMember:
         """
         Assign member to entity with role.
@@ -164,13 +174,12 @@ class EntityRepository(BaseRepository[Entity]):
         try:
         
             # Create new assignment
-            assignment = EntityMember(
-                entity_id=entity_id,
-                member_id=member_id,
-                member_entity_role_id=role_id,
-                date_from=from_date
-            )
-            
+            assignment = EntityMember()
+            assignment.entity_id = entity_id
+            assignment.member_id = member_id
+            assignment.member_entity_role_id = role_id
+            assignment.date_from = from_date
+
             self.db.add(assignment)
             self.db.commit()
             self.db.refresh(assignment)
