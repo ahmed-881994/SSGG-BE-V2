@@ -1,14 +1,11 @@
-
-from datetime import date, datetime
 from typing import Any, Dict, List, Optional
+
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func
 
 from app.config.logging_config import logger
-from app.core.exceptions import EntityAlreadyExistsError, EntityDoesNotExistError, ServiceError
+from app.core.exceptions import (EntityAlreadyExistsError,
+                                 EntityDoesNotExistError, ServiceError)
 from app.models.entity_member_model import EntityMember
-from app.models.entity_model import Entity
-from app.models.entity_role_model import EntityRole
 from app.models.member_model import Member
 from app.repositories.entity_repository import EntityRepository
 from app.schemas.entity_schema import EntityTransfer

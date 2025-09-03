@@ -123,9 +123,7 @@ def update_entity(entityID: int, body: EntityCreate, db: Session = Depends(get_d
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-@router.delete("/{entityID}", status_code=204, tags=['Entities'], responses={
-    204: {"description": "No Content"}
-})
+@router.delete("/{entityID}", status_code=204, tags=['Entities'])
 def delete_entity(entityID: int, db: Session = Depends(get_db)):
     try:
         entity_service = EntityService(db)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import Date, ForeignKey, Integer, String
+from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base_model import Base
@@ -10,8 +10,8 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    user_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    user_name: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
+    user_id: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
     is_active: Mapped[bool] = mapped_column(default=True)
     password_reset: Mapped[bool] = mapped_column(default=False)
     password_hash: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -58,14 +58,14 @@ class User(Base):
     @staticmethod
     def strip_sensitive_info(user_obj: User) -> User:
         """Create a copy of User instance without sensitive information."""
-        # Create a new user object without sensitive data
-        clean_user = User(
-            id=user_obj.id,
-            user_name=user_obj.user_name,
-            user_id=user_obj.user_id,
-            is_active=user_obj.is_active,
-            password_reset=user_obj.password_reset,
-            password_hash="",  # Empty values instead of deleting
-            salt=""
-        )
+        # Create a new user object and manually set attributes
+        clean_user = User()
+        clean_user.id = user_obj.id
+        clean_user.user_name = user_obj.user_name
+        clean_user.user_id = user_obj.user_id
+        clean_user.is_active = user_obj.is_active
+        clean_user.password_reset = user_obj.password_reset
+        clean_user.password_hash = ""  # Clear sensitive data
+        clean_user.salt = ""  # Clear sensitive data
+        
         return clean_user

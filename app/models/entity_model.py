@@ -1,4 +1,4 @@
-from sqlalchemy import Date, ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base_model import Base
@@ -31,8 +31,33 @@ class Entity(Base):
         remote_side=[entity_id]  # This is the parent entity in the relationship
     )
     # Each Entity can have multiple Members
-    members: Mapped[list["EntityMember"]] = relationship("EntityMember", back_populates="entity")
+    entity_members: Mapped[list["EntityMember"]] = relationship("EntityMember", back_populates="entity")
 
+    # Events organized by this entity
+    organized_events = relationship("Event", foreign_keys="Event.organizing_entity_id", back_populates="organizing_entity")
+    # Events this entity is participating in
+    event_entities = relationship("EventEntity", back_populates="entity")
+    # Events this entity is participating in
+    # participated_events = relationship("Event", secondary="event_entities", back_populates="participating_entities", viewonly=True)
+
+    @property
+    def participated_events(self) -> list["Event"]:
+        """Get all events this entity is participating in"""
+        return [ee.event for ee in self.event_entities]
+        
+    @property
+    def members(self):
+        """Get all members of this entity"""
+        return [em.member for em in self.entity_members]
+    
+    @property
+    def all_events(self):
+        """Get all events this entity is involved in (organized + participated)"""
+        # Combine organized events and participated events, removing duplicates
+        organized = set(self.organized_events)
+        participated = set(self.participated_events)
+        return list(organized.union(participated))
+    
     def __repr__(self):
         return f"<Entity(entity_name_en={self.entity_name_en}, entity_name_ar={self.entity_name_ar}, entity_parent_id={self.entity_parent_id}, entity_type={self.entity_type})>"
 

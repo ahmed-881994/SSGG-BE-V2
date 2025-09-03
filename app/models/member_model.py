@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Date, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Date, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base_model import Base
@@ -86,7 +86,7 @@ class Member(Base):
     
     # One-to-many relationship with attendance table
     # A member can have multiple attendance records
-    # attendance_records = relationship("Attendance", back_populates="member")
+    attendance_records = relationship("Attendance", back_populates="member")
     
     def __repr__(self):
         return f"<Member(member_id={self.member_id}, name_en={self.name_en})>"
