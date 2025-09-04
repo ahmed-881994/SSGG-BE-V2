@@ -1,5 +1,5 @@
 from logging import getLogger
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from sqlalchemy.orm import Session
 
@@ -17,7 +17,7 @@ class LookupService:
         self.lookup_repository = LookupRepository(db_session)
 
 
-    def _format_lookup_entry(self, entries, table_name) -> Dict[str, str]:
+    def _format_lookup_entry(self, entries, table_name) -> Dict[str, Any]:
         """
         Format a single lookup entry into a dictionary.
         """
@@ -27,7 +27,7 @@ class LookupService:
             'description': f"{formatted_table_name} lookup values",
             'lookup_values': []
         }
-        table_name = table_name.rstrip('s')  # Remove trailing 's' for singular form
+        table_name = table_name[:-1] if table_name.endswith('s') else table_name  # Remove trailing 's' for singular form  
         for entry in entries:
             formatted_entry["lookup_values"].append({
                 "lookup_id": getattr(entry, f"{table_name}_id"),
