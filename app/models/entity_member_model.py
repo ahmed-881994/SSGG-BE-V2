@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Date, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Date, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base_model import Base
@@ -19,7 +19,7 @@ class EntityMember(Base):
     
     # Foreign key to entity_roles table
     # Defines what role the member has in this entity
-    member_entity_role_id: Mapped[int] = mapped_column(Integer, ForeignKey("entity_roles.id"))
+    member_entity_role_id: Mapped[int] = mapped_column(Integer, ForeignKey("entity_roles.entity_role_id"))
     
     # Membership period tracking
     date_from: Mapped[Date] = mapped_column(Date)  # When the membership started

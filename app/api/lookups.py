@@ -1,25 +1,26 @@
-from typing import List
-from fastapi import APIRouter, Depends
-from pymysql import MySQLError
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
+from app.core.database import get_db
 from app.core.dependencies import get_user_in_token
-from app.core.exceptions import ServiceError
-from app.service.lookups.getlookups import get_lookups as get_lookups_service
+from app.core.exceptions import EntityDoesNotExistError, ServiceError
+from app.schemas.lookup_schema import LookupResponseSchema
+from app.services.lookup_service import LookupService
 
 router = APIRouter(prefix="/lookups", tags=["Lookups"], dependencies=[Depends(get_user_in_token)])
 
 
-@router.get("", tags=["Lookups"], responses={
-    200: {"description": "Success", "model": List[dict]}})
-def get_lookups():
+@router.get("", tags=["Lookups"], response_model=LookupResponseSchema)
+def get_lookups(db: Session = Depends(get_db)):
     """
     Get all lookup tables and their values.
-    
-    Returns:
-        List[Dict]: A list of dictionaries containing lookup table names, descriptions, and their values.
     """
     try:
-        return get_lookups_service()
-    except MySQLError as error:
-        # raise HTTPException(status_code=500, detail=error.args)
-        raise ServiceError(message=error.args[1], name="Database Error" )
+        lookup_service = LookupService(db)
+        return lookup_service.get_all_lookups()
+    except EntityDoesNotExistError as e:
+        raise HTTPException(status_code=404, detail=str(e.message))
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e.message))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")

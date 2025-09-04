@@ -7,8 +7,11 @@ from .entity_schema import (EntityCreate, EntityHierarchicalResponse,
 from .event_schema import (EventAttendanceResponse, EventAttendanceUpdate,
                            EventCreate, EventResponse, EventUpdate,
                            SearchEventsResponse)
+from .lookup_schema import (LookupEntrySchema, LookupObjectSchema,
+                            LookupResponseSchema)
 from .member_schema import MemberRequest, MemberResponse, SearchMembersResponse
 
 __all__ = ["EntityTransfer", "EntityCreate", "EntitySearchResponse", "EntityMembersResponse", "RoleUpdate", "BaseSchema", "Token",
            "SuccessResponse", "ErrorResponse", "NameObject", "EntityHierarchicalResponse", "MemberRequest", "MemberResponse", "SearchMembersResponse",
-           "EventResponse", "SearchEventsResponse", "EventCreate", "EventUpdate", "EventAttendanceResponse", "EventAttendanceUpdate"]
+           "EventResponse", "SearchEventsResponse", "EventCreate", "EventUpdate", "EventAttendanceResponse", "EventAttendanceUpdate",
+           "LookupEntrySchema", "LookupObjectSchema", "LookupResponseSchema"]
