@@ -64,7 +64,7 @@ jobs:
       run: |
         cat > .env << EOF
         # Application environment
-        environment=staging
+        environment=${{ env.ENVIRONMENT }}
         # DB settings
         db_host=${{ secrets.STAGING_DB_HOST }}
         db_port=${{ secrets.STAGING_DB_PORT }}
