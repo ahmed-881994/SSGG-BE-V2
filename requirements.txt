@@ -72,6 +72,7 @@ PyMySQL==1.1.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.1
 python-multipart==0.0.20
+pytz==2025.2
 pyzmq==26.4.0
 redis==6.2.0
 referencing==0.36.2
