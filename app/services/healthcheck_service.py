@@ -354,6 +354,7 @@ class HealthCheckService:
                 "status": "unhealthy",
                 "timestamp": self.get_egypt_time().isoformat(),
                 "response_time_ms": round((time() - start_time) * 1000, 2),
+                "environment": os.getenv("environment", "unknown"),
                 "message": "Environment health check failed",
                 "error": {
                     "type": "UnexpectedError",
