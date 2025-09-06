@@ -29,6 +29,7 @@ services:
     # ports:
     #   - "8001:8000"
     environment:
+      - environment=${environment}
       - db_host=${db_host}
       - db_port=${db_port}
       - db_database=${db_database}
@@ -41,7 +42,7 @@ services:
       - rds_database=${rds_database}
       - secret_key=${secret_key}
       - algorithm=${algorithm}
-      - access_token_expire_minutes=${access_token_expire_minutes}
+      - access_token_expires_minutes=${access_token_expire_minutes}
       - cors_origins=${cors_origins}
       - rate_limit_per_minute=${rate_limit_per_minute}
       - log_level=${log_level}
