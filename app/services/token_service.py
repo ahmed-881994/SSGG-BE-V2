@@ -10,12 +10,14 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 import jwt
+import logging
 
-from app.config.logging_config import logger
+# from app.config.logging_config import logger
 from app.config.settings import settings
 from app.core.exceptions import InvalidTokenError
 from app.core.token_blacklist import token_blacklist
 
+logger = logging.getLogger(__name__)
 
 class TokenService:
     """Centralized token management service"""
@@ -90,7 +92,7 @@ class TokenService:
             creation_time = round((time.time() - start_time) * 1000, 2)
             logger.error(f"Refresh token creation failed after {creation_time}ms: {str(e)}", exc_info=True)
             raise InvalidTokenError(message="Token creation error", name=None)
-    
+
     def verify_token(self, token: str, token_type: str = "access") -> Dict[str, Any]:
         """
         Verify and decode JWT token
