@@ -5,6 +5,9 @@ from logging import getLogger
 from time import time
 
 import pytz
+import redis
+from redis.exceptions import ConnectionError as RedisConnectionError
+from redis.exceptions import RedisError
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -369,7 +372,154 @@ class HealthCheckService:
                 }
             }
 
-    def check_health(self, summary_only=False):
+    async def check_redis_health(self):
+        """Check Redis connectivity for token blacklisting"""
+        logger.info("Checking Redis health...")
+        start_time = time()
+        try:
+            # Get Redis connection details from settings
+            redis_host = settings.rds_host
+            redis_port = settings.rds_port
+            redis_db = settings.rds_database
+
+            # Create Redis connection
+            redis_client = redis.Redis(
+                host=redis_host,
+                port=redis_port,
+                db=redis_db,
+                decode_responses=True,
+                socket_connect_timeout=5,
+                socket_timeout=5
+            )
+            
+            # Test basic connectivity
+            redis_client.ping()
+            
+            # Test set/get operations for token blacklisting
+            test_key = "health_check_test_token"
+            test_value = f"test_{int(time())}"
+            
+            # Test SET operation
+            redis_client.setex(test_key, 10, test_value)  # 10 seconds TTL
+            
+            # Test GET operation
+            retrieved_value = redis_client.get(test_key)
+            
+            # Test DELETE operation
+            redis_client.delete(test_key)
+            
+            # Get Redis info
+            redis_info = redis_client.info()
+            
+            response_time = round((time() - start_time) * 1000, 2)
+            logger.info("Redis is healthy.")
+            
+            return {
+                "service_name": "Redis Token Blacklist",
+                "status": "healthy",
+                "timestamp": self.get_egypt_time().isoformat(),
+                "response_time_ms": response_time,
+                "connection_info": {
+                    "host": redis_host,
+                    "port": redis_port,
+                    "database": redis_db,
+                    "redis_version": redis_info.get('redis_version', 'unknown')
+                },
+                "performance_metrics": {
+                    "connected_clients": redis_info.get('connected_clients', 0),
+                    "used_memory_human": redis_info.get('used_memory_human', 'unknown'),
+                    "total_commands_processed": redis_info.get('total_commands_processed', 0),
+                    "keyspace_hits": redis_info.get('keyspace_hits', 0),
+                    "keyspace_misses": redis_info.get('keyspace_misses', 0)
+                },
+                "test_operations": {
+                    "ping_successful": True,
+                    "set_operation": True,
+                    "get_operation": retrieved_value == test_value,
+                    "delete_operation": True
+                },
+                "message": "Redis connection and token blacklist operations working properly",
+                "details": {
+                    "description": "Successfully connected to Redis and performed token blacklist test operations",
+                    "severity": "info",
+                    "troubleshooting": "No action required"
+                }
+            }
+            
+        except RedisConnectionError as e:
+            response_time = round((time() - start_time) * 1000, 2)
+            logger.error(f"Redis connection failed: {str(e)}")
+            return {
+                "service_name": "Redis Token Blacklist",
+                "status": "unhealthy",
+                "timestamp": self.get_egypt_time().isoformat(),
+                "response_time_ms": response_time,
+                "connection_info": {
+                    "host": redis_host,
+                    "port": redis_port,
+                    "database": redis_db
+                },
+                "error": {
+                    "type": "RedisConnectionError",
+                    "message": str(e),
+                    "category": "redis_connection"
+                },
+                "message": "Redis connection failed",
+                "details": {
+                    "description": f"Failed to connect to Redis server: {str(e)}",
+                    "severity": "critical",
+                    "troubleshooting": "Check Redis server status, network connectivity, and connection credentials"
+                }
+            }
+            
+        except RedisError as e:
+            response_time = round((time() - start_time) * 1000, 2)
+            logger.error(f"Redis operation failed: {str(e)}")
+            return {
+                "service_name": "Redis Token Blacklist",
+                "status": "unhealthy",
+                "timestamp": self.get_egypt_time().isoformat(),
+                "response_time_ms": response_time,
+                "connection_info": {
+                    "host": redis_host,
+                    "port": redis_port,
+                    "database": redis_db
+                },
+                "error": {
+                    "type": "RedisError",
+                    "message": str(e),
+                    "category": "redis_operation"
+                },
+                "message": "Redis operation failed",
+                "details": {
+                    "description": f"Redis operation error: {str(e)}",
+                    "severity": "critical",
+                    "troubleshooting": "Check Redis server configuration and available memory"
+                }
+            }
+            
+        except Exception as e:
+            response_time = round((time() - start_time) * 1000, 2)
+            logger.error(f"Unexpected error in Redis health check: {str(e)}")
+            return {
+                "service_name": "Redis Token Blacklist",
+                "status": "unhealthy",
+                "timestamp": self.get_egypt_time().isoformat(),
+                "response_time_ms": response_time,
+                "error": {
+                    "type": "UnexpectedError",
+                    "message": str(e),
+                    "category": "system_error"
+                },
+                "message": "Unexpected error during Redis health check",
+                "details": {
+                    "description": f"An unexpected error occurred: {str(e)}",
+                    "severity": "critical",
+                    "troubleshooting": "Review application logs and system resources"
+                }
+            }
+
+    async def check_health(self, summary_only=False):
         """Check overall application health using SQLAlchemy"""
         logger.info("Checking overall application health...")
         start_time = time()
@@ -379,9 +529,10 @@ class HealthCheckService:
         pool_health = self.check_connection_pool()
         db_schema_health = self.check_database_schema_health()
         env_health = self.check_environment_health()
+        redis_health = await self.check_redis_health()
 
         # Determine overall status
-        all_services = [db_health, pool_health, db_schema_health, env_health]
+        all_services = [db_health, pool_health, db_schema_health, env_health, redis_health]
         unhealthy_services = [s for s in all_services if s["status"] == "unhealthy"]
         warning_services = [s for s in all_services if s["status"] == "warning"]
         
@@ -423,6 +574,7 @@ class HealthCheckService:
                 "database_connectivity": db_health,
                 "connection_pool": pool_health,
                 "database_schema": db_schema_health,
-                "environment": env_health
+                "environment": env_health,
+                "redis_token_blacklist": redis_health
             }
         }
