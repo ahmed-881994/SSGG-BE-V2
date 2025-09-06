@@ -30,7 +30,7 @@ class TokenBlacklist:
         """Check if token is blacklisted"""
         try:
             logger.debug("Checking if token is blacklisted")
-            exists = self.redis_client.exists(f"blacklist:{token}")  # Remove await
+            exists = self.redis_client.exists(f"blacklist:{token}")
             logger.debug(f"Token blacklisted: {exists > 0}")
             return exists > 0
         except Exception as e:
@@ -40,7 +40,11 @@ class TokenBlacklist:
 
     async def remove_from_blacklist(self, token: str):
         """Remove token from blacklist"""
-        await self.redis_client.delete(f"blacklist:{token}")
+        try:
+            result = await self.redis_client.delete(f"blacklist:{token}")
+            logger.debug(f"Token removed from blacklist: {result}")
+        except Exception as e:
+            logger.error(f"Failed to remove token from blacklist: {e}")
 
 # Global blacklist instance
 token_blacklist = TokenBlacklist()
