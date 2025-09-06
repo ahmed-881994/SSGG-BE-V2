@@ -85,7 +85,7 @@ jobs:
         # JWT settings
         secret_key=${{ secrets.STAGING_JWT_SECRET }}
         algorithm=${{ secrets.STAGING_JWT_ALGORITHM }}
-        access_token_expire_minutes=${{ secrets.STAGING_JWT_EXPIRES_IN }}
+        access_token_expires_minutes=${{ secrets.STAGING_JWT_EXPIRES_IN }}
 
 
         # Security settings
