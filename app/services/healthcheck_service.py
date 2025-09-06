@@ -1,12 +1,14 @@
+import os
+import re
 from datetime import datetime
 from logging import getLogger
-import os
 from time import time
 
 import pytz
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.config.settings import settings
 from app.core.database import engine, get_db
 
 logger = getLogger(__name__)
@@ -25,7 +27,7 @@ class HealthCheckService:
     def check_database(self):
         """Check database connectivity and responsiveness."""
         logger.info("Checking database health...")
-        statement = "SELECT COUNT(*) FROM SSGG.members"
+        statement = f"SELECT COUNT(*) FROM {settings.db_database}.members"
         start_time = time()
         try:
             db = next(get_db())
@@ -116,7 +118,7 @@ class HealthCheckService:
             # Example: "Pool size: 10  Connections in pool: 1 Current Overflow: -9 Current Checked out connections: 0"
             
             # Parse the string to extract values
-            import re
+            
 
             # Extract values using regex
             pool_size_match = re.search(r'Pool size: (\d+)', pool_status_str)
@@ -228,11 +230,12 @@ class HealthCheckService:
                     "status": "unhealthy",
                     "timestamp": self.get_egypt_time().isoformat(),
                     "response_time_ms": response_time,
-                    "table_count": len(required_tables),
+                    "required_tables_count": len(required_tables),
                     "required_tables": required_tables,
                     "existing_table_count": len(existing_tables),
-                    "existing_tables": len(existing_tables),
+                    "existing_tables": existing_tables,
                     "missing_tables": missing_tables,
+                    "extra_tables": [table for table in existing_tables if table not in required_tables],
                     "details": f"Missing required tables: {', '.join(missing_tables)}"
                 }
             response_time = round((time() - start_time) * 1000, 2)
@@ -243,10 +246,11 @@ class HealthCheckService:
                 "status": "healthy",
                 "timestamp": self.get_egypt_time().isoformat(),
                 "response_time_ms": response_time,
-                "table_count": len(required_tables),
+                "required_tables_count": len(required_tables),
                 "required_tables": required_tables,
                 "existing_table_count": len(existing_tables),
                 "existing_tables": existing_tables,
+                "extra_tables": [table for table in existing_tables if table not in required_tables],
                 "details": "All required database tables exist"
             }
             
