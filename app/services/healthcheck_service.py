@@ -51,7 +51,8 @@ class HealthCheckService:
                 "message": "Database connection established successfully",
                 "details": {
                     "description": "Successfully connected to database and executed test query",
-                    "severity": "info"
+                    "severity": "info",
+                    "troubleshooting": "No action required"
                 }
             }
         except SQLAlchemyError as e:
@@ -117,9 +118,6 @@ class HealthCheckService:
             pool_status_str = str(pool.status())
             # Example: "Pool size: 10  Connections in pool: 1 Current Overflow: -9 Current Checked out connections: 0"
             
-            # Parse the string to extract values
-            
-
             # Extract values using regex
             pool_size_match = re.search(r'Pool size: (\d+)', pool_status_str)
             connections_in_pool_match = re.search(r'Connections in pool: (\d+)', pool_status_str)
@@ -191,8 +189,21 @@ class HealthCheckService:
         except Exception as e:
             logger.error(f"Pool health check failed: {str(e)}")
             return {
+                "service_name": "Database Connection Pool",
                 "status": "unhealthy",
-                "details": f"Pool check failed: {str(e)}"
+                "timestamp": self.get_egypt_time().isoformat(),
+                "response_time_ms": round((time() - start_time) * 1000, 2),
+                "message": "Connection pool health check failed",
+                "error": {
+                    "type": "UnexpectedError",
+                    "message": str(e),
+                    "category": "system_error"
+                },
+                "details": {
+                    "description": f"Pool check failed: {str(e)}",
+                    "severity": "critical",
+                    "troubleshooting": "Review application logs and system resources"
+                }
             }
 
     def check_database_schema_health(self):
@@ -236,7 +247,11 @@ class HealthCheckService:
                     "existing_tables": existing_tables,
                     "missing_tables": missing_tables,
                     "extra_tables": [table for table in existing_tables if table not in required_tables],
-                    "details": f"Missing required tables: {', '.join(missing_tables)}"
+                    "details": {
+                        "description": f"Missing required tables: {', '.join(missing_tables)}",
+                        "severity": "critical",
+                        "troubleshooting": "Review database schema and migrations"
+                    }
                 }
             response_time = round((time() - start_time) * 1000, 2)
             logger.info("Database schema is healthy.")
@@ -251,7 +266,11 @@ class HealthCheckService:
                 "existing_table_count": len(existing_tables),
                 "existing_tables": existing_tables,
                 "extra_tables": [table for table in existing_tables if table not in required_tables],
-                "details": "All required database tables exist"
+                "details": {
+                    "description": "All required database tables exist",
+                    "severity": "info",
+                    "troubleshooting": "No action required"
+                }
             }
             
         except Exception as e:
@@ -259,7 +278,19 @@ class HealthCheckService:
             return {
                 "service_name": "Database Schema",
                 "status": "unhealthy",
-                "details": f"Schema check failed: {str(e)}"
+                "timestamp": self.get_egypt_time().isoformat(),
+                "response_time_ms": round((time() - start_time) * 1000, 2),
+                "message": "Database schema health check failed",
+                "error": {
+                    "type": "UnexpectedError",
+                    "message": str(e),
+                    "category": "system_error"
+                },
+                "details": {
+                    "description": f"Schema check failed: {str(e)}",
+                    "severity": "critical",
+                    "troubleshooting": "Review application logs and database connectivity"
+                }
             }
         finally:
             if 'db' in locals():
@@ -267,6 +298,8 @@ class HealthCheckService:
 
     def check_environment_health(self):
         """Check environment configuration"""
+        logger.info("Checking environment health...")
+        start_time = time()
         try:
             required_env_vars = [
                 'environment',
@@ -291,21 +324,47 @@ class HealthCheckService:
             
             if missing_vars:
                 return {
+                    "service_name": "Environment Configuration",
                     "status": "unhealthy",
+                    "timestamp": self.get_egypt_time().isoformat(),
+                    "response_time_ms": round((time() - start_time) * 1000, 2),
                     "environment": os.getenv("environment", "unknown"),
-                    "details": f"Missing environment variables: {', '.join(missing_vars)}"
+                    "details": {
+                        "description": f"Missing environment variables: {', '.join(missing_vars)}",
+                        "severity": "critical",
+                        "troubleshooting": "Review application logs and environment configuration"
+                    }
                 }
             
             return {
+                "service_name": "Environment Configuration",
                 "status": "healthy",
+                "timestamp": self.get_egypt_time().isoformat(),
+                "response_time_ms": round((time() - start_time) * 1000, 2),
                 "environment": os.getenv("environment", "unknown"),
-                "details": "All required environment variables are set"
+                "details": {
+                    "description": "All required environment variables are set",
+                    "severity": "info",
+                    "troubleshooting": "No action required"
+                }
             }
         except Exception as e:
             logger.error(f"Environment health check failed: {str(e)}")
             return {
                 "status": "unhealthy",
-                "details": f"Environment check failed: {str(e)}"
+                "timestamp": self.get_egypt_time().isoformat(),
+                "response_time_ms": round((time() - start_time) * 1000, 2),
+                "message": "Environment health check failed",
+                "error": {
+                    "type": "UnexpectedError",
+                    "message": str(e),
+                    "category": "system_error"
+                },
+                "details": {
+                    "description": f"Environment check failed: {str(e)}",
+                    "severity": "critical",
+                    "troubleshooting": "Review application logs and environment configuration"
+                }
             }
 
     def check_health(self, summary_only=False):
