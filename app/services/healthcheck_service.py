@@ -1,5 +1,6 @@
 from datetime import datetime
 from logging import getLogger
+import os
 from time import time
 
 import pytz
@@ -202,22 +203,23 @@ class HealthCheckService:
             
             # Define your critical tables here
             required_tables = [
-                "users",           # System users
+                "attendance",      # Attendance records
+                "attendance_states", # Attendance status types
+                "entities",       # Organizational units
+                "entity_members", # Entity-member relationships
+                "entity_roles",    # Roles within entities
+                "entity_types",    # Entity type classifications
+                "event_entities",   # Event-entity relationships
                 "event_types",     # Event type classifications
                 "events",          # Events and activities
-                "entity_types",    # Entity type classifications
-                "entity_roles",    # Roles within entities
-                "entities",       # Organizational units
+                "lookups",         # Lookup/reference data
                 "members",        # Member information
-                "entity_members", # Entity-member relationships
-                "attendance_states", # Attendance status types
-                "attendance",      # Attendance records
-                "event_entities"     # Event-entity relationships
+                "users",           # System users
             ]
             
             existing_tables = inspector.get_table_names()
             missing_tables = [table for table in required_tables if table not in existing_tables]
-            
+
             if missing_tables:
                 logger.error(f"Missing required tables: {', '.join(missing_tables)}")
                 response_time = round((time() - start_time) * 1000, 2)
@@ -226,11 +228,12 @@ class HealthCheckService:
                     "status": "unhealthy",
                     "timestamp": self.get_egypt_time().isoformat(),
                     "response_time_ms": response_time,
-                    "table_count": len(existing_tables),
+                    "table_count": len(required_tables),
                     "required_tables": required_tables,
-                    "details": f"Missing required tables: {', '.join(missing_tables)}",
+                    "existing_table_count": len(existing_tables),
                     "existing_tables": len(existing_tables),
-                    "missing_tables": missing_tables
+                    "missing_tables": missing_tables,
+                    "details": f"Missing required tables: {', '.join(missing_tables)}"
                 }
             response_time = round((time() - start_time) * 1000, 2)
             logger.info("Database schema is healthy.")
@@ -238,11 +241,13 @@ class HealthCheckService:
             return {
                 "service_name": "Database Schema",
                 "status": "healthy",
-                "response_time_ms": response_time,
                 "timestamp": self.get_egypt_time().isoformat(),
-                "details": "All required database tables exist",
-                "table_count": len(existing_tables),
-                "required_tables": required_tables
+                "response_time_ms": response_time,
+                "table_count": len(required_tables),
+                "required_tables": required_tables,
+                "existing_table_count": len(existing_tables),
+                "existing_tables": existing_tables,
+                "details": "All required database tables exist"
             }
             
         except Exception as e:
@@ -256,6 +261,49 @@ class HealthCheckService:
             if 'db' in locals():
                 db.close()
 
+    def check_environment_health(self):
+        """Check environment configuration"""
+        try:
+            required_env_vars = [
+                'environment',
+                'db_host',
+                'db_port',
+                'db_database',
+                'db_username',
+                'db_password',
+                'db_max_connections',
+                'db_min_connections',
+                'rds_host',
+                'rds_port',
+                'rds_database',
+                'secret_key',
+                'algorithm',
+                'access_token_expires_minutes',
+                'cors_origins',
+                'rate_limit_per_minute',
+                'log_level'
+            ]
+            missing_vars = [var for var in required_env_vars if not os.getenv(var)]
+            
+            if missing_vars:
+                return {
+                    "status": "unhealthy",
+                    "environment": os.getenv("environment", "unknown"),
+                    "details": f"Missing environment variables: {', '.join(missing_vars)}"
+                }
+            
+            return {
+                "status": "healthy",
+                "environment": os.getenv("environment", "unknown"),
+                "details": "All required environment variables are set"
+            }
+        except Exception as e:
+            logger.error(f"Environment health check failed: {str(e)}")
+            return {
+                "status": "unhealthy",
+                "details": f"Environment check failed: {str(e)}"
+            }
+
     def check_health(self, summary_only=False):
         """Check overall application health using SQLAlchemy"""
         logger.info("Checking overall application health...")
@@ -265,9 +313,10 @@ class HealthCheckService:
         db_health = self.check_database()
         pool_health = self.check_connection_pool()
         db_schema_health = self.check_database_schema_health()
-        
+        env_health = self.check_environment_health()
+
         # Determine overall status
-        all_services = [db_health, pool_health, db_schema_health]
+        all_services = [db_health, pool_health, db_schema_health, env_health]
         unhealthy_services = [s for s in all_services if s["status"] == "unhealthy"]
         warning_services = [s for s in all_services if s["status"] == "warning"]
         
@@ -286,6 +335,12 @@ class HealthCheckService:
                 "timestamp": self.get_egypt_time().isoformat(),
                 "version": "2.0.0",
                 "response_time_ms": total_response_time,
+                "summary": {
+                    "total_services": len(all_services),
+                    "healthy_services": len([s for s in all_services if s["status"] == "healthy"]),
+                    "warning_services": len(warning_services),
+                    "unhealthy_services": len(unhealthy_services)
+                }
             }
 
         return {
@@ -293,10 +348,6 @@ class HealthCheckService:
             "timestamp": self.get_egypt_time().isoformat(),
             "version": "2.0.0",
             "response_time_ms": total_response_time,
-            # "database": {
-            #     "engine": str(engine.url).split('@')[0] + '@[REDACTED]',  # Hide credentials
-            #     "dialect": engine.dialect.name
-            # },
             "summary": {
                 "total_services": len(all_services),
                 "healthy_services": len([s for s in all_services if s["status"] == "healthy"]),
@@ -307,6 +358,6 @@ class HealthCheckService:
                 "database_connectivity": db_health,
                 "connection_pool": pool_health,
                 "database_schema": db_schema_health,
-                # "environment": env_health
+                "environment": env_health
             }
         }
