@@ -351,6 +351,7 @@ class HealthCheckService:
         except Exception as e:
             logger.error(f"Environment health check failed: {str(e)}")
             return {
+                "service_name": "Environment Configuration",
                 "status": "unhealthy",
                 "timestamp": self.get_egypt_time().isoformat(),
                 "response_time_ms": round((time() - start_time) * 1000, 2),
