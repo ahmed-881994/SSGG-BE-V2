@@ -11,11 +11,13 @@ from .event_service import EventService
 from .lookup_service import LookupService
 from .member_service import MemberService
 from .user_service import UserService
+from .healthcheck_service import HealthCheckService
 
 __all__ = [
     "AuthService",
     "UserService",
     "MemberService",
+    "HealthCheckService",
     "EntityService",
     "EventService",
     "LookupService"

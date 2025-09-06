@@ -63,6 +63,8 @@ jobs:
     - name: Create environment file
       run: |
         cat > .env << EOF
+        # Application environment
+        environment=${{ env.ENVIRONMENT }}
         # DB settings
         db_host=${{ secrets.STAGING_DB_HOST }}
         db_port=${{ secrets.STAGING_DB_PORT }}
@@ -104,17 +106,17 @@ jobs:
         GIT_COMMIT_HASH=${{ github.sha }}
         EOF
 
-    - name: Debug Environment Variables
-      run: |
-        echo "=== CORS DEBUG ==="
-        echo "Raw variable value: '${{ vars.STG_CORS_VAR }}'"
-        CORS_VAR='${{ vars.STG_CORS_VAR }}'
-        echo "Length: ${#CORS_VAR}"
-        echo "First char: $(echo '${{ vars.STG_CORS_VAR }}' | head -c 1)"
-        echo "In .env file:"
-        grep "cors_origins" .env
-        echo "Validating JSON:"
-        echo '${{ vars.STG_CORS_VAR }}' | python3 -m json.tool || echo "Invalid JSON"
+    # - name: Debug Environment Variables
+    #   run: |
+    #     echo "=== CORS DEBUG ==="
+    #     echo "Raw variable value: '${{ vars.STG_CORS_VAR }}'"
+    #     CORS_VAR='${{ vars.STG_CORS_VAR }}'
+    #     echo "Length: ${#CORS_VAR}"
+    #     echo "First char: $(echo '${{ vars.STG_CORS_VAR }}' | head -c 1)"
+    #     echo "In .env file:"
+    #     grep "cors_origins" .env
+    #     echo "Validating JSON:"
+    #     echo '${{ vars.STG_CORS_VAR }}' | python3 -m json.tool || echo "Invalid JSON"
       
     - name: Docker Stack Deploy
       uses: cssnr/stack-deploy-action@v1

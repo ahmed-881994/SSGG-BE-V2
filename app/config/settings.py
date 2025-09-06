@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # #APP settings
-    # environment: str
+    environment: str
     
     # Database settings
     db_host: str
