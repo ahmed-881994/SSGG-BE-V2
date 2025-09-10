@@ -10,7 +10,8 @@ from sqlalchemy.orm import Session
 
 from app.config.logging_config import logger
 from app.core.database import get_db
-from app.core.exceptions import AuthenticationFailed, ServiceError
+from app.core.exceptions import (AuthenticationFailed, InvalidTokenError,
+                                 ServiceError)
 from app.models.user_model import User
 from app.services.token_service import token_service
 from app.services.user_service import UserService
@@ -48,6 +49,10 @@ def get_user_in_token(token: str = Depends(oauth2_scheme), db: Session = Depends
                 name="Authentication"
             )
         return user
+    except InvalidTokenError:
+        raise
+    except AuthenticationFailed:
+        raise
     except Exception as e:
         logger.error(f"Authentication error: {str(e)}", exc_info=True)
         raise ServiceError(message=f"Authentication error: {str(e)}", name="Authentication")
