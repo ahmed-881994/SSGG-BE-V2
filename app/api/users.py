@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pymysql import MySQLError
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.database import get_db_session
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
@@ -16,7 +16,7 @@ router = APIRouter(
 
 
 @router.get("")
-def search_users(userName: Optional[str] = None, userID: Optional[str] = None, db: Session = Depends(get_db)):
+def search_users(userName: Optional[str] = None, userID: Optional[str] = None, db: Session = Depends(get_db_session)):
     """Search for users by Name or ID.
     Note: Not sending any of the criteria returns all users.
     """
@@ -33,7 +33,7 @@ def search_users(userName: Optional[str] = None, userID: Optional[str] = None, d
 
 
 @router.post("", status_code=201, responses={201: {"description": "Success", "model": SuccessResponse}})
-def create_user(user: dict, db: Session = Depends(get_db)):
+def create_user(user: dict, db: Session = Depends(get_db_session)):
     """Create a new user."""
     try:
         user_service = UserService(db)
@@ -47,7 +47,7 @@ def create_user(user: dict, db: Session = Depends(get_db)):
 
 
 @router.patch("/{id}")
-def update_user(id: int, user: dict, db: Session = Depends(get_db)):
+def update_user(id: int, user: dict, db: Session = Depends(get_db_session)):
     """Update an existing user."""
     try:
         user_service = UserService(db)
@@ -61,7 +61,7 @@ def update_user(id: int, user: dict, db: Session = Depends(get_db)):
 
 
 @router.delete("/{id}")
-def delete_user(id: int, db: Session = Depends(get_db)):
+def delete_user(id: int, db: Session = Depends(get_db_session)):
     """Delete an existing user."""
     try:
         user_service = UserService(db)
@@ -75,7 +75,7 @@ def delete_user(id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{id}")
-def get_user(id: int, db: Session = Depends(get_db)):
+def get_user(id: int, db: Session = Depends(get_db_session)):
     """Get details of an existing user."""
     try:
         user_service = UserService(db)

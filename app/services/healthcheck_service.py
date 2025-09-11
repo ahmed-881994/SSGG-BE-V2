@@ -12,7 +12,7 @@ from sqlalchemy import inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.config.settings import settings
-from app.core.database import engine, get_db
+from app.core.database import engine, get_db_session
 
 logger = getLogger(__name__)
 
@@ -33,7 +33,7 @@ class HealthCheckService:
         statement = f"SELECT COUNT(*) FROM {settings.db_database}.members"
         start_time = time()
         try:
-            db = next(get_db())
+            db = next(get_db_session())
             result = db.execute(text(statement)).scalar()
             response_time = round((time() - start_time) * 1000, 2)
             logger.info("Database is healthy.")
@@ -214,13 +214,14 @@ class HealthCheckService:
         logger.info("Checking database schema health...")
         start_time = time()
         try:
-            db = next(get_db())
+            db = next(get_db_session())
             inspector = inspect(engine)
             
             # Define your critical tables here
             required_tables = [
                 "attendance",      # Attendance records
                 "attendance_states", # Attendance status types
+                "audit",          # Audit logs
                 "entities",       # Organizational units
                 "entity_members", # Entity-member relationships
                 "entity_roles",    # Roles within entities

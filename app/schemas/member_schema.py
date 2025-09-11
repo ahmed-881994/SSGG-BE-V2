@@ -109,16 +109,16 @@ class MemberResponse(BaseSchema):
     conditions_consent: Optional[bool] = Field(alias='ConditionsConsent', description="The conditions consent status of the member")
     entities: Optional[List[Membership]] = Field(alias='Entities', description="The entities the member is part of")
 
-    @field_validator('email')
-    @classmethod
-    def validate_email(cls, v):
-        if v is None or v == '':
-            return None
-        import re
-        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        if not re.match(pattern, v):
-            raise ValueError('Invalid email format')
-        return v
+    # @field_validator('email')
+    # @classmethod
+    # def validate_email(cls, v):
+    #     if v is None or v == '':
+    #         return None
+    #     import re
+    #     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    #     if not re.match(pattern, v):
+    #         raise ValueError('Invalid email format')
+    #     return v
 
 class SearchMembersResponse(BaseSchema):
     members: List[MemberResponse] = Field(alias='Members')

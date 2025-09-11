@@ -1,16 +1,20 @@
 import logging
-from typing import Generator
+from typing import AsyncGenerator, Generator
 
 from sqlalchemy import QueuePool, create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
 # Construct database URL for SQLAlchemy
-# Format: mysql+pymysql://user:password@host:port/database?charset=utf8mb4
+# Synchronous URL: mysql+pymysql://user:password@host:port/database?charset=utf8mb4
 DATABASE_URL = f"mysql+pymysql://{settings.db_username}:{settings.db_password}@{settings.db_host}:{settings.db_port}/{settings.db_database}?charset=utf8mb4"
+
+# Asynchronous URL: mysql+aiomysql://user:password@host:port/database?charset=utf8mb4
+ASYNC_DATABASE_URL = f"mysql+aiomysql://{settings.db_username}:{settings.db_password}@{settings.db_host}:{settings.db_port}/{settings.db_database}?charset=utf8mb4"
 
 # Create SQLAlchemy engine with optimized configuration
 engine = create_engine(
@@ -39,6 +43,29 @@ engine = create_engine(
     }
 )
 
+
+# Create asynchronous SQLAlchemy engine
+async_engine = create_async_engine(
+    ASYNC_DATABASE_URL,
+    # Pool configuration
+    pool_size=settings.db_max_connections,
+    max_overflow=0,
+    pool_pre_ping=True,
+    pool_recycle=3600,
+    
+    # Debug configuration
+    echo=settings.log_level == "DEBUG",
+    echo_pool=settings.log_level == "DEBUG",
+    
+    # Connection arguments passed to aiomysql
+    connect_args={
+        "charset": "utf8mb4",
+        "use_unicode": True,
+        "autocommit": False,
+        "connect_timeout": 10,
+    }
+)
+
 # Create session factory
 # Sessions are thread-local and should be created per request
 SessionLocal = sessionmaker(
@@ -48,8 +75,17 @@ SessionLocal = sessionmaker(
     expire_on_commit=False # Keep objects accessible after commit
 )
 
+# Create async session factory
+AsyncSessionLocal = async_sessionmaker(
+    bind=async_engine,
+    class_=AsyncSession,
+    autocommit=False,
+    autoflush=False,
+    expire_on_commit=False
+)
 
-def get_db() -> Generator[Session, None, None]:
+
+def get_db_session() -> Generator[Session, None, None]:
     """
     FastAPI dependency for database sessions.
     
@@ -62,7 +98,7 @@ def get_db() -> Generator[Session, None, None]:
     
     Usage in FastAPI endpoints:
         @router.get("/")
-        def endpoint(db: Session = Depends(get_db)):
+        def endpoint(db: Session = Depends(get_db_session)):
             # Use db session here
     """
     # Create new database session
@@ -78,3 +114,21 @@ def get_db() -> Generator[Session, None, None]:
     finally:
         # Always close the session to return connection to pool
         db.close()
+        
+async def get_async_db_session() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Provides an asynchronous database session for use in async contexts.
+    
+    Usage:
+        async with get_async_session() as session:
+            # Use session here
+    """
+    session: AsyncSession = AsyncSessionLocal()
+    try:
+        yield session
+    except Exception as e:
+        logger.error(f"Async database session error: {e}")
+        await session.rollback()
+        raise
+    finally:
+        await session.close()
