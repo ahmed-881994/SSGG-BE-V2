@@ -11,6 +11,7 @@ class Audit(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(Integer, nullable=True)
+    member_id: Mapped[str] = mapped_column(String, nullable=True)
     action: Mapped[str] = mapped_column(String, nullable=False)
     request_data: Mapped[str] = mapped_column(Text, nullable=True)
     response_data: Mapped[str] = mapped_column(Text, nullable=True)

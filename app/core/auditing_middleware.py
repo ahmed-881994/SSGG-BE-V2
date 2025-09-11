@@ -41,8 +41,8 @@ async def audit_middleware(request: Request, call_next):
         return await call_next(request)
     
     # Extract user ID from request (adjust based on your auth implementation)
-    user_id = await get_user_id_from_request(request)
-    
+    user_id, member_id = await get_user_id_from_request(request)
+
     # Skip auditing if no authenticated user (optional)
     # if not user_id:
     #     return await call_next(request)
@@ -61,6 +61,7 @@ async def audit_middleware(request: Request, call_next):
         # Save audit record asynchronously (fire and forget)
         await save_audit_record(
             user_id=user_id,
+            member_id=member_id,
             action=f"{request.method} {request.url.path}",
             request_data=request_data,
             response_data=response_data,
@@ -73,6 +74,7 @@ async def audit_middleware(request: Request, call_next):
         # Log the error in audit
         await save_audit_record(
             user_id=user_id,
+            member_id=member_id,
             action=f"{request.method} {request.url.path}",
             request_data=request_data,
             response_data=f"ERROR: {str(e)}",
@@ -81,18 +83,12 @@ async def audit_middleware(request: Request, call_next):
         raise
 
 
-async def get_user_id_from_request(request: Request) -> Optional[int]:
+async def get_user_id_from_request(request: Request) -> tuple[Optional[int], Optional[str]]:
     """Extract user ID from request - adjust based on your auth implementation"""
     try:
-        # This depends on your authentication implementation
-        # You might get it from JWT token, session, etc.
-        # Example:
-        # token = request.headers.get("Authorization")
-        # user_id = decode_token(token).get("user_id")
-        # return user_id
-        return getattr(request.state, 'user_id', None)
+        return getattr(request.state, 'user_id', None), getattr(request.state, 'member_id', None)
     except Exception:
-        return None
+        return None, None
 
 
 async def capture_request_data(request: Request) -> str:
@@ -165,6 +161,7 @@ async def capture_response_data(response: Response) -> str:
 
 async def save_audit_record(
     user_id: int,
+    member_id: str,
     action: str,
     request_data: str,
     response_data: str,
@@ -177,6 +174,7 @@ async def save_audit_record(
         try:
             audit_record = Audit()
             audit_record.user_id = user_id
+            audit_record.member_id = member_id
             audit_record.action = action
             audit_record.request_data = request_data
             audit_record.response_data = response_data
