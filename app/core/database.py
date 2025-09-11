@@ -120,7 +120,7 @@ async def get_async_db_session() -> AsyncGenerator[AsyncSession, None]:
     Provides an asynchronous database session for use in async contexts.
     
     Usage:
-        async with get_async_session() as session:
+        async with get_async_db_session() as session:
             # Use session here
     """
     session: AsyncSession = AsyncSessionLocal()

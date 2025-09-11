@@ -8,7 +8,7 @@ from fastapi.concurrency import iterate_in_threadpool
 import pytz
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_async_db_session
+from app.core.database import AsyncSessionLocal, get_async_db_session
 from app.config.logging_config import logger
 from app.models.audit_model import Audit
 
@@ -160,8 +160,8 @@ async def capture_response_data(response: Response) -> str:
 
 
 async def save_audit_record(
-    user_id: int,
-    member_id: str,
+    user_id: Optional[int],
+    member_id: Optional[str],
     action: str,
     request_data: str,
     response_data: str,
@@ -169,23 +169,25 @@ async def save_audit_record(
 ):
     """Save audit record to database"""
     try:
-        session_generator = get_async_db_session()
-        session = await session_generator.__anext__()
-        try:
-            audit_record = Audit()
+        async with AsyncSessionLocal() as session:
+            audit_record = Audit() 
             audit_record.user_id = user_id
             audit_record.member_id = member_id
             audit_record.action = action
             audit_record.request_data = request_data
             audit_record.response_data = response_data
-            audit_record.status_code = json.loads(response_data).get("status_code")  # Could be set if needed
+            try:
+                response_json = json.loads(response_data)
+                audit_record.status_code = response_json.get("status_code")
+            except (json.JSONDecodeError, AttributeError):
+                audit_record.status_code = None
             audit_record.ip_address = ip_address
             audit_record.created_at = get_egypt_time()
             session.add(audit_record)
             await session.commit()
-        finally:
-            await session.close()
-            
     except Exception as e:
-        # Log the error but don't fail the request
         logger.error(f"Failed to save audit record: {str(e)}", exc_info=True)
+        await session.rollback()
+        raise
+    finally:
+        await session.close()

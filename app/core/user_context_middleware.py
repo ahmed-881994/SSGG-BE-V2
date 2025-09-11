@@ -25,7 +25,7 @@ async def user_context_middleware(request: Request, call_next):
                         token, 
                         settings.secret_key, 
                         algorithms=settings.algorithm,
-                        options={"verify_exp": False}  # Don't fail on expired tokens
+                        options={"verify_exp": True}  # Don't fail on expired tokens
                     )
                     member_id = payload.get("member_id")
                     user_id = payload.get("sub")
@@ -40,18 +40,3 @@ async def user_context_middleware(request: Request, call_next):
 
     response = await call_next(request)
     return response
-
-
-# async def get_user_id_by_username(username: str) -> Optional[int]:
-#     """Helper to get user ID from username - implement based on your DB structure"""
-#     try:
-#         # You can use your existing database connection pattern
-#         from app.util.database import get_connection
-        
-#         with get_connection() as conn:
-#             cursor = conn.cursor()
-#             cursor.execute("SELECT id FROM users WHERE user_name = %s", (username,))
-#             result = cursor.fetchone()
-#             return result[0] if result else None
-#     except Exception:
-#         return None
