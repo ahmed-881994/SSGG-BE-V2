@@ -13,6 +13,7 @@ from app.models.entity_model import Entity
 from app.models.event_entity_model import EventEntity
 from app.models.event_model import Event
 from app.repositories.base_repository import BaseRepository
+from app.util.egy_time import get_egypt_time
 
 logger = getLogger(__name__)
 
@@ -80,7 +81,7 @@ class EventRepository(BaseRepository[Event]):
             new_event.is_multi_team = event["is_multi_team"]
             new_event.event_type_id = event["event_type_id"]
             new_event.organizing_entity_id = event["organizing_entity_id"]
-            new_event.created_at = datetime.now()
+            new_event.created_at = get_egypt_time()
             new_event.created_by = current_user_id
 
             super().create(new_event)
@@ -149,7 +150,7 @@ class EventRepository(BaseRepository[Event]):
                     event_entity.event_id = existing_event.event_id
                     event_entity.entity_id = entity_id
                     existing_event.event_entities.append(event_entity)
-            existing_event.updated_at = datetime.now()
+            existing_event.updated_at = get_egypt_time()
             existing_event.updated_by = current_user_id
 
             super().update(existing_event)

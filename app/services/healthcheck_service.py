@@ -1,10 +1,8 @@
 import os
 import re
-from datetime import datetime
 from logging import getLogger
 from time import time
 
-import pytz
 import redis
 from redis.exceptions import ConnectionError as RedisConnectionError
 from redis.exceptions import RedisError
@@ -13,19 +11,11 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.config.settings import settings
 from app.core.database import engine, get_db_session
+from app.util.egy_time import get_egypt_time
 
 logger = getLogger(__name__)
 
 class HealthCheckService:
-    
-    def __init__(self):
-        # Set Egypt timezone with automatic daylight saving handling
-        self.egypt_tz = pytz.timezone('Africa/Cairo')
-    
-    def get_egypt_time(self):
-        """Get current time in Egypt timezone with DST handling"""
-        utc_now = datetime.now(pytz.UTC)
-        return utc_now.astimezone(self.egypt_tz)
     
     def check_database(self):
         """Check database connectivity and responsiveness."""
@@ -40,7 +30,7 @@ class HealthCheckService:
             return {
                 "service_name": "Database Connectivity",
                 "status": "healthy",
-                "timestamp": self.get_egypt_time().isoformat(),
+                "timestamp": get_egypt_time().isoformat(),
                 "performance": {
                     "response_time_ms": response_time,
                     "query_executed": statement,
@@ -64,7 +54,7 @@ class HealthCheckService:
             return {
                 "service_name": "Database Connectivity",
                 "status": "unhealthy",
-                "timestamp": self.get_egypt_time().isoformat(),
+                "timestamp": get_egypt_time().isoformat(),
                 "performance": {
                     "response_time_ms": response_time,
                     "query_executed": statement,
@@ -88,7 +78,7 @@ class HealthCheckService:
             return {
                 "service_name": "Database Connectivity",
                 "status": "unhealthy",
-                "timestamp": self.get_egypt_time().isoformat(),
+                "timestamp": get_egypt_time().isoformat(),
                 "performance": {
                     "response_time_ms": response_time,
                     "query_executed": statement,
@@ -159,7 +149,7 @@ class HealthCheckService:
             return {
                 "service_name": "Database Connection Pool",
                 "status": status,
-                "timestamp": self.get_egypt_time().isoformat(),
+                "timestamp": get_egypt_time().isoformat(),
                 "response_time_ms": response_time,
                 "pool_configuration": {
                     "max_pool_size": pool_size,
@@ -194,7 +184,7 @@ class HealthCheckService:
             return {
                 "service_name": "Database Connection Pool",
                 "status": "unhealthy",
-                "timestamp": self.get_egypt_time().isoformat(),
+                "timestamp": get_egypt_time().isoformat(),
                 "response_time_ms": round((time() - start_time) * 1000, 2),
                 "message": "Connection pool health check failed",
                 "error": {
@@ -243,7 +233,7 @@ class HealthCheckService:
                 return {
                     "service_name": "Database Schema",
                     "status": "unhealthy",
-                    "timestamp": self.get_egypt_time().isoformat(),
+                    "timestamp": get_egypt_time().isoformat(),
                     "response_time_ms": response_time,
                     "required_tables_count": len(required_tables),
                     "required_tables": required_tables,
@@ -263,7 +253,7 @@ class HealthCheckService:
             return {
                 "service_name": "Database Schema",
                 "status": "healthy",
-                "timestamp": self.get_egypt_time().isoformat(),
+                "timestamp": get_egypt_time().isoformat(),
                 "response_time_ms": response_time,
                 "required_tables_count": len(required_tables),
                 "required_tables": required_tables,
@@ -282,7 +272,7 @@ class HealthCheckService:
             return {
                 "service_name": "Database Schema",
                 "status": "unhealthy",
-                "timestamp": self.get_egypt_time().isoformat(),
+                "timestamp": get_egypt_time().isoformat(),
                 "response_time_ms": round((time() - start_time) * 1000, 2),
                 "message": "Database schema health check failed",
                 "error": {
@@ -330,7 +320,7 @@ class HealthCheckService:
                 return {
                     "service_name": "Environment Configuration",
                     "status": "unhealthy",
-                    "timestamp": self.get_egypt_time().isoformat(),
+                    "timestamp": get_egypt_time().isoformat(),
                     "response_time_ms": round((time() - start_time) * 1000, 2),
                     "environment": os.getenv("environment", "unknown"),
                     "details": {
@@ -343,7 +333,7 @@ class HealthCheckService:
             return {
                 "service_name": "Environment Configuration",
                 "status": "healthy",
-                "timestamp": self.get_egypt_time().isoformat(),
+                "timestamp": get_egypt_time().isoformat(),
                 "response_time_ms": round((time() - start_time) * 1000, 2),
                 "environment": os.getenv("environment", "unknown"),
                 "details": {
@@ -357,7 +347,7 @@ class HealthCheckService:
             return {
                 "service_name": "Environment Configuration",
                 "status": "unhealthy",
-                "timestamp": self.get_egypt_time().isoformat(),
+                "timestamp": get_egypt_time().isoformat(),
                 "response_time_ms": round((time() - start_time) * 1000, 2),
                 "environment": os.getenv("environment", "unknown"),
                 "message": "Environment health check failed",
@@ -418,7 +408,7 @@ class HealthCheckService:
             return {
                 "service_name": "Redis Token Blacklist",
                 "status": "healthy",
-                "timestamp": self.get_egypt_time().isoformat(),
+                "timestamp": get_egypt_time().isoformat(),
                 "response_time_ms": response_time,
                 "connection_info": {
                     "host": redis_host,
@@ -453,7 +443,7 @@ class HealthCheckService:
             return {
                 "service_name": "Redis Token Blacklist",
                 "status": "unhealthy",
-                "timestamp": self.get_egypt_time().isoformat(),
+                "timestamp": get_egypt_time().isoformat(),
                 "response_time_ms": response_time,
                 "connection_info": {
                     "host": redis_host,
@@ -479,7 +469,7 @@ class HealthCheckService:
             return {
                 "service_name": "Redis Token Blacklist",
                 "status": "unhealthy",
-                "timestamp": self.get_egypt_time().isoformat(),
+                "timestamp": get_egypt_time().isoformat(),
                 "response_time_ms": response_time,
                 "connection_info": {
                     "host": redis_host,
@@ -505,7 +495,7 @@ class HealthCheckService:
             return {
                 "service_name": "Redis Token Blacklist",
                 "status": "unhealthy",
-                "timestamp": self.get_egypt_time().isoformat(),
+                "timestamp": get_egypt_time().isoformat(),
                 "response_time_ms": response_time,
                 "error": {
                     "type": "UnexpectedError",
@@ -549,7 +539,7 @@ class HealthCheckService:
         if summary_only:
             return {
                 "status": overall_status,
-                "timestamp": self.get_egypt_time().isoformat(),
+                "timestamp": get_egypt_time().isoformat(),
                 "version": "2.0.0",
                 "response_time_ms": total_response_time,
                 "summary": {
@@ -562,7 +552,7 @@ class HealthCheckService:
 
         return {
             "status": overall_status,
-            "timestamp": self.get_egypt_time().isoformat(),
+            "timestamp": get_egypt_time().isoformat(),
             "version": "2.0.0",
             "response_time_ms": total_response_time,
             "summary": {

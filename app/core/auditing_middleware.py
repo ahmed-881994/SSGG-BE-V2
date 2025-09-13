@@ -3,15 +3,14 @@ import time
 from datetime import datetime
 from typing import Optional
 
+import pytz
 from fastapi import Request, Response
 from fastapi.concurrency import iterate_in_threadpool
-import pytz
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import AsyncSessionLocal, get_async_db_session
 from app.config.logging_config import logger
+from app.core.database import AsyncSessionLocal
 from app.models.audit_model import Audit
-
+from app.util.egy_time import get_egypt_time
 
 # Endpoints to exclude from auditing
 EXCLUDED_PATHS = {
@@ -24,12 +23,6 @@ EXCLUDED_PATHS = {
 
 # Methods to exclude from auditing
 EXCLUDED_METHODS = {"OPTIONS", "HEAD"}
-
-def get_egypt_time():
-    """Get current time in Egypt timezone with DST handling"""
-    egypt_tz = pytz.timezone('Africa/Cairo')
-    utc_now = datetime.now(pytz.UTC)
-    return utc_now.astimezone(egypt_tz)
 
 
 async def audit_middleware(request: Request, call_next):
