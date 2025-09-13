@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.database import get_db_session
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import EntityDoesNotExistError, ServiceError
 from app.schemas.lookup_schema import LookupResponseSchema
@@ -11,7 +11,7 @@ router = APIRouter(prefix="/lookups", tags=["Lookups"], dependencies=[Depends(ge
 
 
 @router.get("", tags=["Lookups"], response_model=LookupResponseSchema)
-def get_lookups(db: Session = Depends(get_db)):
+def get_lookups(db: Session = Depends(get_db_session)):
     """
     Get all lookup tables and their values.
     """

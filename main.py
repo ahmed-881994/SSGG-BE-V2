@@ -17,7 +17,9 @@ from app.core.exceptions import (AuthenticationFailed,
                                        InvalidTokenError, ServiceError,
                                        SSGGApiError)
 from app.core.logging_middleware import logging_middleware
+from app.core.auditing_middleware import audit_middleware
 from app.core.rate_limitting import setup_rate_limiting
+from app.core.user_context_middleware import user_context_middleware
 from app.schemas.common_schema import ErrorResponse
 
 
@@ -43,6 +45,17 @@ app = FastAPI(
 @app.middleware("http")
 async def add_logging_middleware(request: Request, call_next):
     return await logging_middleware(request, call_next)
+
+
+
+@app.middleware("http")
+async def add_auditing_middleware(request: Request, call_next):
+    return await audit_middleware(request, call_next)
+
+
+@app.middleware("http")
+async def add_user_context_middleware(request: Request, call_next):
+    return await user_context_middleware(request, call_next)
 
 
 # Setup rate limiting

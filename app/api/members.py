@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.database import get_db_session
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/members", tags=["Members"], dependencies=[Depends(ge
 
 @router.get("", tags=["Members"], response_model=SearchMembersResponse, responses={
     200: {"description": "Success", "model": SearchMembersResponse}})
-def search_members(name: Optional[str] = None, entityID: Optional[int] = None, db: Session = Depends(get_db)):
+def search_members(name: Optional[str] = None, entityID: Optional[int] = None, db: Session = Depends(get_db_session)):
     """
     Search members by (Name, Entity)
     """
@@ -33,7 +33,7 @@ def search_members(name: Optional[str] = None, entityID: Optional[int] = None, d
 
 @router.post("", status_code=201, responses={
     201: {"description": "Member created successfully", "model": MemberResponse}})
-def create_member(body: MemberRequest, db: Session = Depends(get_db)):
+def create_member(body: MemberRequest, db: Session = Depends(get_db_session)):
     """
     Creates a new member
     """
@@ -50,7 +50,7 @@ def create_member(body: MemberRequest, db: Session = Depends(get_db)):
 
 @router.get("/{member_id}", response_model=MemberResponse, responses={
     200: {"description": "Success", "model": MemberResponse}})
-def get_member(member_id: str, db: Session = Depends(get_db)):
+def get_member(member_id: str, db: Session = Depends(get_db_session)):
     """
     Get Member by ID
     """
@@ -67,7 +67,7 @@ def get_member(member_id: str, db: Session = Depends(get_db)):
 
 @router.put("/{member_id}", response_model=MemberResponse, responses={
     200: {"description": "Member updated successfully", "model": MemberResponse}})
-def update_member(member_id: str, body: MemberRequest, db: Session = Depends(get_db)):
+def update_member(member_id: str, body: MemberRequest, db: Session = Depends(get_db_session)):
     """
     Updates a member
     """
@@ -84,7 +84,7 @@ def update_member(member_id: str, body: MemberRequest, db: Session = Depends(get
 
 @router.delete("/{member_id}", status_code=204, responses={
     204: {"description": "No Content"}})
-def delete_member(member_id: str, db: Session = Depends(get_db)):
+def delete_member(member_id: str, db: Session = Depends(get_db_session)):
     """
     Deletes a member
     """

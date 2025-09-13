@@ -14,7 +14,7 @@ from pymysql import MySQLError
 from sqlalchemy.orm import Session
 
 from app.config.logging_config import logger
-from app.core.database import get_db
+from app.core.database import get_db_session
 from app.core.exceptions import AuthenticationFailed, ServiceError
 from app.core.rate_limitting import rate_limit
 from app.schemas.auth_schema import Token
@@ -26,7 +26,7 @@ router = APIRouter(tags=["Authentication"])
 
 @router.post("/token", response_model=Token)
 @rate_limit("10/minute")
-def login(request: Request, form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db)):
+def login(request: Request, form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db_session)):
     """
     Authenticate user and return access and refresh tokens
     
@@ -100,6 +100,7 @@ def refresh_access_token(request: Request, refresh_token: str):
         payload = token_service.verify_token(refresh_token, "refresh")
         id = payload.get("sub")
         user_type = payload.get("user_type")
+        member_id = payload.get("member_id")
 
         if not id:
             logger.warning("Token refresh failed: Missing user subject in refresh token")
@@ -110,8 +111,10 @@ def refresh_access_token(request: Request, refresh_token: str):
             )
         
         # Create new access token
+        token_data = {"sub": id, "member_id": member_id}
         access_token = token_service.create_access_token(
-            data={"sub": id, "user_type": user_type}
+            data=token_data,
+            expires_delta=timedelta(minutes=token_service.access_token_expire_minutes)
         )
         
         refresh_time = round((time.time() - start_time) * 1000, 2)

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pymysql import MySQLError
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.database import get_db_session
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import EntityDoesNotExistError, ServiceError
 from app.schemas.common_schema import SuccessResponse
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/events", tags=["Events"], dependencies=[Depends(get_
 
 
 @router.get("", response_model=SearchEventsResponse)
-def search_events(entityID: Optional[int] = None, startDate: Optional[str] = None, endDate: Optional[str] = None, name: Optional[str] = None, db: Session = Depends(get_db)):
+def search_events(entityID: Optional[int] = None, startDate: Optional[str] = None, endDate: Optional[str] = None, name: Optional[str] = None, db: Session = Depends(get_db_session)):
     """
     Search events by (Name, Team, Start and End dates)
     """
@@ -33,7 +33,7 @@ def search_events(entityID: Optional[int] = None, startDate: Optional[str] = Non
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 @router.post("" , status_code=201, response_model=EventResponse)
-def create_event(body: EventCreate, db: Session = Depends(get_db), current_user = Depends(get_user_in_token)):
+def create_event(body: EventCreate, db: Session = Depends(get_db_session), current_user = Depends(get_user_in_token)):
     """
     Creates a new event
     """
@@ -46,7 +46,7 @@ def create_event(body: EventCreate, db: Session = Depends(get_db), current_user 
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 @router.get("/{event_id}", response_model=EventResponse)
-def get_event(event_id: int, db: Session = Depends(get_db)):
+def get_event(event_id: int, db: Session = Depends(get_db_session)):
     """
     Gets event by ID
     """
@@ -62,7 +62,7 @@ def get_event(event_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{event_id}", response_model=EventResponse)
-def update_event(event_id: int, body: EventUpdate, db: Session = Depends(get_db), current_user = Depends(get_user_in_token)):
+def update_event(event_id: int, body: EventUpdate, db: Session = Depends(get_db_session), current_user = Depends(get_user_in_token)):
     """
     Updates event by ID
     """
@@ -77,7 +77,7 @@ def update_event(event_id: int, body: EventUpdate, db: Session = Depends(get_db)
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 @router.delete("/{event_id}", status_code=204)
-def delete_event(event_id: int, db: Session = Depends(get_db)):
+def delete_event(event_id: int, db: Session = Depends(get_db_session)):
     """
     Deletes event by ID
     """
@@ -92,7 +92,7 @@ def delete_event(event_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 @router.get("/{event_id}/attendance", response_model=EventAttendanceResponse)
-def get_event_attendance(event_id: int, db: Session = Depends(get_db)):
+def get_event_attendance(event_id: int, db: Session = Depends(get_db_session)):
     """
     Gets the attendance list of an event
     """
@@ -107,7 +107,7 @@ def get_event_attendance(event_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 @router.put("/{event_id}/attendance", response_model=SuccessResponse)
-def update_event_attendance(event_id: int, body: EventAttendanceUpdate, db: Session = Depends(get_db), current_user = Depends(get_user_in_token)):
+def update_event_attendance(event_id: int, body: EventAttendanceUpdate, db: Session = Depends(get_db_session), current_user = Depends(get_user_in_token)):
     """
     Updates members attendance in an event
     """

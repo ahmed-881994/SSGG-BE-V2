@@ -9,7 +9,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.config.logging_config import logger
-from app.core.database import get_db
+from app.core.database import get_db_session
 from app.core.exceptions import (AuthenticationFailed, InvalidTokenError,
                                  ServiceError)
 from app.models.user_model import User
@@ -19,7 +19,7 @@ from app.services.user_service import UserService
 # OAuth2 scheme for token-based authentication
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-def get_user_in_token(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+def get_user_in_token(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db_session)) -> User:
     """
     Get user from token and validate 
 
