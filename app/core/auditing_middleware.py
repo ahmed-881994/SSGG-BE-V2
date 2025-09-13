@@ -132,6 +132,10 @@ async def capture_response_data(response: Response) -> str:
             try:
                 # Parse the JSON payload
                 parsed_payload = json.loads(payload_raw)
+                if 'access_token' in parsed_payload:
+                    parsed_payload['access_token'] = '***MASKED***'
+                if 'refresh_token' in parsed_payload:
+                    parsed_payload['refresh_token'] = '***MASKED***'
                 payload_to_store = parsed_payload  # Store as object, not string
             except json.JSONDecodeError:
                 # If not valid JSON, store as string
