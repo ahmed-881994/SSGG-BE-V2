@@ -1,9 +1,7 @@
 import json
-import time
-from datetime import datetime
+import re
 from typing import Optional
 
-import pytz
 from fastapi import Request, Response
 from fastapi.concurrency import iterate_in_threadpool
 
@@ -85,7 +83,7 @@ async def get_user_id_from_request(request: Request) -> tuple[Optional[int], Opt
 
 
 async def capture_request_data(request: Request) -> str:
-    """Capture relevant request data for auditing"""
+    """Capture relevant request data for auditing with sensitive data masking"""
     try:
         data = {
             "method": request.method,
@@ -100,20 +98,31 @@ async def capture_request_data(request: Request) -> str:
             body = await request.body()
             if body:
                 try:
-                    # Try to parse as JSON
-                    data["body"] = json.loads(body.decode())
+                    # Try to parse as JSON first
+                    parsed_body = json.loads(body.decode())
+                    # Mask sensitive fields in JSON
+                    parsed_body = mask_sensitive_json_data(parsed_body)
+                    data["body"] = parsed_body
                 except (json.JSONDecodeError, UnicodeDecodeError):
-                    # If not JSON, store as base64 or truncated string
-                    data["body"] = body.decode('utf-8', errors='ignore')[:1000]
+                    # Handle multipart/form-data and other formats
+                    body_str = body.decode('utf-8', errors='ignore')
+                    # Mask sensitive data in raw body
+                    body_str = mask_sensitive_form_data(body_str)
+                    data["body"] = body_str[:1000]  # Truncate for storage
+                
+                # Store body for endpoint to use
+                async def receive():
+                    return {"type": "http.request", "body": body}
+                request._receive = receive
         
-        # Remove sensitive headers
-        sensitive_headers = {"authorization", "cookie", "x-api-key"}
+        # Remove/mask sensitive headers
+        sensitive_headers = {"authorization", "cookie", "x-api-key", "x-auth-token"}
         data["headers"] = {
-            k: v for k, v in data["headers"].items() 
-            if k.lower() not in sensitive_headers
+            k: "***MASKED***" if k.lower() in sensitive_headers else v
+            for k, v in data["headers"].items()
         }
         
-        return json.dumps(data, default=str)[:4000]  # Limit size
+        return json.dumps(data, default=str)
         
     except Exception as e:
         logger.warning(f"Failed to capture request data: {str(e)}")
@@ -121,7 +130,7 @@ async def capture_request_data(request: Request) -> str:
 
 
 async def capture_response_data(response: Response) -> str:
-    """Capture relevant response data for auditing"""
+    """Capture relevant response data for auditing with sensitive data masking"""
     try:
         res_body = [section async for section in response.body_iterator]
         response.body_iterator = iterate_in_threadpool(iter(res_body))
@@ -132,19 +141,17 @@ async def capture_response_data(response: Response) -> str:
             try:
                 # Parse the JSON payload
                 parsed_payload = json.loads(payload_raw)
-                if 'access_token' in parsed_payload:
-                    parsed_payload['access_token'] = '***MASKED***'
-                if 'refresh_token' in parsed_payload:
-                    parsed_payload['refresh_token'] = '***MASKED***'
-                payload_to_store = parsed_payload  # Store as object, not string
+                # Mask sensitive data in response
+                parsed_payload = mask_sensitive_response_data(parsed_payload)
+                payload_to_store = parsed_payload
             except json.JSONDecodeError:
-                # If not valid JSON, store as string
-                payload_to_store = payload_raw
+                # If not valid JSON, check for sensitive data in raw text
+                payload_to_store = mask_sensitive_text(payload_raw)
         else:
             payload_to_store = None
         
         data = {
-            "payload": payload_to_store,  # This will be properly encoded by json.dumps()
+            "payload": payload_to_store,
             "status_code": response.status_code,
             "headers": dict(response.headers),
         }
@@ -155,6 +162,73 @@ async def capture_response_data(response: Response) -> str:
         logger.warning(f"Failed to capture response data: {str(e)}")
         return f"Error capturing response data: {str(e)}"
 
+
+def mask_sensitive_json_data(data):
+    """Mask sensitive fields in JSON data"""
+    if isinstance(data, dict):
+        masked_data = {}
+        for key, value in data.items():
+            if key.lower() in ['password', 'passwd', 'pwd', 'secret', 'token', 'key', 'auth']:
+                masked_data[key] = "***MASKED***"
+            elif isinstance(value, (dict, list)):
+                masked_data[key] = mask_sensitive_json_data(value)
+            else:
+                masked_data[key] = value
+        return masked_data
+    elif isinstance(data, list):
+        return [mask_sensitive_json_data(item) for item in data]
+    else:
+        return data
+
+
+def mask_sensitive_form_data(body_str: str) -> str:
+    """Mask sensitive data in multipart form data"""
+    # Pattern to match form fields with sensitive names
+    sensitive_patterns = [
+        r'(name="password"[^-]*?\r?\n\r?\n)([^-\r\n]+)',
+        r'(name="passwd"[^-]*?\r?\n\r?\n)([^-\r\n]+)',
+        r'(name="pwd"[^-]*?\r?\n\r?\n)([^-\r\n]+)',
+        r'(name="secret"[^-]*?\r?\n\r?\n)([^-\r\n]+)',
+        r'(name="token"[^-]*?\r?\n\r?\n)([^-\r\n]+)',
+        r'(name="key"[^-]*?\r?\n\r?\n)([^-\r\n]+)',
+    ]
+    
+    masked_body = body_str
+    for pattern in sensitive_patterns:
+        masked_body = re.sub(pattern, r'\1***MASKED***', masked_body, flags=re.IGNORECASE)
+    
+    return masked_body
+
+def mask_sensitive_response_data(data):
+    """Mask sensitive fields in response data"""
+    if isinstance(data, dict):
+        masked_data = {}
+        for key, value in data.items():
+            # Mask tokens and sensitive response fields
+            if key.lower() in ['access_token', 'refresh_token', 'token', 'password', 'secret', 'key']:
+                masked_data[key] = "***MASKED***"
+            elif isinstance(value, (dict, list)):
+                masked_data[key] = mask_sensitive_response_data(value)
+            else:
+                masked_data[key] = value
+        return masked_data
+    elif isinstance(data, list):
+        return [mask_sensitive_response_data(item) for item in data]
+    else:
+        return data
+
+
+def mask_sensitive_text(text: str) -> str:
+    """Mask sensitive data in plain text"""
+    # This is a fallback for non-JSON responses
+    sensitive_keywords = ['password', 'token', 'secret', 'key', 'auth']
+    
+    for keyword in sensitive_keywords:
+        # Simple pattern to mask values after sensitive keywords
+        pattern = rf'({keyword}["\']?\s*[:=]\s*["\']?)([^"\',\s\n\r]+)'
+        text = re.sub(pattern, r'\1***MASKED***', text, flags=re.IGNORECASE)
+    
+    return text
 
 async def save_audit_record(
     user_id: Optional[int],
