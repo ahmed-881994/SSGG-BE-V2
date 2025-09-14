@@ -65,7 +65,7 @@ class EntityRepository(BaseRepository[Entity]):
         self.db.query(EntityMember).filter(EntityMember.entity_id == entity_id).delete()
         self.db.commit()
 
-    def get_entity_by_id(self, entity_id: int) -> Entity | None:
+    def get_entity_by_entity_id(self, entity_id: int) -> Entity | None:
 
         try:
             # entity = self.get_by_id(id)
@@ -253,7 +253,7 @@ class EntityRepository(BaseRepository[Entity]):
     def delete_entity(self, entity_id: int) -> bool:
         """Delete an entity."""
         try:
-            entity = self.get_entity_by_id(entity_id)
+            entity = self.get_entity_by_entity_id(entity_id)
 
             return super().delete(entity)
 

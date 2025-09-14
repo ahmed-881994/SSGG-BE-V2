@@ -37,6 +37,23 @@ class RoleUpdate(BaseSchema):
 
 # Responses
 
+class AttendanceStateType(BaseSchema):
+    """Schema for attendance state in responses."""
+    attendance_state_id: int = Field(alias='AttendanceStateID')
+    attendance_state_name: NameObject = Field(alias='AttendanceStateName')
+
+class EntityAttendanceType(BaseSchema):
+    """Schema for individual event attendance in responses."""
+    member_id: str = Field(alias='MemberID')
+    member_name: NameObject = Field(alias='MemberName')
+    attendance_state: AttendanceStateType = Field(alias='AttendanceState')
+
+class EntityEventType(BaseSchema):
+    """Schema for entity event data in responses."""
+    event_id: int = Field(alias='EventID')
+    event_name: NameObject = Field(alias='EventName')
+    attendance: List[EntityAttendanceType] = Field(alias='Attendance')
+
 class EntityTypeResponse(BaseSchema):
     """Schema for entity type data in responses."""
     entity_type_id: int = Field(alias='EntityTypeID')
@@ -74,3 +91,9 @@ class EntityHierarchicalResponse(EntityResponse):
     """Schema for entity with hierarchical relationships (children and parent)."""
     children: Optional[List[EntityResponse]] = Field(alias='Children', default=None)
     parent: Optional[EntityResponse] = Field(alias='Parent', default=None)
+    
+class EntityAttendanceResponse(BaseSchema):
+    """Schema for entity attendance response."""
+    total_events: int = Field(alias='TotalEvents')
+    attendance_percentage: float = Field(alias='AttendancePercentage')
+    events: List[EntityEventType] = Field(alias='Events')

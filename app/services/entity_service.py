@@ -20,7 +20,7 @@ class EntityService:
         
     def _entity_exists(self, entity_id: int) -> bool:
         """Check if entity exists - private method for internal use."""
-        entity = self.entity_repository.get_entity_by_id(entity_id=entity_id)
+        entity = self.entity_repository.get_entity_by_entity_id(entity_id=entity_id)
         return entity is not None
 
     def _member_exists_in_entity(self, entity_id: int, member_id: str) -> bool:
@@ -30,7 +30,7 @@ class EntityService:
     def get_entity(self, entity_id: int) -> Dict[str, Any]:
         """Retrieve an entity by its ID with entity type names."""
         try:
-            entity = self.entity_repository.get_entity_by_id(entity_id=entity_id)
+            entity = self.entity_repository.get_entity_by_entity_id(entity_id=entity_id)
             if not entity:
                 raise EntityDoesNotExistError(
                     message=f"Entity with ID {entity_id} not found",
@@ -444,7 +444,7 @@ class EntityService:
                 )
                 
             # Fetch existing entity to use current names as defaults
-            existing_entity = self.entity_repository.get_entity_by_id(entity_id)
+            existing_entity = self.entity_repository.get_entity_by_entity_id(entity_id)
             entity_name_en = entity_data.get("entity_name", {}).get("en")
             if not entity_name_en:
                 entity_name_en = getattr(existing_entity, "entity_name_en", None)
@@ -490,4 +490,68 @@ class EntityService:
             raise ServiceError(
                 message=f"Failed to delete entity: {str(e)}",
                 name="Entity Delete Error"
+            )
+            
+    def get_entity_attendance(self, entity_id: int):
+        """Get attendance data for an entity."""
+        try:
+            entity = self.entity_repository.get_entity_by_entity_id(entity_id)
+            if entity is None:
+                raise EntityDoesNotExistError(
+                    message=f"Entity with ID {entity_id} does not exist.",
+                    name="Entity Attendance Retrieval Error"
+                )
+            entity_events = entity.all_events
+            total_events = len(entity_events)
+            attended_events = 0
+            attendance_records_count = 0
+            
+            entity_attendance = {
+                "events": [
+                    {
+                        "event_id": event.event_id,
+                        "event_name": {
+                            "en": event.event_name_en,
+                            "ar": event.event_name_ar
+                        },
+                        "attendance": [
+                            {
+                                "member_id": attendance.member.member_id,
+                                "member_name": {
+                                    "en": attendance.member.name_en,
+                                    "ar": attendance.member.name_ar
+                                } if attendance.member else None,
+                                "attendance_state": {
+                                    "attendance_state_id": attendance.attendance_state.attendance_state_id,
+                                    "attendance_state_name": {
+                                        "en": attendance.attendance_state.attendance_state_name_en,
+                                        "ar": attendance.attendance_state.attendance_state_name_ar
+                                    } if attendance.attendance_state else None
+                                } if attendance.attendance_state else None
+                            }
+                            for attendance in event.attendance_records
+                        ] if hasattr(event, 'attendance_records') else []
+                    }
+                    for event in entity_events
+                ],
+                "total_events": 0,  # Direct assignment of int
+                "attendance_percentage": 0.0  # Direct assignment of float
+            }
+            # Calculate attendance statistics
+            for event in entity_events:
+                attendance_records_count += len(event.attendance_records)
+                attended_events += sum(1 for attendance in event.attendance_records if attendance.attendance_state_id in [1, 4])  # Assuming 1 and 4 are the IDs for attended states
+
+            attendance_percentage = (attended_events / attendance_records_count * 100) if attendance_records_count > 0 else 0
+
+            entity_attendance["total_events"] = total_events
+            entity_attendance["attendance_percentage"] = attendance_percentage
+            return entity_attendance
+        except EntityDoesNotExistError:
+            raise
+        except Exception as e:
+            logger.error(f"Error retrieving entity attendance: {str(e)}")
+            raise ServiceError(
+                message=f"Failed to retrieve entity attendance: {str(e)}",
+                name="Entity Attendance Retrieval Error"
             )

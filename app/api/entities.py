@@ -8,7 +8,7 @@ from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
 from app.schemas.common_schema import SuccessResponse
-from app.schemas.entity_schema import (EntityAssign, EntityCreate,
+from app.schemas.entity_schema import (EntityAssign, EntityAttendanceResponse, EntityCreate,
                                        EntityHierarchicalResponse,
                                        EntityMembersResponse, EntityResponse,
                                        EntitySearchResponse, EntityTransfer,
@@ -159,6 +159,21 @@ def update_entity_member_role(entityID: int, body: RoleUpdate, db: Session = Dep
         entity_service = EntityService(db)
         if entity_service.update_entity_member_role(entity_id=entityID, body=body.model_dump()):
             return {"message": "Roles updated successfully"}
+    except EntityDoesNotExistError as e:
+        raise HTTPException(status_code=404, detail=str(e.message))
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e.message))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    
+@router.get("/{entityID}/attendance", tags=['Entities'], response_model=EntityAttendanceResponse)
+def get_entity_attendance(entityID: int, db: Session = Depends(get_db_session)):
+    """
+    Get attendance records of entity members.
+    """
+    try:
+        entity_service = EntityService(db)
+        return entity_service.get_entity_attendance(entity_id=entityID)
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e.message))
     except ServiceError as e:
