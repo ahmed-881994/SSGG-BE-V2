@@ -68,7 +68,17 @@ class Membership(BaseSchema):
     from_date: Optional[date] = Field(alias='FromDate')
     to_date: Optional[date] = Field(alias='ToDate')
     is_current_entity: bool = Field(alias='IsCurrentEntity')
-
+    
+    
+class AttendanceState(BaseSchema):
+        attendance_state_id: int = Field(alias='AttendanceStateID', description="The unique identifier for the attendance state")
+        attendance_state_name: NameObject = Field(alias='AttendanceStateName', description="The name of the attendance state")
+        
+class MemberAttendance(BaseSchema):
+    event_id: int = Field(alias='EventID', description="The unique identifier for the event")
+    event_name: NameObject = Field(alias='EventName', description="The name of the event")
+    attendance_state: AttendanceState = Field(alias='AttendanceState', description="The attendance status for the member in the event (e.g., Present, Absent, Excused, Late)")
+    
 
 class MemberResponse(BaseSchema):
     member_id: Optional[str] = Field(alias='MemberID', description="The unique identifier for the member")
@@ -122,3 +132,12 @@ class MemberResponse(BaseSchema):
 
 class SearchMembersResponse(BaseSchema):
     members: List[MemberResponse] = Field(alias='Members')
+    
+class MemberAttendanceResponse(BaseSchema):
+    total_events: int = Field(alias='TotalEvents', description="Total number of events the member was a part of")
+    attended_events: int = Field(alias='AttendedEvents', description="Number of events the member attended (including being late)")
+    attendance_percentage: float = Field(alias='AttendancePercentage', description="Attendance percentage of the member (including being late)")
+    absent_percentage: float = Field(alias='AbsentPercentage', description="Absent percentage of the member")
+    excused_percentage: float = Field(alias='ExcusedPercentage', description="Excused percentage of the member")
+    late_percentage: float = Field(alias='LatePercentage', description="Late percentage of the member")
+    member_attendance: List[MemberAttendance] = Field(alias='MemberAttendance', description="List of attendance records for the member")

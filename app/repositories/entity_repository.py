@@ -41,7 +41,7 @@ class EntityRepository(BaseRepository[Entity]):
 
     def role_exists(self, role_id: int) -> bool:
         """Check if an entity role exists."""
-        return self.db.query(EntityRole).filter(EntityRole.id == role_id).first() is not None
+        return self.db.query(EntityRole).filter(EntityRole.entity_role_id == role_id).first() is not None
     
     
     def update_member_assignment_end_date(self, assignment: EntityMember, end_date) -> None:

@@ -7,7 +7,7 @@ from app.core.database import get_db_session
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
-from app.schemas.member_schema import (MemberRequest, MemberResponse,
+from app.schemas.member_schema import (MemberAttendanceResponse, MemberRequest, MemberResponse,
                                        SearchMembersResponse)
 from app.services.member_service import MemberService
 
@@ -99,10 +99,17 @@ def delete_member(member_id: str, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@router.get("/{member_id}/attendance", responses={
-    200: {"description": "Success", "model": dict}})
-def get_member_attendance(member_id: str):
+@router.get("/{member_id}/attendance",response_model=MemberAttendanceResponse)
+def get_member_attendance(member_id: str, db: Session = Depends(get_db_session)):
     """
-    Gets member attendance by ID (To be implemented)
+    Gets member attendance by ID
     """
-    pass
+    try:
+        member_service = MemberService(db)
+        return member_service.get_member_attendance(member_id)
+    except EntityDoesNotExistError as e:
+        raise HTTPException(status_code=404, detail=str(e.message))
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e.message))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")

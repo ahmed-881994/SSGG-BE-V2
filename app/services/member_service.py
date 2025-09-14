@@ -137,3 +137,44 @@ class MemberService:
                 message=f"Failed to delete member: {str(e)}",
                 name="Member Deletion Error"
             )
+
+    def get_member_attendance(self, member_id: str) -> Dict[str, List[Dict[str, Any]]]:
+        try:
+            member = self.member_repository.get_member_by_member_id(member_id)
+            if not member:
+                raise EntityDoesNotExistError(f"Member with ID {member_id} does not exist.", name="Member Retrieval Error")
+            member_attendance = {
+                "member_attendance": [
+                    {
+                        "event_id": attendance.event.event_id,
+                        "event_name": {
+                            "en": attendance.event.event_name_en,
+                            "ar": attendance.event.event_name_ar
+                        },
+                        "attendance_state": {
+                            "attendance_state_id": attendance.attendance_state_id,
+                            "attendance_state_name": {
+                            "en": attendance.attendance_state.attendance_state_name_en,
+                            "ar": attendance.attendance_state.attendance_state_name_ar
+                        }
+                    },
+                    
+                }
+                for attendance in member.attendance_records
+            ],
+                "total_events": len(member.attendance_records),
+                "attended_events": sum(1 for attendance in member.attendance_records if attendance.attendance_state_id == 1 or attendance.attendance_state_id == 4),
+                "attendance_percentage": (sum(1 for attendance in member.attendance_records if attendance.attendance_state_id == 1 or attendance.attendance_state_id == 4) / len(member.attendance_records) * 100) if member.attendance_records else 0.0,
+                "absent_percentage": (sum(1 for attendance in member.attendance_records if attendance.attendance_state_id == 2) / len(member.attendance_records) * 100) if member.attendance_records else 0.0,  
+                "excused_percentage": (sum(1 for attendance in member.attendance_records if attendance.attendance_state_id == 3) / len(member.attendance_records) * 100) if member.attendance_records else 0.0,
+                "late_percentage": (sum(1 for attendance in member.attendance_records if attendance.attendance_state_id == 4) / len(member.attendance_records) * 100) if member.attendance_records else 0.0 
+            }
+            return member_attendance
+        except EntityDoesNotExistError:
+            raise
+        except Exception as e:
+            logger.error(f"Error retrieving attendance for member {member_id}: {str(e)}")
+            raise ServiceError(
+                message=f"Failed to retrieve member attendance: {str(e)}",
+                name="Member Attendance Retrieval Error"
+            )
