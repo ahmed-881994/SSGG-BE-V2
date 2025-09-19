@@ -536,9 +536,7 @@ class HealthCheckService:
             overall_status = "healthy"
         
         total_response_time = round((time() - start_time) * 1000, 2)
-
-        if summary_only:
-            return {
+        report = {
                 "status": overall_status,
                 "timestamp": get_egypt_time().isoformat(),
                 "time_of_deployment": time_of_deployment,
@@ -551,23 +549,14 @@ class HealthCheckService:
                     "unhealthy_services": len(unhealthy_services)
                 }
             }
-
-        return {
-            "status": overall_status,
-            "timestamp": get_egypt_time().isoformat(),
-            "version": "2.0.0",
-            "response_time_ms": total_response_time,
-            "summary": {
-                "total_services": len(all_services),
-                "healthy_services": len([s for s in all_services if s["status"] == "healthy"]),
-                "warning_services": len(warning_services),
-                "unhealthy_services": len(unhealthy_services)
-            },
-            "services": {
-                "database_connectivity": db_health,
-                "connection_pool": pool_health,
-                "database_schema": db_schema_health,
-                "environment": env_health,
-                "redis_token_blacklist": redis_health
-            }
-        }
+        if summary_only:
+            return report
+        else:
+            report['services'] = {
+                    "database_connectivity": db_health,
+                    "connection_pool": pool_health,
+                    "database_schema": db_schema_health,
+                    "environment": env_health,
+                    "redis_token_blacklist": redis_health
+                }
+            return report
