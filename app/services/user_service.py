@@ -69,7 +69,7 @@ class UserService:
             )
 
             
-    def search_users(self, user_name: Optional[str] = None, user_id: Optional[str] = None) -> list[User]:
+    def search_users(self, user_name: Optional[str] = None, user_id: Optional[str] = None) -> dict[str, list[User]]:
         """Search for users by name or ID.
         
         Args:
@@ -77,7 +77,7 @@ class UserService:
             user_id: Optional external user ID to search for (partial match)
             
         Returns:
-            List[User]: List of matching users
+            dict[str, list[User]]: Dictionary containing a list of matching users
             
         Raises:
             EntityDoesNotExistError: If no users found

@@ -9,13 +9,14 @@ from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
 from app.schemas.common_schema import SuccessResponse
+from app.schemas.users_schema import UserCreate, UserResponse, UserSearchResponse, UserUpdate
 from app.services.user_service import UserService
 
 router = APIRouter(
     prefix="/users", tags=["Users"], dependencies=[Depends(get_user_in_token)])
 
 
-@router.get("")
+@router.get("", response_model=UserSearchResponse)
 def search_users(userName: Optional[str] = None, userID: Optional[str] = None, db: Session = Depends(get_db_session)):
     """Search for users by Name or ID.
     Note: Not sending any of the criteria returns all users.
@@ -32,12 +33,12 @@ def search_users(userName: Optional[str] = None, userID: Optional[str] = None, d
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@router.post("", status_code=201, responses={201: {"description": "Success", "model": SuccessResponse}})
-def create_user(user: dict, db: Session = Depends(get_db_session)):
+@router.post("", status_code=201, response_model=UserResponse)
+def create_user(user: UserCreate, db: Session = Depends(get_db_session)):
     """Create a new user."""
     try:
         user_service = UserService(db)
-        return user_service.create_user(user_data=user)
+        return user_service.create_user(user_data=user.model_dump())
     except EntityAlreadyExistsError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except ServiceError as e:
@@ -47,11 +48,11 @@ def create_user(user: dict, db: Session = Depends(get_db_session)):
 
 
 @router.patch("/{id}")
-def update_user(id: int, user: dict, db: Session = Depends(get_db_session)):
+def update_user(id: int, user: UserUpdate, db: Session = Depends(get_db_session)):
     """Update an existing user."""
     try:
         user_service = UserService(db)
-        return user_service.update_user(id=id, **user)
+        return user_service.update_user(id=id, **user.model_dump())
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except ServiceError as e:

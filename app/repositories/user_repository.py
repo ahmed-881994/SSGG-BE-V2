@@ -54,7 +54,7 @@ class UserRepository(BaseRepository[User]):
                 name="Database Error"
             )
 
-    def search_users(self, user_name: Optional[str] = None, user_id: Optional[str] = None) -> list[User]:
+    def search_users(self, user_name: Optional[str] = None, user_id: Optional[str] = None) -> dict[str, list[User]]:
         """Search for users by a query string."""
         try:
             # Create a base query
@@ -67,11 +67,11 @@ class UserRepository(BaseRepository[User]):
             if user_id:
                 filters.append(User.user_id.ilike(f"%{user_id}%"))
                 
-            if not filters:
-                raise InvalidOperationError(
-                    message="At least one search criteria must be provided",
-                    name="User Search Error"
-                )
+            # if not filters:
+            #     raise InvalidOperationError(
+            #         message="At least one search criteria must be provided",
+            #         name="User Search Error"
+            #     )
 
             users = query.filter(or_(*filters)).all()
 
@@ -81,7 +81,7 @@ class UserRepository(BaseRepository[User]):
                     name="User Search Error"
                 )
 
-            return users
+            return {'users': [User.strip_sensitive_info(user) for user in users]}
         except SQLAlchemyError as e:
             raise ServiceError(
                 message=f"Failed to search users: {str(e)}",
@@ -145,8 +145,9 @@ class UserRepository(BaseRepository[User]):
                 name="Database Error"
             )
 
-    def create_user(self, user_name: str, user_id: Optional[str], password_hash: str,
-                    user_type: int, salt: str, is_active: bool = True,
+    def create_user(self, user_name: str, user_id: str, password_hash: str,
+                    # user_type: int, 
+                    salt: str, is_active: bool = True,
                     password_reset: bool = False) -> User:
         """Create a new user in the database.
 
@@ -185,15 +186,14 @@ class UserRepository(BaseRepository[User]):
                     name="User Creation Error"
                 )
 
-            user = User(
-                user_name=user_name,
-                user_id=user_id,
-                password_hash=password_hash,
-                # user_type=user_type,
-                salt=salt,
-                is_active=is_active,
-                password_reset=password_reset
-            )
+            user = User()
+            user.user_name = user_name
+            user.user_id = user_id
+            user.password_hash = password_hash
+            # user.user_type = user_type
+            user.salt = salt
+            user.is_active = is_active
+            user.password_reset = password_reset
 
             super().create(user)
 
