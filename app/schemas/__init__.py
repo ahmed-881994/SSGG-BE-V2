@@ -10,8 +10,10 @@ from .event_schema import (EventAttendanceResponse, EventAttendanceUpdate,
 from .lookup_schema import (LookupEntrySchema, LookupObjectSchema,
                             LookupResponseSchema)
 from .member_schema import MemberRequest, MemberResponse, SearchMembersResponse
+from .users_schema import (UserCreate, UserResponse, UserSearchResponse,
+                           UserUpdate)
 
 __all__ = ["EntityTransfer", "EntityCreate", "EntitySearchResponse", "EntityMembersResponse", "RoleUpdate", "BaseSchema", "Token",
            "SuccessResponse", "ErrorResponse", "NameObject", "EntityHierarchicalResponse", "MemberRequest", "MemberResponse", "SearchMembersResponse",
            "EventResponse", "SearchEventsResponse", "EventCreate", "EventUpdate", "EventAttendanceResponse", "EventAttendanceUpdate",
-           "LookupEntrySchema", "LookupObjectSchema", "LookupResponseSchema"]
+           "LookupEntrySchema", "LookupObjectSchema", "LookupResponseSchema", "UserCreate", "UserResponse", "UserSearchResponse", "UserUpdate"]

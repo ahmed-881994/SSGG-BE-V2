@@ -8,10 +8,10 @@ between repositories and API layers.
 from .auth_service import AuthService
 from .entity_service import EntityService
 from .event_service import EventService
+from .healthcheck_service import HealthCheckService
 from .lookup_service import LookupService
 from .member_service import MemberService
 from .user_service import UserService
-from .healthcheck_service import HealthCheckService
 
 __all__ = [
     "AuthService",
