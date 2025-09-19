@@ -22,7 +22,7 @@ class UserService:
         """Get user by database ID.
         
         Args:
-            id: Database ID of the user
+            user_id: Database ID of the user
             
         Returns:
             User: User instance
@@ -38,6 +38,31 @@ class UserService:
             raise
         except Exception as e:
             logger.error(f"Error retrieving user {id}: {str(e)}")
+            raise ServiceError(
+                message=f"Failed to retrieve user: {str(e)}",
+                name="User Retrieval Error"
+            )
+
+    def get_user_by_user_id(self, user_id: str) -> User:
+        """Get user by database ID.
+        
+        Args:
+            user_id: Database ID of the user
+            
+        Returns:
+            User: User instance
+            
+        Raises:
+            EntityDoesNotExistError: If user not found
+            ServiceError: If retrieval fails
+        """
+        try:
+            user = self.user_repository.get_user_by_user_id(user_id)
+            return user
+        except EntityDoesNotExistError:
+            raise
+        except Exception as e:
+            logger.error(f"Error retrieving user {user_id}: {str(e)}")
             raise ServiceError(
                 message=f"Failed to retrieve user: {str(e)}",
                 name="User Retrieval Error"
@@ -95,11 +120,11 @@ class UserService:
                 name="User Search Error"
             )
 
-    def update_user(self, id: int, **kwargs) -> User:
+    def update_user(self, user_id: str, **kwargs) -> User:
         """Update user information.
         
         Args:
-            id: Database ID of user to update
+            user_id: ID of user to update
             **kwargs: Fields to update
             
         Returns:
@@ -110,7 +135,7 @@ class UserService:
             ServiceError: If update fails
         """
         try:
-            user = self.user_repository.update_user(id, **kwargs)
+            user = self.user_repository.update_user(user_id, **kwargs)
             return user
         except EntityDoesNotExistError:
             raise
@@ -121,7 +146,7 @@ class UserService:
                 name="User Update Error"
             )
 
-    def delete_user(self, id: int) -> bool:
+    def delete_user(self, user_id: str) -> bool:
         """Delete a user from the database.
         
         Args:
@@ -135,11 +160,11 @@ class UserService:
             ServiceError: If deletion fails
         """
         try:
-            return self.user_repository.delete_user(id)
+            return self.user_repository.delete_user(user_id=user_id)
         except EntityDoesNotExistError:
             raise
         except Exception as e:
-            logger.error(f"Error deleting user {id}: {str(e)}")
+            logger.error(f"Error deleting user {user_id}: {str(e)}")
             raise ServiceError(
                 message=f"Failed to delete user: {str(e)}",
                 name="User Deletion Error"

@@ -47,12 +47,12 @@ def create_user(user: UserCreate, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@router.patch("/{id}", response_model=UserResponse)
-def update_user(id: int, user: UserUpdate, db: Session = Depends(get_db_session)):
+@router.patch("/{user_id}", response_model=UserResponse)
+def update_user(user_id: str, user: UserUpdate, db: Session = Depends(get_db_session)):
     """Update an existing user."""
     try:
         user_service = UserService(db)
-        return user_service.update_user(id=id, **user.model_dump())
+        return user_service.update_user(user_id=user_id, **user.model_dump())
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except ServiceError as e:
@@ -61,12 +61,12 @@ def update_user(id: int, user: UserUpdate, db: Session = Depends(get_db_session)
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@router.delete("/{id}")
-def delete_user(id: int, db: Session = Depends(get_db_session)):
+@router.delete("/{user_id}")
+def delete_user(user_id: str, db: Session = Depends(get_db_session)):
     """Delete an existing user."""
     try:
         user_service = UserService(db)
-        return user_service.delete_user(id=id)
+        return user_service.delete_user(user_id=user_id)
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except ServiceError as e:
@@ -75,12 +75,12 @@ def delete_user(id: int, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@router.get("/{id}", response_model=UserResponse)
-def get_user(id: int, db: Session = Depends(get_db_session)):
+@router.get("/{user_id}", response_model=UserResponse)
+def get_user(user_id: str, db: Session = Depends(get_db_session)):
     """Get details of an existing user."""
     try:
         user_service = UserService(db)
-        return user_service.get_user_by_id(id)
+        return user_service.get_user_by_user_id(user_id)
         
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e))

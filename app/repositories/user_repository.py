@@ -18,13 +18,30 @@ class UserRepository(BaseRepository[User]):
         """Initialize UserRepository with database session."""
         super().__init__(db_session, User)
 
+
     def get_user_by_id(self, id: int) -> User:
         """Get user by ID."""
         try:
-            user = self.get_by_id(id)
+            user = self.db.query(User).filter(User.id == id).first()
             if not user:
                 raise EntityDoesNotExistError(
                     message=f"User with ID {id} not found",
+                    name="User Retrieval Error"
+                )
+            return User.strip_sensitive_info(user)
+        except SQLAlchemyError as e:
+            raise ServiceError(
+                message=f"Failed to retrieve user: {str(e)}",
+                name="Database Error"
+            )
+
+    def get_user_by_user_id(self, user_id: str) -> User:
+        """Get user by ID."""
+        try:
+            user = self.db.query(User).filter(User.user_id == user_id).first()
+            if not user:
+                raise EntityDoesNotExistError(
+                    message=f"User with ID {user_id} not found",
                     name="User Retrieval Error"
                 )
             return User.strip_sensitive_info(user)
@@ -88,7 +105,7 @@ class UserRepository(BaseRepository[User]):
                 name="Database Error"
             )
     
-    def update_user(self, id: int, **kwargs) -> User:
+    def update_user(self, user_id: str, **kwargs) -> User:
         """
         Update fields of a user with the given ID.
 
@@ -104,11 +121,11 @@ class UserRepository(BaseRepository[User]):
             ServiceError: If a database error occurs during the update.
         """
         try:
-            user = self.get_by_id(id)
+            user = self.get_user_by_user_id(user_id)
 
             if not user:
                 raise EntityDoesNotExistError(
-                    message=f"User with ID {id} not found",
+                    message=f"User with ID {user_id} not found",
                     name="User Update Error"
                 )
 
@@ -128,13 +145,13 @@ class UserRepository(BaseRepository[User]):
                 name="Database Error"
             )
 
-    def delete_user(self, id: int) -> bool:
+    def delete_user(self, user_id: str) -> bool:
         """Delete a user by ID."""
         try:
-            user = self.get_by_id(id)
+            user = self.get_by_id(user_id)
             if not user:
                 raise EntityDoesNotExistError(
-                    message=f"User with ID {id} not found",
+                    message=f"User with ID {user_id} not found",
                     name="User Delete Error"
                 )
             return super().delete(user)
