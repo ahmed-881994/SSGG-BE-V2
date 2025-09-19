@@ -14,6 +14,7 @@ from app.core.database import engine, get_db_session
 from app.util.egy_time import get_egypt_time
 
 logger = getLogger(__name__)
+time_of_deployment = get_egypt_time().isoformat()
 
 class HealthCheckService:
     
@@ -540,6 +541,7 @@ class HealthCheckService:
             return {
                 "status": overall_status,
                 "timestamp": get_egypt_time().isoformat(),
+                "time_of_deployment": time_of_deployment,
                 "version": "2.0.0",
                 "response_time_ms": total_response_time,
                 "summary": {
