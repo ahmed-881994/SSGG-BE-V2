@@ -75,7 +75,7 @@ def delete_user(id: int, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@router.get("/{id}")
+@router.get("/{id}", response_model=UserResponse)
 def get_user(id: int, db: Session = Depends(get_db_session)):
     """Get details of an existing user."""
     try:
