@@ -47,7 +47,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@router.patch("/{id}")
+@router.patch("/{id}", response_model=UserResponse)
 def update_user(id: int, user: UserUpdate, db: Session = Depends(get_db_session)):
     """Update an existing user."""
     try:
