@@ -1,6 +1,5 @@
 import os
 import re
-from logging import getLogger
 from time import time
 
 import redis
@@ -9,11 +8,11 @@ from redis.exceptions import RedisError
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.config.logging_config import logger
 from app.config.settings import settings
 from app.core.database import engine, get_db_session
 from app.util.egy_time import get_egypt_time
 
-logger = getLogger(__name__)
 time_of_deployment = get_egypt_time().isoformat()
 
 class HealthCheckService:

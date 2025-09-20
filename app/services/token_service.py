@@ -5,18 +5,17 @@ Centralized token management service for JWT operations including
 token creation, verification, and blacklisting.
 """
 
-import logging
 import time
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 import jwt
 
+from app.config.logging_config import logger
 from app.config.settings import settings
 from app.core.exceptions import InvalidTokenError
 from app.core.token_blacklist import token_blacklist
 
-logger = logging.getLogger(__name__)
 
 class TokenService:
     """Centralized token management service"""

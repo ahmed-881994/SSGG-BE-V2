@@ -1,12 +1,10 @@
-from logging import getLogger
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
+from app.config.logging_config import logger
 from app.core.exceptions import EntityDoesNotExistError, ServiceError
 from app.repositories.event_repository import EventRepository
-
-logger = getLogger(__name__)
 
 
 class EventService:

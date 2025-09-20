@@ -1,13 +1,12 @@
-import logging
 from typing import AsyncGenerator, Generator
 
 from sqlalchemy import QueuePool, create_engine
+from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
+                                    create_async_engine)
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from app.config.logging_config import logger
 from app.config.settings import settings
-
-logger = logging.getLogger(__name__)
 
 # Construct database URL for SQLAlchemy
 # Synchronous URL: mysql+pymysql://user:password@host:port/database?charset=utf8mb4

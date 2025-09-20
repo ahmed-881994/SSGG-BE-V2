@@ -1,12 +1,15 @@
 import time
 import uuid
-from fastapi import Request, Response
+
+from fastapi import Request
+
 from app.config.logging_config import logger
+
 
 async def logging_middleware(request: Request, call_next):
     """Middleware for request/response logging"""
     # Generate request ID
-    request_id = str(uuid.uuid4())
+    request_id = request.state.request_id if hasattr(request.state, 'request_id') else str(uuid.uuid4())
     request.state.request_id = request_id
     
     # Log request
@@ -16,7 +19,7 @@ async def logging_middleware(request: Request, call_next):
         extra={
             "request_id": request_id,
             "method": request.method,
-            "url": str(request.url),
+            "url": str(request.url.path),
             "client_ip": request.client.host if request.client else None,
             "user_agent": request.headers.get("user-agent"),
         }
@@ -40,8 +43,8 @@ async def logging_middleware(request: Request, call_next):
         )
         
         # Add request ID to response headers
-        response.headers["X-Request-ID"] = request_id
-        response.headers["X-Process-Time"] = str(process_time)
+        response.headers["x-request-id"] = request_id
+        response.headers["x-process-time"] = str(process_time)
         
         return response
         

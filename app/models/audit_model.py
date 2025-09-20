@@ -18,4 +18,5 @@ class Audit(Base):
     response_data: Mapped[str] = mapped_column(Text, nullable=True)
     status_code: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     ip_address: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    request_id: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

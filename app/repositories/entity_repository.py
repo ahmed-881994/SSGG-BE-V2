@@ -1,18 +1,17 @@
 from datetime import date, datetime
-from logging import getLogger
 from typing import List, Optional
 
 from sqlalchemy import and_, func, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.config.logging_config import logger
 from app.core.exceptions import EntityDoesNotExistError, ServiceError
 from app.models.entity_member_model import EntityMember
 from app.models.entity_model import Entity
 from app.models.entity_role_model import EntityRole
 from app.repositories.base_repository import BaseRepository
 
-logger = getLogger(__name__)
 
 class EntityRepository(BaseRepository[Entity]):
     """Repository for Entity database operations."""

@@ -1,11 +1,11 @@
 from datetime import datetime
-from logging import getLogger
 from typing import List, Optional
 
 from sqlalchemy import func, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.config.logging_config import logger
 from app.core.exceptions import ServiceError
 from app.models.attendance_model import Attendance
 from app.models.attendance_state_model import AttendanceState
@@ -15,7 +15,6 @@ from app.models.event_model import Event
 from app.repositories.base_repository import BaseRepository
 from app.util.egy_time import get_egypt_time
 
-logger = getLogger(__name__)
 
 class EventRepository(BaseRepository[Event]):
     """Repository for Event database operations."""

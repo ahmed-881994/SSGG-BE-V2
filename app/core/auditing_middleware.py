@@ -1,5 +1,6 @@
 import json
 import re
+import uuid
 from typing import Optional
 
 from fastapi import Request, Response
@@ -25,7 +26,9 @@ EXCLUDED_METHODS = {"OPTIONS", "HEAD"}
 
 async def audit_middleware(request: Request, call_next):
     """Middleware for auditing requests and responses"""
-    
+    # Generate request ID
+    request_id = request.state.request_id if hasattr(request.state, 'request_id') else str(uuid.uuid4())
+    request.state.request_id = request_id
     # Skip auditing for excluded paths and methods
     if (request.url.path in EXCLUDED_PATHS or 
         request.method in EXCLUDED_METHODS):
@@ -56,9 +59,10 @@ async def audit_middleware(request: Request, call_next):
             action=f"{request.method} {request.url.path}",
             request_data=request_data,
             response_data=response_data,
-            ip_address=ip_address
+            ip_address=ip_address,
+            request_id=request_id
         )
-        
+        response.headers["x-request-id"] = request_id
         return response
         
     except Exception as e:
@@ -69,7 +73,8 @@ async def audit_middleware(request: Request, call_next):
             action=f"{request.method} {request.url.path}",
             request_data=request_data,
             response_data=f"ERROR: {str(e)}",
-            ip_address=ip_address
+            ip_address=ip_address,
+            request_id=request_id
         )
         raise
 
@@ -236,7 +241,8 @@ async def save_audit_record(
     action: str,
     request_data: str,
     response_data: str,
-    ip_address: Optional[str]
+    ip_address: Optional[str],
+    request_id: str
 ):
     """Save audit record to database"""
     try:
@@ -253,6 +259,7 @@ async def save_audit_record(
             except (json.JSONDecodeError, AttributeError):
                 audit_record.status_code = None
             audit_record.ip_address = ip_address
+            audit_record.request_id = request_id
             audit_record.created_at = get_egypt_time()
             session.add(audit_record)
             await session.commit()

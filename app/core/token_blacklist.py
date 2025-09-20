@@ -1,11 +1,10 @@
-import logging
 from datetime import datetime, timezone
 
 import redis
 
+from app.config.logging_config import logger
 from app.config.settings import settings
 
-logger = logging.getLogger(__name__)
 
 class TokenBlacklist:
     def __init__(self):
