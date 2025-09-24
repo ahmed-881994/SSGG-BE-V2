@@ -113,7 +113,7 @@ async def capture_request_data(request: Request) -> str:
                     body_str = body.decode('utf-8', errors='ignore')
                     # Mask sensitive data in raw body
                     body_str = mask_sensitive_form_data(body_str)
-                    data["body"] = body_str  # Truncate for storage
+                    data["body"] = body_str
                 
                 # Store body for endpoint to use
                 async def receive():
