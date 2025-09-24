@@ -20,6 +20,10 @@ class UserUpdate(BaseSchema):
     # user_type: int = Field(alias="UserType", ge=1, le=3)
     is_active: Optional[bool] = Field(alias="IsActive", default=True)
     password_reset: Optional[bool] = Field(alias="PasswordReset", default=False)
+    
+class UserUpdatePassword(BaseSchema):
+    old_password: str = Field(alias="OldPassword")
+    new_password: str = Field(alias="NewPassword")
 
 # Responses
 

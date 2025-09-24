@@ -121,7 +121,7 @@ class UserRepository(BaseRepository[User]):
             ServiceError: If a database error occurs during the update.
         """
         try:
-            user = self.get_user_by_user_id(user_id)
+            user = self.db.query(User).filter(User.user_id == user_id).first()
 
             if not user:
                 raise EntityDoesNotExistError(

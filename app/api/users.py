@@ -9,7 +9,7 @@ from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
 from app.schemas.users_schema import (UserCreate, UserResponse,
-                                      UserSearchResponse, UserUpdate)
+                                      UserSearchResponse, UserUpdate, UserUpdatePassword)
 from app.services.user_service import UserService
 
 router = APIRouter(
@@ -82,6 +82,19 @@ def get_user(user_id: str, db: Session = Depends(get_db_session)):
         user_service = UserService(db)
         return user_service.get_user_by_user_id(user_id)
         
+    except EntityDoesNotExistError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    
+@router.patch("/{user_id}/password", response_model=UserResponse)
+def update_user_password(user_id: str, password_data: UserUpdatePassword, db: Session = Depends(get_db_session)):
+    """Update a user's password."""
+    try:
+        user_service = UserService(db)
+        return user_service.update_user_password(user_id=user_id, **password_data.model_dump())
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except ServiceError as e:

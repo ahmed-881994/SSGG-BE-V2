@@ -113,7 +113,7 @@ async def capture_request_data(request: Request) -> str:
                     body_str = body.decode('utf-8', errors='ignore')
                     # Mask sensitive data in raw body
                     body_str = mask_sensitive_form_data(body_str)
-                    data["body"] = body_str[:1000]  # Truncate for storage
+                    data["body"] = body_str  # Truncate for storage
                 
                 # Store body for endpoint to use
                 async def receive():
@@ -173,7 +173,7 @@ def mask_sensitive_json_data(data):
     if isinstance(data, dict):
         masked_data = {}
         for key, value in data.items():
-            if key.lower() in ['password', 'passwd', 'pwd', 'secret', 'token', 'key', 'auth']:
+            if key.lower() in ['password', 'passwd', 'pwd', 'oldpassword', 'newpassword', 'secret', 'token', 'key', 'auth']:
                 masked_data[key] = "***MASKED***"
             elif isinstance(value, (dict, list)):
                 masked_data[key] = mask_sensitive_json_data(value)

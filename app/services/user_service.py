@@ -200,3 +200,44 @@ class UserService:
                 message=f"Failed to create user: {str(e)}",
                 name="User Creation Error"
             )
+
+    def update_user_password(self, user_id: str, new_password: str, old_password: str) -> User:
+        """Update a user's password.
+
+        Args:
+            user_id (str): ID of the user to update.
+            new_password (str): New password to set.
+
+        Returns:
+            User: Updated user instance
+
+        Raises:
+            EntityDoesNotExistError: If user not found
+            ServiceError: If update fails
+        """
+        try:
+            user = self.user_repository.get_user_auth(user_id)
+            # Verify old password
+            old_password_hash, _ = get_password_hash(old_password, user.salt)
+            if not old_password_hash == user.password_hash:
+                raise ServiceError(
+                    message="Old password is incorrect.",
+                    name="User Password Update Error"
+                )
+            # Generate new salt and hash password
+            salt = generate_salt()
+            hashed_password, _ = get_password_hash(new_password, salt)
+            user = self.user_repository.update_user(
+                user_id,
+                password_hash=hashed_password,
+                salt=salt
+            )
+            return user
+        except EntityDoesNotExistError:
+            raise
+        except Exception as e:
+            logger.error(f"Error updating password for user {user_id}: {str(e)}")
+            raise ServiceError(
+                message=f"Failed to update user password: {str(e)}",
+                name="User Password Update Error"
+            )
