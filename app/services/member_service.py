@@ -151,8 +151,8 @@ class MemberService:
                             "en": attendance.event.event_name_en,
                             "ar": attendance.event.event_name_ar
                         },
-                        "event_start_date": attendance.event.event_start_date
-                        "event_end_date": attendance.event.event_end_date
+                        "event_start_date": attendance.event.event_start_date,
+                        "event_end_date": attendance.event.event_end_date,
                         "attendance_state": {
                             "attendance_state_id": attendance.attendance_state_id,
                             "attendance_state_name": {
