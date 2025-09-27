@@ -34,6 +34,13 @@ class Settings(BaseSettings):
     # Logging settings
     log_level: str = "INFO"
     
+    # SMTP settings
+    smtp_server: str
+    smtp_port: int = 587
+    smtp_username: str
+    smtp_password: str
+    from_email: str
+
     # @validator("secret_key")
     # def validate_secret_key(cls, v):
     #     if len(v) < 32:
