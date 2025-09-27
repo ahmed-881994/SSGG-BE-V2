@@ -312,7 +312,12 @@ class HealthCheckService:
                 'access_token_expires_minutes',
                 'cors_origins',
                 'rate_limit_per_minute',
-                'log_level'
+                'log_level',
+                'smtp_server',
+                'smtp_port',
+                'smtp_username',
+                'smtp_password',
+                'from_email'
             ]
             missing_vars = [var for var in required_env_vars if not os.getenv(var)]
             
