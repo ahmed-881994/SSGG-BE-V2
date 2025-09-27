@@ -7,7 +7,9 @@ from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
 from app.models.user_model import User
 from app.repositories.user_repository import UserRepository
-from app.util.password import generate_salt, get_password_hash
+from app.services.email_service import email_service
+from app.util.password import (generate_salt, genrate_random_password,
+                               get_password_hash)
 
 
 class UserService:
@@ -201,7 +203,7 @@ class UserService:
                 name="User Creation Error"
             )
 
-    def update_user_password(self, user_id: str, new_password: str, old_password: str) -> User:
+    def update_user_password(self, user_id: str, new_password: str, old_password: str) -> bool:
         """Update a user's password.
 
         Args:
@@ -232,7 +234,7 @@ class UserService:
                 password_hash=hashed_password,
                 salt=salt
             )
-            return user
+            return True
         except EntityDoesNotExistError:
             raise
         except Exception as e:
@@ -240,4 +242,47 @@ class UserService:
             raise ServiceError(
                 message=f"Failed to update user password: {str(e)}",
                 name="User Password Update Error"
+            )
+            
+    def reset_user_password(self, user_id: str) -> bool:
+        """Reset a user's password.
+
+        Args:
+            user_id (str): ID of the user to reset.
+
+        Returns:
+            User: Updated user instance
+
+        Raises:
+            EntityDoesNotExistError: If user not found
+            ServiceError: If reset fails
+        """
+        try:
+            user = self.user_repository.get_user_auth(user_id)
+            # Generate new password
+            new_password = genrate_random_password()
+            # Hash new password
+            hashed_password, salt = get_password_hash(new_password)
+            user = self.user_repository.update_user(
+                user.user_id,
+                password_hash=hashed_password,
+                password_reset=True,
+                salt=salt
+            )
+            # Send email with new password
+            subject = "Your Password Has Been Reset"
+            body = (f"Hello {user.user_name},\n\n"
+                    f"Your password has been reset. Your new password is: {new_password}\n\n"
+                    "Please log in and change it as soon as possible.\n\n"
+                    "Best regards,\n"
+                    "The DTC Team")
+            email_service.send_email(to_email=f"{user.user_name}@sportingscout.org", subject=subject, body=body)
+            return True
+        except EntityDoesNotExistError:
+            raise
+        except Exception as e:
+            logger.error(f"Error resetting password for user {user_id}: {str(e)}")
+            raise ServiceError(
+                message=f"Failed to reset user password: {str(e)}",
+                name="User Password Reset Error"
             )

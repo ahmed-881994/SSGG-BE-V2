@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import secrets
+import string
 from typing import Optional
 
 
@@ -49,3 +50,15 @@ def generate_salt(length: int = 32) -> str:
         str: A hex-encoded salt string.
     """
     return secrets.token_hex(length)
+
+def genrate_random_password(length: int = 12) -> str:
+    """Generate a random password containing letters, digits, and punctuation.
+    
+    Args:
+        length (int): Length of the password. Default is 12.
+        
+    Returns:
+        str: A randomly generated password.
+    """
+    characters = string.ascii_letters + string.digits + string.punctuation
+    return ''.join(secrets.choice(characters) for _ in range(length))

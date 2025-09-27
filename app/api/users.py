@@ -1,15 +1,16 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pymysql import MySQLError
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db_session
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
+from app.schemas.common_schema import SuccessResponse
 from app.schemas.users_schema import (UserCreate, UserResponse,
-                                      UserSearchResponse, UserUpdate, UserUpdatePassword)
+                                      UserSearchResponse, UserUpdate,
+                                      UserUpdatePassword)
 from app.services.user_service import UserService
 
 router = APIRouter(
@@ -89,12 +90,27 @@ def get_user(user_id: str, db: Session = Depends(get_db_session)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
     
-@router.patch("/{user_id}/password", response_model=UserResponse)
+@router.patch("/{user_id}/password", response_model=SuccessResponse)
 def update_user_password(user_id: str, password_data: UserUpdatePassword, db: Session = Depends(get_db_session)):
     """Update a user's password."""
     try:
         user_service = UserService(db)
-        return user_service.update_user_password(user_id=user_id, **password_data.model_dump())
+        user_service.update_user_password(user_id=user_id, **password_data.model_dump())
+        return {"message": "Password updated successfully"}
+    except EntityDoesNotExistError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ServiceError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
+@router.post("/{user_id}/reset-password", response_model=SuccessResponse)
+def reset_user_password(user_id: str, db: Session = Depends(get_db_session)):
+    """Reset a user's password."""
+    try:
+        user_service = UserService(db)
+        user_service.reset_user_password(user_id=user_id)
+        return {"message": "Password reset email sent"}
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except ServiceError as e:
