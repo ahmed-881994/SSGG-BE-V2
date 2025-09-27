@@ -96,6 +96,13 @@ jobs:
         # Logging settings
         log_level=${{ secrets.STAGING_LOG_LEVEL }}
 
+        # Email settings
+        smtp_server=${{ secrets.SMTP_SERVER }}
+        smtp_port=${{ secrets.SMTP_PORT }}
+        smtp_username=${{ secrets.SMTP_USERNAME }}
+        smtp_password=${{ secrets.SMTP_PASSWORD }}
+        from_email=${{ secrets.SMTP_USERNAME }}
+
 
         MYSQL_ROOT_PASSWORD=${{ secrets.STAGING_MYSQL_ROOT_PASSWORD }}
         MYSQL_DATABASE=${{ secrets.STAGING_DB_NAME }}
