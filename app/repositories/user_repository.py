@@ -134,9 +134,9 @@ class UserRepository(BaseRepository[User]):
                 if hasattr(user, field):
                     setattr(user, field, value)
 
-            super().update(user)
+            updated_user = super().update(user)
 
-            return User.strip_sensitive_info(user)
+            return User.strip_sensitive_info(updated_user)
 
         except SQLAlchemyError as e:
             self.db.rollback()
