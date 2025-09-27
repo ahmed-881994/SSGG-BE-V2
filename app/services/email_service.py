@@ -4,6 +4,7 @@ from email.mime.text import MIMEText
 
 from app.config.logging_config import logger
 from app.config.settings import settings
+from app.core.exceptions import ServiceError
 
 
 class EmailService:
@@ -28,8 +29,6 @@ class EmailService:
         Raises:
             Exception: If sending email fails
         """
-        
-
         try:
             # Create the email message
             msg = MIMEMultipart()
@@ -49,6 +48,6 @@ class EmailService:
         
         except Exception as e:
             logger.error(f"Failed to send email to {to_email}: {str(e)}")
-            raise Exception(f"Email sending failed: {str(e)}")
+            raise ServiceError(f"Email sending failed: {str(e)}")
         
 email_service = EmailService()

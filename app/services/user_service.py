@@ -8,7 +8,7 @@ from app.core.exceptions import (EntityAlreadyExistsError,
 from app.models.user_model import User
 from app.repositories.user_repository import UserRepository
 from app.services.email_service import email_service
-from app.util.password import (generate_salt, genrate_random_password,
+from app.util.password import (generate_salt, generate_random_password,
                                get_password_hash)
 
 
@@ -212,7 +212,7 @@ class UserService:
             old_password (str): Current password for verification.
 
         Returns:
-            User: Updated user instance
+            bool: True if updated successfully
 
         Raises:
             EntityDoesNotExistError: If user not found
@@ -252,7 +252,7 @@ class UserService:
             user_id (str): ID of the user to reset.
 
         Returns:
-            User: Updated user instance
+            bool: True if reset successfully
 
         Raises:
             EntityDoesNotExistError: If user not found
@@ -261,7 +261,7 @@ class UserService:
         try:
             user = self.user_repository.get_user_auth(user_id)
             # Generate new password
-            new_password = genrate_random_password()
+            new_password = generate_random_password()
             # Hash new password
             hashed_password, salt = get_password_hash(new_password)
             user = self.user_repository.update_user(

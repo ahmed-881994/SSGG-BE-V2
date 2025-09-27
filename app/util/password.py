@@ -51,7 +51,7 @@ def generate_salt(length: int = 32) -> str:
     """
     return secrets.token_hex(length)
 
-def genrate_random_password(length: int = 12) -> str:
+def generate_random_password(length: int = 12) -> str:
     """Generate a random password containing letters, digits, and punctuation.
     
     Args:
