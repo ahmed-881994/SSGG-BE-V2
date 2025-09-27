@@ -15,8 +15,10 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s                 # Let the app boot before first check
     networks:
       - stg-internal
     deploy:
@@ -77,10 +79,10 @@ services:
       - stg-internal
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s                 # Let the app boot before first check
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s                 # Let the app boot before first check
 
   #------ redis ------
   redis:
@@ -91,8 +93,10 @@ services:
       - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      timeout: 20s
-      retries: 10
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s                 # Let the app boot before first check
     networks:
       - stg-internal
     deploy:
