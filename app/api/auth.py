@@ -54,7 +54,7 @@ def login(request: Request, form_data: Annotated[OAuth2PasswordRequestForm, Depe
         token_data = {"sub": str(user.id), "member_id": str(user.user_id)}
         access_token = token_service.create_access_token(
             data=token_data, 
-            expires_delta=timedelta(minutes=token_service.access_token_expire_minutes)
+            expires_delta=timedelta(minutes=token_service.access_token_expires_minutes)
         )
         refresh_token = token_service.create_refresh_token(
             data=token_data, 
@@ -114,7 +114,7 @@ def refresh_access_token(request: Request, refresh_token: str):
         token_data = {"sub": id, "member_id": member_id}
         access_token = token_service.create_access_token(
             data=token_data,
-            expires_delta=timedelta(minutes=token_service.access_token_expire_minutes)
+            expires_delta=timedelta(minutes=token_service.access_token_expires_minutes)
         )
         
         refresh_time = round((time.time() - start_time) * 1000, 2)

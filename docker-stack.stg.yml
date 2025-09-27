@@ -42,10 +42,15 @@ services:
       - rds_database=${rds_database}
       - secret_key=${secret_key}
       - algorithm=${algorithm}
-      - access_token_expires_minutes=${access_token_expire_minutes}
+      - access_token_expires_minutes=${access_token_expires_minutes}
       - cors_origins=${cors_origins}
       - rate_limit_per_minute=${rate_limit_per_minute}
       - log_level=${log_level}
+      - smtp_server=${smtp_server}
+      - smtp_port=${smtp_port}
+      - smtp_username=${smtp_username}
+      - smtp_password=${smtp_password}
+      - from_email=${from_email}
     deploy:
       labels:
       - "traefik.enable=true"

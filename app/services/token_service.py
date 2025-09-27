@@ -23,7 +23,7 @@ class TokenService:
     def __init__(self):
         self.secret_key = settings.secret_key
         self.algorithm = settings.algorithm
-        self.access_token_expire_minutes = settings.access_token_expires_minutes
+        self.access_token_expires_minutes = settings.access_token_expires_minutes
     
     def create_access_token(self, data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
         """
@@ -43,7 +43,7 @@ class TokenService:
             if expires_delta:
                 expire = datetime.now(timezone.utc) + expires_delta
             else:
-                expire = datetime.now(timezone.utc) + timedelta(minutes=self.access_token_expire_minutes)
+                expire = datetime.now(timezone.utc) + timedelta(minutes=self.access_token_expires_minutes)
             
             to_encode.update({"exp": expire, "type": "access"})
             token = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
