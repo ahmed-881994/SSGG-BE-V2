@@ -209,6 +209,7 @@ class UserService:
         Args:
             user_id (str): ID of the user to update.
             new_password (str): New password to set.
+            old_password (str): Current password for verification.
 
         Returns:
             User: Updated user instance
