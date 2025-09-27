@@ -52,6 +52,8 @@ class EntityEventType(BaseSchema):
     """Schema for entity event data in responses."""
     event_id: int = Field(alias='EventID')
     event_name: NameObject = Field(alias='EventName')
+    event_start_date: date = Field(alias='EventStartDate')
+    event_end_date: date = Field(alias='EventEndDate')
     attendance: List[EntityAttendanceType] = Field(alias='Attendance')
 
 class EntityTypeResponse(BaseSchema):

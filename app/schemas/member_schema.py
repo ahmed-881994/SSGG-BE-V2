@@ -77,6 +77,8 @@ class AttendanceState(BaseSchema):
 class MemberAttendance(BaseSchema):
     event_id: int = Field(alias='EventID', description="The unique identifier for the event")
     event_name: NameObject = Field(alias='EventName', description="The name of the event")
+    event_start_date: date = Field(alias='EventStartDate', description="The start date of the event")
+    event_end_date: date = Field(alias='EventEndDate', description="The end date of the event")
     attendance_state: AttendanceState = Field(alias='AttendanceState', description="The attendance status for the member in the event (e.g., Present, Absent, Excused, Late)")
     
 

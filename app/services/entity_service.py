@@ -514,6 +514,8 @@ class EntityService:
                             "en": event.event_name_en,
                             "ar": event.event_name_ar
                         },
+                        "event_start_date": event.event_start_date,
+                        "event_end_date": event.event_end_date,
                         "attendance": [
                             {
                                 "member_id": attendance.member.member_id,
