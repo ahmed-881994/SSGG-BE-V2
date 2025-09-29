@@ -80,7 +80,7 @@ class EntityMemberResponse(BaseSchema):
     member_name: NameObject = Field(alias='MemberName')
     role_id: int = Field(alias='RoleID')
     role_name: NameObject = Field(alias='RoleName')
-    date_from: date = Field(alias='DateFrom')
+    date_from: Optional[date] = Field(alias='DateFrom')
     date_to: Optional[date] = Field(alias='DateTo', default=None)
     is_active: bool = Field(alias='IsActive')
 
