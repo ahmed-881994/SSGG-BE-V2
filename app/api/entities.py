@@ -8,7 +8,8 @@ from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
 from app.schemas.common_schema import SuccessResponse
-from app.schemas.entity_schema import (EntityAssign, EntityAttendanceResponse, EntityCreate,
+from app.schemas.entity_schema import (EntityAssign, EntityAttendanceResponse,
+                                       EntityCreate,
                                        EntityHierarchicalResponse,
                                        EntityMembersResponse, EntityResponse,
                                        EntitySearchResponse, EntityTransfer,
@@ -20,17 +21,18 @@ router = APIRouter(prefix="/entities",tags=["Entities"],
 
 
 @router.get("",  response_model=EntitySearchResponse)
-def search_entities(entityID: Optional[int] = None, entityParentID: Optional[int] = None, entityName: Optional[str] = None, db: Session = Depends(get_db_session)):
+def search_entities(entityID: Optional[int] = None, entityParentID: Optional[int] = None, entityName: Optional[str] = None, entityType: Optional[int] = None, db: Session = Depends(get_db_session)):
     """ 
     Search entities by ID, Parent ID, and Name.
     Args:
         entityID (Optional[int]): The ID of the entity.
         entityParentID (Optional[int]): The Parent ID of the entity.
         entityName (Optional[str]): The Name of the entity.
+        entityType (Optional[int]): The Type of the entity.
     """
     try:
         entity_service = EntityService(db)
-        return entity_service.search_entities(entity_id=entityID, entity_parent_id=entityParentID, entity_name=entityName)
+        return entity_service.search_entities(entity_id=entityID, entity_parent_id=entityParentID, entity_name=entityName, entity_type_id=entityType)
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e.message))
     except ServiceError as e:

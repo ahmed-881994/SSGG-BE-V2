@@ -111,7 +111,7 @@ class EntityRepository(BaseRepository[Entity]):
                 name="Database Error"
             )
 
-    def search_entities(self, entity_id: Optional[int] = None, entity_parent_id: Optional[int] = None, entity_name: Optional[str] = None) -> List[Entity]:
+    def search_entities(self, entity_id: Optional[int] = None, entity_parent_id: Optional[int] = None, entity_name: Optional[str] = None, entity_type_id: Optional[int] = None) -> List[Entity]:
         """Search for entities based on various criteria."""
         try:
             query = self.db.query(Entity)
@@ -122,6 +122,8 @@ class EntityRepository(BaseRepository[Entity]):
                 query = query.filter(Entity.entity_parent_id == entity_parent_id)
             if entity_name:
                 query = query.filter(or_(Entity.entity_name_en.ilike(f"%{entity_name}%"), Entity.entity_name_ar.ilike(f"%{entity_name}%")))
+            if entity_type_id:
+                query = query.filter(Entity.entity_type_id == entity_type_id)
 
             return query.all()
         except SQLAlchemyError as e:

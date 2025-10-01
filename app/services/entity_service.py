@@ -151,11 +151,11 @@ class EntityService:
                 name="Entity Members Retrieval Error"
             )
 
-    def search_entities(self, entity_id: Optional[int] = None, entity_parent_id: Optional[int] = None, entity_name: Optional[str] = None) -> Dict[str, List[Dict[str, Any]]]:
+    def search_entities(self, entity_id: Optional[int] = None, entity_parent_id: Optional[int] = None, entity_name: Optional[str] = None, entity_type_id: Optional[int] = None) -> Dict[str, List[Dict[str, Any]]]:
         """Search for entities based on various criteria."""
-        logger.info(f"Searching entities with ID: {entity_id}, Parent ID: {entity_parent_id}, Name: {entity_name}")
+        logger.info(f"Searching entities with ID: {entity_id}, Parent ID: {entity_parent_id}, Name: {entity_name}, Type: {entity_type_id}")
         try:
-            entities = self.entity_repository.search_entities(entity_id, entity_parent_id, entity_name)
+            entities = self.entity_repository.search_entities(entity_id, entity_parent_id, entity_name, entity_type_id)
             if not entities:
                 raise EntityDoesNotExistError(
                     message="No entities found matching the search criteria",
