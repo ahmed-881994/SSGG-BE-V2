@@ -21,7 +21,7 @@ router = APIRouter(prefix="/entities",tags=["Entities"],
 
 
 @router.get("",  response_model=EntitySearchResponse)
-def search_entities(entityID: Optional[int] = None, entityParentID: Optional[int] = None, entityName: Optional[str] = None, entityType: Optional[int] = None, db: Session = Depends(get_db_session)):
+def search_entities(entityID: Optional[int] = None, entityParentID: Optional[int] = None, entityName: Optional[str] = None, entityTypeID: Optional[int] = None, db: Session = Depends(get_db_session)):
     """ 
     Search entities by ID, Parent ID, and Name.
     Args:
@@ -32,7 +32,7 @@ def search_entities(entityID: Optional[int] = None, entityParentID: Optional[int
     """
     try:
         entity_service = EntityService(db)
-        return entity_service.search_entities(entity_id=entityID, entity_parent_id=entityParentID, entity_name=entityName, entity_type_id=entityType)
+        return entity_service.search_entities(entity_id=entityID, entity_parent_id=entityParentID, entity_name=entityName, entity_type_id=entityTypeID)
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e.message))
     except ServiceError as e:
