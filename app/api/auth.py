@@ -94,7 +94,6 @@ def refresh_access_token(request: Request, refresh_token: str):
         HTTPException: If refresh token is invalid or expired
     """
     logger.info("Access token refresh requested")
-    start_time = time.time()
     
     try:
         payload = token_service.verify_token(refresh_token, "refresh")
@@ -116,15 +115,13 @@ def refresh_access_token(request: Request, refresh_token: str):
             data=token_data,
             expires_delta=timedelta(minutes=token_service.access_token_expires_minutes)
         )
-        
-        refresh_time = round((time.time() - start_time) * 1000, 2)
-        logger.info(f"Token refresh successful for user '{id}' in {refresh_time}ms")
+
+        logger.info(f"Token refresh successful for user '{id}'")
 
         return Token(access_token=access_token, token_type="bearer", refresh_token=None)
         
     except Exception as e:
-        refresh_time = round((time.time() - start_time) * 1000, 2)
-        logger.warning(f"Token refresh failed after {refresh_time}ms: {str(e)}")
+        logger.warning(f"Token refresh failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
@@ -148,20 +145,17 @@ def logout(request: Request, token: str = Depends(oauth2_scheme)):
         HTTPException: If token is invalid
     """
     logger.info("User logout requested")
-    start_time = time.time()
     
     try:
         success = token_service.blacklist_token(token)
-        logout_time = round((time.time() - start_time) * 1000, 2)
         
         if success:
-            logger.info(f"User logout successful in {logout_time}ms")
+            logger.info(f"User logout successful")
             return {"message": "Successfully logged out"}
         else:
-            logger.warning(f"Logout failed after {logout_time}ms: Invalid token")
+            logger.warning(f"Logout failed: Invalid token")
             raise HTTPException(status_code=400, detail="Invalid token")
             
     except Exception as e:
-        logout_time = round((time.time() - start_time) * 1000, 2)
-        logger.error(f"Unexpected error during logout after {logout_time}ms: {str(e)}", exc_info=True)
+        logger.error(f"Unexpected error during logout: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
