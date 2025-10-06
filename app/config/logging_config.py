@@ -55,7 +55,7 @@ def setup_logging():
 
     # Create formatter with standard format
     formatter = StandardFormatter(
-        fmt='%(asctime)s %(levelname)s %(name)s.%(module)s.%(funcName)s %(message)s',
+        fmt='%(levelname)s: %(asctime)s %(name)s.%(module)s.%(funcName)s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
 
