@@ -1,12 +1,11 @@
-
-
 import re
 from typing import Dict, Optional
-from fastapi import status, Depends
+
+from fastapi import Depends, Request, status
 from fastapi.responses import JSONResponse
-from app.config.logging_config import logger
-from fastapi import Request
 from sqlalchemy.orm import Session
+
+from app.config.logging_config import logger
 from app.core.database import get_db_session
 from app.services.user_service import UserService
 
