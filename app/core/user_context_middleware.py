@@ -26,7 +26,7 @@ class UserContextMiddleware:
                     request.state.member_id = member_id
         except Exception:
             logger.error("Error extracting user context from token", exc_info=True)
-            raise
+            pass
 
         response = await call_next(request)
         return response

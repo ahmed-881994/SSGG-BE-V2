@@ -11,7 +11,7 @@ from .base_model import Base
 class RolePermission(Base):
     __tablename__ = "role_permissions"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id", ondelete="CASCADE"))
     permission_id: Mapped[int] = mapped_column(ForeignKey("permissions.id", ondelete="CASCADE"))
     granted_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"))
