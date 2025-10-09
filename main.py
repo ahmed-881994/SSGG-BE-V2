@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from app.api import auth, entities, events, health, lookups, members, users
 from app.config.logging_config import logger
 from app.config.settings import settings
+from app.core.access_control_middleware import access_control_middleware
 from app.core.exceptions import (AuthenticationFailed,
                                        EntityDoesNotExistError,
                                        InvalidOperationError,
@@ -42,14 +43,16 @@ app = FastAPI(
     # lifespan=lifespan,
 )
 
+app.middleware("http")(access_control_middleware)
+app.middleware("http")(user_context_middleware)
+app.middleware("http")(auditing_middleware)
 @app.middleware("http")
 async def add_logging_middleware(request: Request, call_next):
     return await logging_middleware(request, call_next)
 
 
-app.middleware("http")(auditing_middleware)
 
-app.middleware("http")(user_context_middleware)
+
 
 # Setup rate limiting
 setup_rate_limiting(app)

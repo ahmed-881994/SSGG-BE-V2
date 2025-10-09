@@ -19,7 +19,7 @@ class AccessControlMiddleware:
         # Routes that don't require authentication
         self.public_routes = {
             "/docs", "/redoc", "/openapi.json", "/favicon.ico",
-            "/health", "/health/", "/auth/login", "/auth/refresh"
+            "/health", "/health/", "/token", "/refresh"
         }
         
         # Route patterns that don't require authentication (regex)
@@ -78,6 +78,9 @@ class AccessControlMiddleware:
             # "PUT:/lookups/{lookup_id}": "manage_lookups",
             # "DELETE:/lookups/{lookup_id}": "manage_lookups",
             
+            # Health Check Routes
+            "GET:/health/report": "read_health_report",
+            
             # ABAC Management Routes
             # "GET:/abac/policies": "manage_abac_policies",
             # "POST:/abac/policies": "manage_abac_policies",
@@ -127,15 +130,17 @@ class AccessControlMiddleware:
                 
         return None
     
-    def _has_permission(self, user_id: str, route_key: str, db: Session = Depends(get_db_session)) -> bool:
+    def _has_permission(self, user_id: str, route_key: str) -> bool:
         """Check if user has the required permission for the route"""
+        db = next(get_db_session())
         user_service = UserService(db)
-        user = user_service.get_user_by_user_id(user_id)
+        user = user_service.get_user_by_id(int(user_id))
         if not user:
             return False
         user_permissions = user.role.permissions if user.role else []
         required_permission = self.route_permissions.get(route_key)
-        if required_permission not in user_permissions:
+        
+        if not user.role or required_permission not in user_permissions:
             logger.warning(f"User {user_id} lacks permission '{required_permission}' for route '{route_key}'")
             return False
         return True
@@ -176,3 +181,5 @@ class AccessControlMiddleware:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content={"detail": "Internal server error"}
             )
+            
+access_control_middleware = AccessControlMiddleware()

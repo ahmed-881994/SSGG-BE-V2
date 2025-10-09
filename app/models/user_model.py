@@ -55,6 +55,7 @@ class User(Base):
             "user_name": self.user_name,
             "user_id": self.user_id,
             "role_id": self.role_id,
+            "role": self.role,
             "password_hash": self.password_hash,
             "salt": self.salt,
             "is_active": self.is_active,
@@ -70,6 +71,7 @@ class User(Base):
         clean_user.user_name = user_obj.user_name
         clean_user.user_id = user_obj.user_id
         clean_user.role_id = user_obj.role_id
+        clean_user.role = user_obj.role  # Retain role relationship if needed
         clean_user.is_active = user_obj.is_active
         clean_user.password_reset = user_obj.password_reset
         clean_user.password_hash = ""  # Clear sensitive data
