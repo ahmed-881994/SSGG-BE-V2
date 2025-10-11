@@ -15,6 +15,7 @@ from .user_model import User
 from .role_model import Role
 from .permission_model import Permission
 from .role_permission_model import RolePermission
+from .rbac_models import RoutePattern, RoutePermission, PublicRoute
 from .event_type_model import EventType
 from .event_model import Event
 from .entity_type_model import EntityType
@@ -35,6 +36,9 @@ __all__ = [
     "Role",           # User roles
     "Permission",     # Permissions for access control
     "RolePermission", # Association between roles and permissions
+    "RoutePattern",   # API route patterns
+    "RoutePermission",# Association between routes and permissions
+    "PublicRoute",    # Publicly accessible routes
     "EventType",      # Event type classifications
     "Event",          # Events and activities
     "EntityType",     # Entity type classifications
@@ -45,4 +49,5 @@ __all__ = [
     "AttendanceState", # Attendance status types
     "Attendance",      # Attendance records
     "EventEntity"     # Event-entity relationships
+    
 ]

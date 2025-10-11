@@ -3,7 +3,6 @@ from typing import List, Optional
 
 from sqlalchemy import Boolean, DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql import func
 
 from .base_model import Base
 

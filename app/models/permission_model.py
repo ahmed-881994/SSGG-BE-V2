@@ -3,7 +3,9 @@ from typing import List, Optional
 
 from sqlalchemy import Boolean, DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql import func
+
+from app.models.rbac_models import RoutePattern
+from app.models.role_model import Role
 
 from .base_model import Base
 
@@ -24,5 +26,11 @@ class Permission(Base):
     roles: Mapped[List["Role"]] = relationship(
         "Role", 
         secondary="role_permissions", 
+        back_populates="permissions"
+    )
+    
+    route_patterns: Mapped[List["RoutePattern"]] = relationship(
+        "RoutePattern", 
+        secondary="route_permissions", 
         back_populates="permissions"
     )
