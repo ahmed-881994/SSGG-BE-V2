@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import List, Optional
 
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -22,7 +21,7 @@ class User(Base):
     # date_updated: Mapped[Date] = mapped_column(Date, nullable=False)
     
     # Relationships
-    role: Mapped[Optional["Role"]] = relationship("Role", back_populates="users")
+    role: Mapped["Role"] = relationship("Role", back_populates="users")
     # user_permissions: Mapped[List["UserPermission"]] = relationship("UserPermission", back_populates="user")
 
     

@@ -20,6 +20,7 @@ from app.core.rate_limitting import rate_limit
 from app.schemas.auth_schema import Token
 from app.services.auth_service import AuthService, oauth2_scheme
 from app.services.token_service import token_service
+from app.services.user_service import UserService
 
 router = APIRouter(tags=["Authentication"])
 
@@ -50,8 +51,12 @@ def login(request: Request, form_data: Annotated[OAuth2PasswordRequestForm, Depe
 
         if not user.is_active:
             raise AuthenticationFailed(message="User is not active", name="Authentication")
+        
+        user_service = UserService(db)
+        
+        user_permissions = user_service.get_user_permissions_by_id(user.id)
 
-        token_data = {"sub": str(user.id), "member_id": str(user.user_id)}
+        token_data = {"sub": str(user.id), "member_id": str(user.user_id), "role": user.role.name, "permissions": user_permissions}
         access_token = token_service.create_access_token(
             data=token_data, 
             expires_delta=timedelta(minutes=token_service.access_token_expires_minutes)
@@ -98,8 +103,6 @@ def refresh_access_token(request: Request, refresh_token: str):
     try:
         payload = token_service.verify_token(refresh_token, "refresh")
         id = payload.get("sub")
-        user_type = payload.get("user_type")
-        member_id = payload.get("member_id")
 
         if not id:
             logger.warning("Token refresh failed: Missing user subject in refresh token")
@@ -109,10 +112,8 @@ def refresh_access_token(request: Request, refresh_token: str):
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
-        # Create new access token
-        token_data = {"sub": id, "member_id": member_id}
         access_token = token_service.create_access_token(
-            data=token_data,
+            data=payload,
             expires_delta=timedelta(minutes=token_service.access_token_expires_minutes)
         )
 

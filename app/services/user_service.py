@@ -287,3 +287,24 @@ class UserService:
                 message=f"Failed to reset user password: {str(e)}",
                 name="User Password Reset Error"
             )
+            
+    def get_user_permissions_by_id(self, id:int):
+        
+        try:
+            user = self.get_user_by_id(id)
+            
+            user_permissions = [permission.name for permission in user.role.permissions]
+            
+            if user_permissions:
+                return user_permissions
+            else:
+                return []
+            
+        except EntityDoesNotExistError:
+            raise
+        except Exception as e:
+            logger.error(f"Error retrieving permissions for user {id}: {str(e)}")
+            raise ServiceError(
+                message=f"Failed to retrieve user permissions: {str(e)}",
+                name="User Permissions Retrieval Error"
+            )
