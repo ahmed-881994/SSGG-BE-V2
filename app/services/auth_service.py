@@ -37,7 +37,6 @@ class AuthService:
             AuthenticationFailed: If authentication fails
         """
         logger.info(f"Attempting authentication for user: {login}")
-        # start_time = time.time()
         
         try:
             user_service = UserService(self.db_session)
@@ -56,8 +55,7 @@ class AuthService:
                     name="Authentication"
                 )
                 
-            # auth_time = round((time.time() - start_time) * 1000, 2)
-            # logger.info(f"Authentication successful for user '{login}' in {auth_time}ms")
+            logger.info(f"Authentication successful for user '{login}'")
             return user
             
         except EntityDoesNotExistError:
@@ -67,6 +65,5 @@ class AuthService:
                 name="Authentication"
             )
         except Exception as e:
-            # auth_time = round((time.time() - start_time) * 1000, 2)
             logger.error(f"Authentication error for user '{login}': {str(e)}", exc_info=True)
             raise ServiceError(message=f"Authentication error: {str(e)}", name="Authentication")
