@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -288,17 +288,18 @@ class UserService:
                 name="User Password Reset Error"
             )
             
-    def get_user_permissions_by_id(self, id:int):
+    def get_user_permissions_by_id(self, id:int)-> List[str]:
         
         try:
             user = self.get_user_by_id(id)
             
             user_permissions = [permission.name for permission in user.role.permissions]
             
-            if user_permissions:
-                return user_permissions
-            else:
-                return []
+            return user_permissions
+            # if user_permissions:
+            #     return user_permissions
+            # else:
+            #     return []
             
         except EntityDoesNotExistError:
             raise

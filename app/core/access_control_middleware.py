@@ -5,6 +5,7 @@ from app.config.logging_config import logger
 from app.core.database import get_db_session
 from app.services.access_control_service import AccessControlService
 
+#TODO: #18 The method fetches the user from the database every time permissions are checked, even though the user is already authenticated and their permissions could be cached in the request context. Consider using permissions from the JWT token (which are already included in the token payload) to avoid this database query on every request.
 
 class AccessControlMiddleware:
 
@@ -67,5 +68,7 @@ class AccessControlMiddleware:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content={"detail": "Internal server error"}
             )
+        finally:
+            db.close()
 
 access_control_middleware = AccessControlMiddleware()
