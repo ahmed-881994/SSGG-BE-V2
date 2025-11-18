@@ -293,6 +293,8 @@ class UserService:
         try:
             user = self.get_user_by_id(id)
             
+            if user.role is None:
+                return []
             user_permissions = [permission.name for permission in user.role.permissions]
             
             return user_permissions

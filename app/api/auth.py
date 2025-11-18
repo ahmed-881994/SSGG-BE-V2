@@ -56,7 +56,7 @@ def login(request: Request, form_data: Annotated[OAuth2PasswordRequestForm, Depe
         
         user_permissions = user_service.get_user_permissions_by_id(user.id)
 
-        token_data = {"sub": str(user.id), "member_id": str(user.user_id), "role": user.role.name, "permissions": user_permissions}
+        token_data = {"sub": str(user.id), "member_id": str(user.user_id), "role": user.role.name if user.role else None, "permissions": user_permissions}
         access_token = token_service.create_access_token(
             data=token_data, 
             expires_delta=timedelta(minutes=token_service.access_token_expires_minutes)
