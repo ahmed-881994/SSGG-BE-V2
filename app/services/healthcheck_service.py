@@ -222,6 +222,12 @@ class HealthCheckService:
                 "lookups",         # Lookup/reference data
                 "members",        # Member information
                 "users",           # System users
+                "roles",           # User roles and permissions
+                "permissions",     # Permission definitions
+                "role_permissions",      # Role-permission mappings
+                "public_routes",   # Publicly accessible routes
+                "route_patterns", # Route pattern definitions
+                "route_permissions", # Route-permission mappings
             ]
             
             existing_tables = inspector.get_table_names()

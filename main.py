@@ -43,8 +43,8 @@ app = FastAPI(
     # lifespan=lifespan,
 )
 
-app.middleware("http")(user_context_middleware)
 app.middleware("http")(access_control_middleware)
+app.middleware("http")(user_context_middleware)
 app.middleware("http")(auditing_middleware)
 @app.middleware("http")
 async def add_logging_middleware(request: Request, call_next):
