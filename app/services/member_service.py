@@ -99,7 +99,7 @@ class MemberService:
         except Exception as e:
             logger.error(f"Error creating member: {str(e)}")
             raise ServiceError(
-                message=f"Failed to create member: {str(e)}",
+                message=f"Failed to create member",
                 name="Member Creation Error"
             )
             
@@ -119,7 +119,7 @@ class MemberService:
         except Exception as e:
             logger.error(f"Error updating member: {str(e)}")
             raise ServiceError(
-                message=f"Failed to update member: {str(e)}",
+                message=f"Failed to update member",
                 name="Member Update Error"
             )
             
@@ -134,7 +134,7 @@ class MemberService:
         except Exception as e:
             logger.error(f"Error deleting member: {str(e)}")
             raise ServiceError(
-                message=f"Failed to delete member: {str(e)}",
+                message=f"Failed to delete member",
                 name="Member Deletion Error"
             )
 
@@ -177,6 +177,6 @@ class MemberService:
         except Exception as e:
             logger.error(f"Error retrieving attendance for member {member_id}: {str(e)}")
             raise ServiceError(
-                message=f"Failed to retrieve member attendance: {str(e)}",
+                message=f"Failed to retrieve member attendance",
                 name="Member Attendance Retrieval Error"
             )
