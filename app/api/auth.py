@@ -4,7 +4,6 @@ Authentication API Router
 Handles authentication endpoints including login, logout, and token refresh.
 """
 
-import time
 from datetime import timedelta
 from typing import Annotated
 
@@ -78,10 +77,11 @@ def login(request: Request, form_data: Annotated[OAuth2PasswordRequestForm, Depe
             headers={"WWW-Authenticate": "Bearer"},
         )
     except ServiceError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Database error during login for user {form_data.username}: {e.message}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-
+        logger.error(f"Unexpected error during login for user {form_data.username}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Unexpected error")
 @router.post("/refresh", response_model=Token)
 @rate_limit("5/minute")
 def refresh_access_token(request: Request, refresh_token: str):
