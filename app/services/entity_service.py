@@ -501,7 +501,7 @@ class EntityService:
                     message=f"Entity with ID {entity_id} does not exist.",
                     name="Entity Attendance Retrieval Error"
                 )
-            entity_events = entity.all_events
+            entity_events = entity.all_events + [event for child in entity.children for event in child.all_events] if hasattr(entity, 'children') else entity.all_events
             total_events = len(entity_events)
             attended_events = 0
             attendance_records_count = 0
