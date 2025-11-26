@@ -10,7 +10,7 @@ class BaseSchema(BaseModel):
         from_attributes=True,
         validate_assignment=True,
         use_enum_values=True,
-        str_strip_whitespace=True,
+        str_strip_whitespace=True
     )
     
     def to_dict(self) -> Dict[str, Any]:

@@ -12,6 +12,7 @@ from .healthcheck_service import HealthCheckService
 from .lookup_service import LookupService
 from .member_service import MemberService
 from .user_service import UserService
+from .role_service import RoleService
 
 __all__ = [
     "AuthService",
@@ -20,5 +21,6 @@ __all__ = [
     "HealthCheckService",
     "EntityService",
     "EventService",
-    "LookupService"
+    "LookupService",
+    "RoleService"
 ]

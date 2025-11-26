@@ -8,7 +8,7 @@ from app.core.exceptions import (EntityAlreadyExistsError,
 from app.models.user_model import User
 from app.repositories.user_repository import UserRepository
 from app.services.email_service import email_service
-from app.util.password import (generate_salt, generate_random_password,
+from app.util.password import (generate_random_password, generate_salt,
                                get_password_hash)
 
 
