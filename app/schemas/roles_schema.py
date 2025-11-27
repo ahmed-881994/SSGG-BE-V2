@@ -24,6 +24,13 @@ class RoleCreate(BaseSchema):
     is_system_role: bool = Field(alias="IsSystemRole", default=False)
     # is_active: bool = Field(alias="IsActive", default=True)
     
+class RoleUpdate(BaseSchema):
+    name: Optional[str] = Field(alias="Name")
+    display_name: Optional[str] = Field(alias="DisplayName")
+    description: Optional[str] = Field(alias="Description")
+    is_system_role: Optional[bool] = Field(alias="IsSystemRole")
+    is_active: Optional[bool] = Field(alias="IsActive")
+    
     
 # Responses
 class RoleResponse(BaseSchema):

@@ -74,3 +74,36 @@ class RoleRepository(BaseRepository[Role]):
             logger.error(f"Error creating role: {e}")
             raise ServiceError(message=f"Failed to create role: {str(e)}",
                 name="Database Error")
+            
+    def update_role(self, role:Role, name: str, display_name: str, description: str, is_system_role: bool, is_active: bool) -> Role :
+        """
+        Update an existing role.
+        """
+        try:
+            role.name = name
+            role.display_name = display_name
+            role.description = description
+            role.is_system_role = is_system_role
+            role.is_active = is_active
+            role.updated_at = get_egypt_time()
+            self.db.commit()
+            self.db.refresh(role)
+            return role
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            logger.error(f"Error updating role ID {role.id}: {e}")
+            raise ServiceError(message=f"Failed to update role: {str(e)}",
+                name="Database Error")
+            
+    def delete_role(self, role: Role) -> None:
+        """
+        Delete a role by its ID.
+        """
+        try:
+            self.db.delete(role)
+            self.db.commit()
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            logger.error(f"Error deleting role ID {role.id}: {e}")
+            raise ServiceError(message=f"Failed to delete role: {str(e)}",
+                name="Database Error")
