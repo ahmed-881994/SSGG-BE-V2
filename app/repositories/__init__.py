@@ -11,6 +11,8 @@ from .event_repository import EventRepository
 from .lookup_repository import LookupRepository
 from .member_repository import MemberRepository
 from .user_repository import UserRepository
+from .role_repository import RoleRepository
+from .permission_repository import PermissionRepository
 
 __all__ = [
     "BaseRepository",
@@ -18,5 +20,7 @@ __all__ = [
     "MemberRepository",
     "EntityRepository",
     "EventRepository",
-    "LookupRepository"
+    "LookupRepository",
+    "RoleRepository",
+    "PermissionRepository"
 ]

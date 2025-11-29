@@ -3,12 +3,13 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.config.logging_config import logger
 from app.core.database import get_db_session
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
-from app.schemas.member_schema import (MemberAttendanceResponse, MemberRequest, MemberResponse,
-                                       SearchMembersResponse)
+from app.schemas.member_schema import (MemberAttendanceResponse, MemberRequest,
+                                       MemberResponse, SearchMembersResponse)
 from app.services.member_service import MemberService
 
 router = APIRouter(prefix="/members", tags=["Members"], dependencies=[Depends(get_user_in_token)])
@@ -24,11 +25,14 @@ def search_members(name: Optional[str] = None, entityID: Optional[int] = None, d
         member_service = MemberService(db)
         return member_service.search_members(name=name, entity_id=entityID)
     except EntityDoesNotExistError as e:
-        raise HTTPException(status_code=404, detail=str(e.message))
+        logger.error(f"No members found matching criteria: {e.message}", exc_info=True)
+        raise HTTPException(status_code=404, detail='No members found matching criteria')
     except ServiceError as e:
-        raise HTTPException(status_code=500, detail=str(e.message))
+        logger.error(f"Service error: {e.message}", exc_info=True)
+        raise HTTPException(status_code=500, detail='Service error')
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail='Unexpected error')
 
 
 @router.post("", status_code=201, responses={
@@ -41,11 +45,14 @@ def create_member(body: MemberRequest, db: Session = Depends(get_db_session)):
         member_service = MemberService(db)
         return member_service.create_member(body.model_dump())
     except EntityAlreadyExistsError as e:
-        raise HTTPException(status_code=400, detail=str(e.message))
+        logger.error(f"Member already exists: {e.message}", exc_info=True)
+        raise HTTPException(status_code=400, detail='Member already exists')
     except ServiceError as e:
-        raise HTTPException(status_code=500, detail=str(e.message))
+        logger.error(f"Service error: {e.message}", exc_info=True)
+        raise HTTPException(status_code=500, detail='Service error')
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail='Unexpected error')
 
 
 @router.get("/{member_id}", response_model=MemberResponse, responses={
@@ -58,11 +65,14 @@ def get_member(member_id: str, db: Session = Depends(get_db_session)):
         member_service = MemberService(db)
         return member_service.get_member_by_member_id(member_id)
     except EntityDoesNotExistError as e:
-        raise HTTPException(status_code=404, detail=str(e.message))
+        logger.error(f"Member not found: {e.message}", exc_info=True)
+        raise HTTPException(status_code=404, detail='Member not found')
     except ServiceError as e:
-        raise HTTPException(status_code=500, detail=str(e.message))
+        logger.error(f"Service error: {e.message}", exc_info=True)
+        raise HTTPException(status_code=500, detail='Service error')
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail='Unexpected error')
 
 
 @router.put("/{member_id}", response_model=MemberResponse, responses={
@@ -75,11 +85,14 @@ def update_member(member_id: str, body: MemberRequest, db: Session = Depends(get
         member_service = MemberService(db)
         return member_service.update_member(member_id, body.model_dump( exclude_none=True))
     except EntityDoesNotExistError as e:
-        raise HTTPException(status_code=404, detail=str(e.message))
+        logger.error(f"Member not found: {e.message}", exc_info=True)
+        raise HTTPException(status_code=404, detail='Member not found')
     except ServiceError as e:
-        raise HTTPException(status_code=500, detail=str(e.message))
+        logger.error(f"Service error: {e.message}", exc_info=True)
+        raise HTTPException(status_code=500, detail='Service error')
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail='Unexpected error')
     
 
 @router.delete("/{member_id}", status_code=204, responses={
@@ -92,11 +105,14 @@ def delete_member(member_id: str, db: Session = Depends(get_db_session)):
         member_service = MemberService(db)
         member_service.delete_member(member_id)
     except EntityDoesNotExistError as e:
-        raise HTTPException(status_code=404, detail=str(e.message))
+        logger.error(f"Member not found: {e.message}", exc_info=True)
+        raise HTTPException(status_code=404, detail='Member not found')
     except ServiceError as e:
-        raise HTTPException(status_code=500, detail=str(e.message))
+        logger.error(f"Service error: {e.message}", exc_info=True)
+        raise HTTPException(status_code=500, detail='Service error')
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail='Unexpected error')
 
 
 @router.get("/{member_id}/attendance",response_model=MemberAttendanceResponse)
@@ -108,8 +124,11 @@ def get_member_attendance(member_id: str, db: Session = Depends(get_db_session))
         member_service = MemberService(db)
         return member_service.get_member_attendance(member_id)
     except EntityDoesNotExistError as e:
-        raise HTTPException(status_code=404, detail=str(e.message))
+        logger.error(f"Member not found: {e.message}", exc_info=True)
+        raise HTTPException(status_code=404, detail='Member not found')
     except ServiceError as e:
-        raise HTTPException(status_code=500, detail=str(e.message))
+        logger.error(f"Service error: {e.message}", exc_info=True)
+        raise HTTPException(status_code=500, detail='Service error')
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail='Unexpected error')
