@@ -32,7 +32,7 @@ class RoutePermission(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     route_pattern_id: Mapped[int] = mapped_column(ForeignKey("route_patterns.id", ondelete="CASCADE"))
-    permission_id: Mapped[int] = mapped_column(ForeignKey("permissions.id", ondelete="CASCADE"))
+    permission_id: Mapped[int] = mapped_column(ForeignKey("permissions.permission_id", ondelete="CASCADE"))
     is_required: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
