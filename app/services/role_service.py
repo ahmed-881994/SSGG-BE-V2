@@ -1,11 +1,10 @@
-from typing import Dict, List
+from typing import Dict
 
 from sqlalchemy.orm import Session
 
 from app.config.logging_config import logger
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
-from app.models.role_model import Role
 from app.repositories.permission_repository import PermissionRepository
 from app.repositories.role_repository import RoleRepository
 
@@ -63,14 +62,14 @@ class RoleService:
                 name="Role Retrieval Error"
             )
             
-    def search_roles(self, role_id: int | None = None, role_name: str | None = None) -> Dict|None:
+    def search_roles(self, role_id: int | None = None, role_name: str | None = None) -> Dict | None:
         """
         Search roles by ID and/or name.
         """
         try:
             roles = self.role_repository.search_roles(role_id, role_name)
             if not roles:
-                logger.warning(f"Role not found: {id}")
+                logger.warning(f"No roles found matching criteria: role_id={role_id}, role_name={role_name}")
                 raise EntityDoesNotExistError(
                     f"No roles found matching criteria.", name="Role Retrieval Error")
             result = []
@@ -108,7 +107,7 @@ class RoleService:
                     name="Role Creation Error"
                 )
             role = self.role_repository.create_role(**role_data)
-            return{
+            return {
                 "id": role.id,
                 "name": role.name,
                 "display_name": role.display_name,
@@ -146,7 +145,7 @@ class RoleService:
                 is_system_role=update_data.get('is_system_role', role.is_system_role),
                 is_active=update_data.get('is_active', role.is_active)
             )
-            return{
+            return {
                 "id": role.id,
                 "name": role.name,
                 "display_name": role.display_name,
@@ -219,7 +218,7 @@ class RoleService:
                     "assigned_at": role_perm.created_at,
                     "assigned_by": role_perm.created_by
                 })
-            return{
+            return {
                 "id": role.id,
                 "name": role.name,
                 "display_name": role.display_name,
