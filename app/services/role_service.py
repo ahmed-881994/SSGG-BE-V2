@@ -30,7 +30,7 @@ class RoleService:
             permissions_with_metadata = []
             for role_perm in role.role_permissions:
                 permissions_with_metadata.append({
-                    "id": role_perm.permission.id,
+                    "id": role_perm.permission.permission_id,
                     "name": role_perm.permission.name,
                     "display_name": role_perm.permission.display_name,
                     "description": role_perm.permission.description,
@@ -207,7 +207,7 @@ class RoleService:
             permissions_with_metadata = []
             for role_perm in role.role_permissions:
                 permissions_with_metadata.append({
-                    "id": role_perm.permission.id,
+                    "id": role_perm.permission.permission_id,
                     "name": role_perm.permission.name,
                     "display_name": role_perm.permission.display_name,
                     "description": role_perm.permission.description,

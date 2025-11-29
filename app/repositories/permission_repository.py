@@ -16,12 +16,12 @@ class PermissionRepository(BaseRepository[Permission]):
     def __init__(self, db: Session):
         super().__init__(db, Permission)
         
-    def get_permission_by_id(self, id: int) -> Permission | None:
+    def get_permission_by_permission_id(self, id: int) -> Permission | None:
         """
         Retrieve a permission by its ID.
         """
         try:
-            return self.db.query(Permission).filter(Permission.id == id).first()
+            return self.db.query(Permission).filter(Permission.permission_id == id).first()
         except SQLAlchemyError as e:
             logger.error(f"Error retrieving permission by ID {id}: {e}")
             raise ServiceError(message=f"Failed to retrieve permission: {str(e)}",

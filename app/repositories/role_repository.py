@@ -128,7 +128,7 @@ class RoleRepository(BaseRepository[Role]):
             for permission in permissions:
                 role_permission = RolePermission()
                 role_permission.role_id = role.id
-                role_permission.permission_id = permission.id
+                role_permission.permission_id = permission.permission_id
                 role_permission.created_at = current_time
                 role_permission.created_by = user_id
                 self.db.add(role_permission)
