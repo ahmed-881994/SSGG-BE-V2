@@ -197,7 +197,7 @@ class RoleService:
                     f"Role with ID {role_id} does not exist.", name="Role Permission Update Error")
             permissions = []
             for permission_id in permissions_ids:
-                permission = self.permission_repository.get_permission_by_id(permission_id)
+                permission = self.permission_repository.get_permission_by_permission_id(permission_id)
                 if not permission:
                     logger.warning(f"Permission not found: {permission_id}")
                     raise EntityDoesNotExistError(

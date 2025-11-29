@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -16,6 +17,17 @@ class RoleRepository(BaseRepository[Role]):
     
     def __init__(self, db: Session):
         super().__init__(db, Role)
+        
+        
+    def get_next_role_id(self) -> int:
+        """Get the next available event ID."""
+        try:
+            return (self.db.query(func.max(Role.role_id)).scalar() or 0) + 1
+        except SQLAlchemyError as e:
+            raise ServiceError(
+                message=f"Failed to retrieve next event ID: {str(e)}",
+                name="Database Error"
+            )
 
     def get_role_by_id(self, id: int) -> Role | None:
         """
@@ -61,6 +73,7 @@ class RoleRepository(BaseRepository[Role]):
         """
         try:
             new_role = Role()
+            new_role.role_id = self.get_next_role_id()
             new_role.name= name
             new_role.display_name= display_name
             new_role.description= description
