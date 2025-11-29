@@ -11,10 +11,12 @@ class Permission(BaseSchema):
     name: str = Field(alias="Name")
     display_name: str = Field(alias="DisplayName")
     description: Optional[str] = Field(alias="Description", default=None)
-    category: bool = Field(alias="Category")
+    category: str = Field(alias="Category")
     is_active: bool = Field(alias="IsActive")
     created_at: datetime = Field(alias="CreatedAt")
     updated_at: Optional[datetime] = Field(alias="UpdatedAt")
+    assigned_at: Optional[datetime] = Field(alias="AssignedAt")
+    assigned_by: Optional[int] = Field(alias="AssignedBy")
 
 # Requests
 class RoleCreate(BaseSchema):
@@ -30,6 +32,9 @@ class RoleUpdate(BaseSchema):
     description: Optional[str] = Field(alias="Description")
     is_system_role: Optional[bool] = Field(alias="IsSystemRole")
     is_active: Optional[bool] = Field(alias="IsActive")
+    
+class RoleUpdatePermissions(BaseSchema):
+    permissions_ids: List[int] = Field(alias="PermissionsIDs")
     
     
 # Responses

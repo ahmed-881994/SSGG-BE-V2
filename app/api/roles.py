@@ -9,7 +9,7 @@ from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
 from app.schemas.roles_schema import (RoleCreate, RoleNoPermissionsResponse, RoleResponse,
-                                      RoleSearchResponse, RoleUpdate)
+                                      RoleSearchResponse, RoleUpdate, RoleUpdatePermissions)
 from app.services.role_service import RoleService
 
 router = APIRouter(prefix="/roles", tags=["Roles"], dependencies=[Depends(get_user_in_token)])
@@ -25,7 +25,7 @@ def create_role(role: RoleCreate, db: Session = Depends(get_db_session)):
         return role_service.create_role(role_data=role.model_dump())
     except EntityAlreadyExistsError as e:
         logger.error(f"Role already exists: {e.message}", exc_info=True)
-        raise HTTPException(status_code=400, detail='Role already exists')
+        raise HTTPException(status_code=400, detail=f"{e.message}")
     except ServiceError as e:
         logger.error(f"Service error: {e.message}", exc_info=True)
         raise HTTPException(status_code=500, detail='Service error')
@@ -43,7 +43,7 @@ def search_roles(role_id: Optional[int] = None, role_name: Optional[str] = None,
         return role_service.search_roles(role_id, role_name)
     except EntityDoesNotExistError as e:
         logger.error(f"No roles found matching criteria: {e.message}", exc_info=True)
-        raise HTTPException(status_code=404, detail='No roles found matching criteria')
+        raise HTTPException(status_code=404, detail=f"{e.message}")
     except ServiceError as e:
         logger.error(f"Service error: {e.message}", exc_info=True)
         raise HTTPException(status_code=500, detail='Service error')
@@ -61,7 +61,7 @@ def get_role(role_id: int,db: Session = Depends(get_db_session)):
         return role_service.get_role_by_id(role_id)
     except EntityDoesNotExistError as e:
         logger.error(f"Role not found: {e.message}", exc_info=True)
-        raise HTTPException(status_code=404, detail='Role not found')
+        raise HTTPException(status_code=404, detail=f"{e.message}")
     except ServiceError as e:
         logger.error(f"Service error: {e.message}", exc_info=True)
         raise HTTPException(status_code=500, detail='Service error')
@@ -79,7 +79,7 @@ def update_role(role_id: int, role_update: RoleUpdate, db: Session = Depends(get
         return role_service.update_role(role_id, role_update.model_dump(exclude_none=True))
     except EntityDoesNotExistError as e:
         logger.error(f"Role not found: {e.message}", exc_info=True)
-        raise HTTPException(status_code=404, detail='Role not found')
+        raise HTTPException(status_code=404, detail=f"{e.message}")
     except ServiceError as e:
         logger.error(f"Service error: {e.message}", exc_info=True)
         raise HTTPException(status_code=500, detail='Service error')
@@ -97,7 +97,7 @@ def delete_role(role_id: int, db: Session = Depends(get_db_session)):
         role_service.delete_role(role_id)
     except EntityDoesNotExistError as e:
         logger.error(f"Role not found: {e.message}", exc_info=True)
-        raise HTTPException(status_code=404, detail='Role not found')
+        raise HTTPException(status_code=404, detail=f"{e.message}")
     except ServiceError as e:
         logger.error(f"Service error: {e.message}", exc_info=True)
         raise HTTPException(status_code=500, detail='Service error')
@@ -105,10 +105,21 @@ def delete_role(role_id: int, db: Session = Depends(get_db_session)):
         logger.error(f"Unexpected error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail='Unexpected error')
 
-@router.put("/{role_id}/permissions", tags=["Roles"])
-def update_role_permissions(role_id: int):
+@router.put("/{role_id}/permissions", tags=["Roles"], response_model=RoleResponse)
+def update_role_permissions(role_id: int, permissions_ids: RoleUpdatePermissions, db: Session = Depends(get_db_session), current_user = Depends(get_user_in_token)):
     """
     Update role permissions by role ID
     """
-    return {"message": f"Role {role_id} permissions updated successfully"}
+    try:
+        role_service = RoleService(db)
+        return role_service.update_role_permissions(role_id, permissions_ids.model_dump()["permissions_ids"], current_user.id)
+    except EntityDoesNotExistError as e:
+        logger.error(f"Role not found: {e.message}", exc_info=True)
+        raise HTTPException(status_code=404, detail=f"{e.message}")
+    except ServiceError as e:
+        logger.error(f"Service error: {e.message}", exc_info=True)
+        raise HTTPException(status_code=500, detail='Service error')
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail='Unexpected error')
 

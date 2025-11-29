@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.config.logging_config import logger
 from app.core.exceptions import ServiceError
 from app.models.role_model import Role
+from app.models.role_permission_model import RolePermission
 from app.repositories.base_repository import BaseRepository
 from app.util.egy_time import get_egypt_time
 
@@ -100,10 +101,48 @@ class RoleRepository(BaseRepository[Role]):
         Delete a role by its ID.
         """
         try:
+            # Delete existing role-permission associations
+            self.db.query(RolePermission).filter(
+                RolePermission.role_id == role.id
+            ).delete(synchronize_session=False)
             self.db.delete(role)
             self.db.commit()
         except SQLAlchemyError as e:
             self.db.rollback()
             logger.error(f"Error deleting role ID {role.id}: {e}")
             raise ServiceError(message=f"Failed to delete role: {str(e)}",
+                name="Database Error")
+            
+    def update_role_permissions(self, role: Role, permissions: list, user_id: int) -> Role:
+        """
+        Add permissions to a role.
+        """
+        try:
+            # Delete existing role-permission associations
+            self.db.query(RolePermission).filter(
+                RolePermission.role_id == role.id
+            ).delete(synchronize_session=False)
+            
+            # Create new associations with current timestamp
+            current_time = get_egypt_time()
+            for permission in permissions:
+                role_permission = RolePermission()
+                role_permission.role_id = role.id
+                role_permission.permission_id = permission.id
+                role_permission.created_at = current_time
+                role_permission.created_by = user_id
+                self.db.add(role_permission)
+                
+            # Update permission's updated_at
+            permission.updated_at = current_time
+            
+            # Update role's updated_at
+            role.updated_at = current_time
+            self.db.commit()
+            self.db.refresh(role)
+            return role
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            logger.error(f"Error adding permissions to role ID {role.id}: {e}")
+            raise ServiceError(message=f"Failed to add permissions: {str(e)}",
                 name="Database Error")

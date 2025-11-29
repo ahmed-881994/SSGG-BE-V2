@@ -6,6 +6,7 @@ from app.config.logging_config import logger
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
 from app.models.role_model import Role
+from app.repositories.permission_repository import PermissionRepository
 from app.repositories.role_repository import RoleRepository
 
 
@@ -15,6 +16,7 @@ class RoleService:
     def __init__(self, db_session: Session):
         self.db_session = db_session
         self.role_repository = RoleRepository(db_session)
+        self.permission_repository = PermissionRepository(db_session)
 
     def get_role_by_id(self, id: int) -> Dict | None:
         """
@@ -26,7 +28,22 @@ class RoleService:
                 logger.warning(f"Role not found: {id}")
                 raise EntityDoesNotExistError(
                     f"Role with ID {id} does not exist.", name="Role Retrieval Error")
-            return{
+            permissions_with_metadata = []
+            for role_perm in role.role_permissions:
+                permissions_with_metadata.append({
+                    "id": role_perm.permission.id,
+                    "name": role_perm.permission.name,
+                    "display_name": role_perm.permission.display_name,
+                    "description": role_perm.permission.description,
+                    "category": role_perm.permission.category,
+                    "is_active": role_perm.permission.is_active,
+                    "created_at": role_perm.permission.created_at,
+                    "updated_at": role_perm.permission.updated_at,
+                    "assigned_at": role_perm.created_at,
+                    "assigned_by": role_perm.created_by
+                })
+            
+            return {
                 "id": role.id,
                 "name": role.name,
                 "display_name": role.display_name,
@@ -35,7 +52,7 @@ class RoleService:
                 "is_active": role.is_active,
                 "created_at": role.created_at,
                 "updated_at": role.updated_at,
-                "permissions": role.permissions
+                "permissions": permissions_with_metadata
             }
         except EntityDoesNotExistError:
             raise
@@ -55,7 +72,7 @@ class RoleService:
             if not roles:
                 logger.warning(f"Role not found: {id}")
                 raise EntityDoesNotExistError(
-                    f"Role with ID {id} does not exist.", name="Role Retrieval Error")
+                    f"No roles found matching criteria.", name="Role Retrieval Error")
             result = []
             for role in roles:
                 result.append({
@@ -167,4 +184,57 @@ class RoleService:
             raise ServiceError(
                 message=f"Failed to delete role: {str(e)}",
                 name="Role Deletion Error"
+            )
+            
+    def update_role_permissions(self, role_id: int, permissions_ids: list, user_id: int) -> Dict | None:
+        """
+        Update role permissions.
+        """
+        try:
+            role = self.role_repository.get_role_by_id(role_id)
+            if not role:
+                logger.warning(f"Role not found: {role_id}")
+                raise EntityDoesNotExistError(
+                    f"Role with ID {role_id} does not exist.", name="Role Permission Update Error")
+            permissions = []
+            for permission_id in permissions_ids:
+                permission = self.permission_repository.get_permission_by_id(permission_id)
+                if not permission:
+                    logger.warning(f"Permission not found: {permission_id}")
+                    raise EntityDoesNotExistError(
+                        f"Permission with ID {permission_id} does not exist.", name="Role Permission Update Error")
+                permissions.append(permission)
+            role = self.role_repository.update_role_permissions(role, permissions, user_id)
+            permissions_with_metadata = []
+            for role_perm in role.role_permissions:
+                permissions_with_metadata.append({
+                    "id": role_perm.permission.id,
+                    "name": role_perm.permission.name,
+                    "display_name": role_perm.permission.display_name,
+                    "description": role_perm.permission.description,
+                    "category": role_perm.permission.category,
+                    "is_active": role_perm.permission.is_active,
+                    "created_at": role_perm.permission.created_at,
+                    "updated_at": role_perm.permission.updated_at,
+                    "assigned_at": role_perm.created_at,
+                    "assigned_by": role_perm.created_by
+                })
+            return{
+                "id": role.id,
+                "name": role.name,
+                "display_name": role.display_name,
+                "description": role.description,
+                "is_system_role": role.is_system_role,
+                "is_active": role.is_active,
+                "created_at": role.created_at,
+                "updated_at": role.updated_at,
+                "permissions": permissions_with_metadata
+            }
+        except EntityDoesNotExistError:
+            raise
+        except Exception as e:
+            logger.error(f"Error updating role permissions: {str(e)}")
+            raise ServiceError(
+                message=f"Failed to update role permissions: {str(e)}",
+                name="Role Permission Update Error"
             )

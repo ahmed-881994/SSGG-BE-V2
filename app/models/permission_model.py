@@ -35,3 +35,10 @@ class Permission(Base):
         secondary="route_permissions", 
         back_populates="permissions"
     )
+    
+    # Add this new relationship to access the association table
+    role_permissions: Mapped[List["RolePermission"]] = relationship(
+        "RolePermission",
+        back_populates="permission",
+        cascade="all, delete-orphan"
+    )
