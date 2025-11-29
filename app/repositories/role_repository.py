@@ -132,9 +132,6 @@ class RoleRepository(BaseRepository[Role]):
                 role_permission.created_at = current_time
                 role_permission.created_by = user_id
                 self.db.add(role_permission)
-                
-            # Update permission's updated_at
-            permission.updated_at = current_time
             
             # Update role's updated_at
             role.updated_at = current_time
