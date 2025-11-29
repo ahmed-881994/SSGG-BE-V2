@@ -12,6 +12,7 @@ class RoutePattern(Base):
     __tablename__ = "route_patterns"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    route_pattern_id: Mapped[int] = mapped_column(nullable=False)
     method: Mapped[str] = mapped_column(String(10), nullable=False)
     path_pattern: Mapped[str] = mapped_column(String(255), nullable=False)
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
@@ -31,7 +32,7 @@ class RoutePermission(Base):
     __tablename__ = "route_permissions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    route_pattern_id: Mapped[int] = mapped_column(ForeignKey("route_patterns.id", ondelete="CASCADE"))
+    route_pattern_id: Mapped[int] = mapped_column(ForeignKey("route_patterns.route_pattern_id", ondelete="CASCADE"))
     permission_id: Mapped[int] = mapped_column(ForeignKey("permissions.permission_id", ondelete="CASCADE"))
     is_required: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
@@ -46,6 +47,7 @@ class PublicRoute(Base):
     __tablename__ = "public_routes"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    path_pattern_id: Mapped[int] = mapped_column(nullable=False)
     path_pattern: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text)
     is_regex: Mapped[bool] = mapped_column(Boolean, default=False)
