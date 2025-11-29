@@ -43,7 +43,7 @@ def search_roles(role_id: Optional[int] = None, role_name: Optional[str] = None,
         return role_service.search_roles(role_id, role_name)
     except EntityDoesNotExistError as e:
         logger.error(f"No roles found matching criteria: {e.message}", exc_info=True)
-        raise HTTPException(status_code=404, detail=f"{e.message}")
+        raise HTTPException(status_code=404, detail=f"No roles found matching criteria")
     except ServiceError as e:
         logger.error(f"Service error: {e.message}", exc_info=True)
         raise HTTPException(status_code=500, detail='Service error')
@@ -52,7 +52,7 @@ def search_roles(role_id: Optional[int] = None, role_name: Optional[str] = None,
         raise HTTPException(status_code=500, detail='Unexpected error')
 
 @router.get("/{role_id}", tags=["Roles"], response_model=RoleResponse)
-def get_role(role_id: int,db: Session = Depends(get_db_session)):
+def get_role(role_id: int, db: Session = Depends(get_db_session)):
     """
     Get role by ID
     """
@@ -61,7 +61,7 @@ def get_role(role_id: int,db: Session = Depends(get_db_session)):
         return role_service.get_role_by_id(role_id)
     except EntityDoesNotExistError as e:
         logger.error(f"Role not found: {e.message}", exc_info=True)
-        raise HTTPException(status_code=404, detail=f"{e.message}")
+        raise HTTPException(status_code=404, detail=f"Role not found")
     except ServiceError as e:
         logger.error(f"Service error: {e.message}", exc_info=True)
         raise HTTPException(status_code=500, detail='Service error')
@@ -79,7 +79,7 @@ def update_role(role_id: int, role_update: RoleUpdate, db: Session = Depends(get
         return role_service.update_role(role_id, role_update.model_dump(exclude_none=True))
     except EntityDoesNotExistError as e:
         logger.error(f"Role not found: {e.message}", exc_info=True)
-        raise HTTPException(status_code=404, detail=f"{e.message}")
+        raise HTTPException(status_code=404, detail=f"Role not found")
     except ServiceError as e:
         logger.error(f"Service error: {e.message}", exc_info=True)
         raise HTTPException(status_code=500, detail='Service error')
@@ -97,7 +97,7 @@ def delete_role(role_id: int, db: Session = Depends(get_db_session)):
         role_service.delete_role(role_id)
     except EntityDoesNotExistError as e:
         logger.error(f"Role not found: {e.message}", exc_info=True)
-        raise HTTPException(status_code=404, detail=f"{e.message}")
+        raise HTTPException(status_code=404, detail=f"Role not found")
     except ServiceError as e:
         logger.error(f"Service error: {e.message}", exc_info=True)
         raise HTTPException(status_code=500, detail='Service error')
