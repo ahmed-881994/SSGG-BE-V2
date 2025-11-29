@@ -10,7 +10,7 @@ from app.util.egy_time import get_egypt_time
 
 class PermissionRepository(BaseRepository[Permission]):
     """
-    Repository for Role model, providing CRUD operations.
+    Repository for Permission model, providing CRUD operations.
     """
     
     def __init__(self, db: Session):
