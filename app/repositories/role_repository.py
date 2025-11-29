@@ -22,7 +22,7 @@ class RoleRepository(BaseRepository[Role]):
         Retrieve a role by its ID.
         """
         try:
-            return self.db.query(Role).filter(Role.id == id).first()
+            return self.db.query(Role).filter(Role.role_id == id).first()
         except SQLAlchemyError as e:
             logger.error(f"Error retrieving role by ID {id}: {e}")
             raise ServiceError(message=f"Failed to retrieve role: {str(e)}",
@@ -46,7 +46,7 @@ class RoleRepository(BaseRepository[Role]):
         try:
             query = self.db.query(Role)
             if role_id is not None:
-                query = query.filter(Role.id == role_id)
+                query = query.filter(Role.role_id == role_id)
             if role_name is not None:
                 query = query.filter(Role.name.ilike(f"%{role_name}%"))
             return query.all()
@@ -92,7 +92,7 @@ class RoleRepository(BaseRepository[Role]):
             return role
         except SQLAlchemyError as e:
             self.db.rollback()
-            logger.error(f"Error updating role ID {role.id}: {e}")
+            logger.error(f"Error updating role ID {role.role_id}: {e}")
             raise ServiceError(message=f"Failed to update role: {str(e)}",
                 name="Database Error")
             
@@ -103,13 +103,13 @@ class RoleRepository(BaseRepository[Role]):
         try:
             # Delete existing role-permission associations
             self.db.query(RolePermission).filter(
-                RolePermission.role_id == role.id
+                RolePermission.role_id == role.role_id
             ).delete(synchronize_session=False)
             self.db.delete(role)
             self.db.commit()
         except SQLAlchemyError as e:
             self.db.rollback()
-            logger.error(f"Error deleting role ID {role.id}: {e}")
+            logger.error(f"Error deleting role ID {role.role_id}: {e}")
             raise ServiceError(message=f"Failed to delete role: {str(e)}",
                 name="Database Error")
             
@@ -120,14 +120,14 @@ class RoleRepository(BaseRepository[Role]):
         try:
             # Delete existing role-permission associations
             self.db.query(RolePermission).filter(
-                RolePermission.role_id == role.id
+                RolePermission.role_id == role.role_id
             ).delete(synchronize_session=False)
             
             # Create new associations with current timestamp
             current_time = get_egypt_time()
             for permission in permissions:
                 role_permission = RolePermission()
-                role_permission.role_id = role.id
+                role_permission.role_id = role.role_id
                 role_permission.permission_id = permission.permission_id
                 role_permission.created_at = current_time
                 role_permission.created_by = user_id
@@ -140,6 +140,6 @@ class RoleRepository(BaseRepository[Role]):
             return role
         except SQLAlchemyError as e:
             self.db.rollback()
-            logger.error(f"Error adding permissions to role ID {role.id}: {e}")
+            logger.error(f"Error adding permissions to role ID {role.role_id}: {e}")
             raise ServiceError(message=f"Failed to add permissions: {str(e)}",
                 name="Database Error")

@@ -43,7 +43,7 @@ class RoleService:
                 })
             
             return {
-                "id": role.id,
+                "id": role.role_id,
                 "name": role.name,
                 "display_name": role.display_name,
                 "description": role.description,
@@ -75,7 +75,7 @@ class RoleService:
             result = []
             for role in roles:
                 result.append({
-                    "id": role.id,
+                    "id": role.role_id,
                     "name": role.name,
                     "display_name": role.display_name,
                     "description": role.description,
@@ -108,7 +108,7 @@ class RoleService:
                 )
             role = self.role_repository.create_role(**role_data)
             return {
-                "id": role.id,
+                "id": role.role_id,
                 "name": role.name,
                 "display_name": role.display_name,
                 "description": role.description,
@@ -146,7 +146,7 @@ class RoleService:
                 is_active=update_data.get('is_active', role.is_active)
             )
             return {
-                "id": role.id,
+                "id": role.role_id,
                 "name": role.name,
                 "display_name": role.display_name,
                 "description": role.description,
@@ -219,7 +219,7 @@ class RoleService:
                     "assigned_by": role_perm.created_by
                 })
             return {
-                "id": role.id,
+                "id": role.role_id,
                 "name": role.name,
                 "display_name": role.display_name,
                 "description": role.description,
