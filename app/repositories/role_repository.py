@@ -61,11 +61,11 @@ class RoleRepository(BaseRepository[Role]):
         """
         try:
             new_role = Role()
-            new_role.name=name
-            new_role.display_name=display_name
-            new_role.description=description
-            new_role.is_system_role=is_system_role
-            new_role.created_at=get_egypt_time()
+            new_role.name= name
+            new_role.display_name= display_name
+            new_role.description= description
+            new_role.is_system_role= is_system_role
+            new_role.created_at= get_egypt_time()
             self.db.add(new_role)
             self.db.commit()
             self.db.refresh(new_role)
@@ -76,7 +76,7 @@ class RoleRepository(BaseRepository[Role]):
             raise ServiceError(message=f"Failed to create role: {str(e)}",
                 name="Database Error")
             
-    def update_role(self, role:Role, name: str, display_name: str, description: str, is_system_role: bool, is_active: bool) -> Role :
+    def update_role(self, role: Role, name: str, display_name: str, description: str, is_system_role: bool, is_active: bool) -> Role:
         """
         Update an existing role.
         """
