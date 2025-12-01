@@ -17,12 +17,12 @@ class RoleService:
         self.role_repository = RoleRepository(db_session)
         self.permission_repository = PermissionRepository(db_session)
 
-    def get_role_by_id(self, id: int) -> Dict | None:
+    def get_role_by_role_id(self, id: int) -> Dict | None:
         """
         Retrieve a role by its ID.
         """
         try:
-            role = self.role_repository.get_role_by_id(id)
+            role = self.role_repository.get_role_by_role_id(id)
             if not role:
                 logger.warning(f"Role not found: {id}")
                 raise EntityDoesNotExistError(
@@ -132,7 +132,7 @@ class RoleService:
         Update an existing role.
         """
         try:
-            role = self.role_repository.get_role_by_id(role_id)
+            role = self.role_repository.get_role_by_role_id(role_id)
             if not role:
                 logger.warning(f"Role not found: {role_id}")
                 raise EntityDoesNotExistError(
@@ -170,7 +170,7 @@ class RoleService:
         Delete an existing role.
         """
         try:
-            role = self.role_repository.get_role_by_id(role_id)
+            role = self.role_repository.get_role_by_role_id(role_id)
             if not role:
                 logger.warning(f"Role not found: {role_id}")
                 raise EntityDoesNotExistError(
@@ -190,7 +190,7 @@ class RoleService:
         Update role permissions.
         """
         try:
-            role = self.role_repository.get_role_by_id(role_id)
+            role = self.role_repository.get_role_by_role_id(role_id)
             if not role:
                 logger.warning(f"Role not found: {role_id}")
                 raise EntityDoesNotExistError(

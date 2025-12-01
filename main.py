@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from pymysql import DataError, IntegrityError
 from contextlib import asynccontextmanager
 
-from app.api import auth, entities, events, health, lookups, members, roles, users
+from app.api import auth, entities, events, health, lookups, members, permissions, roles, users
 from app.config.logging_config import logger
 from app.config.settings import settings
 from app.core.access_control_middleware import access_control_middleware
@@ -91,6 +91,10 @@ tags_metadata = [
         "description": "Endpoints for managing user roles and permissions within the SSGG system. Includes role creation, updates, deletions, and permission assignments to control access to various features and data.",
     },
     {
+        "name": "Permissions",
+        "description": "Management of permissions associated with roles and users. Endpoints to create, update, delete, and query permissions that define access levels within the SSGG application.",
+    },
+    {
         "name": "Health",
         "description": "Health check endpoints to monitor the status and performance of the SSGG backend services. Provides basic uptime and diagnostics information.",
     },
@@ -114,6 +118,7 @@ app.include_router(entities.router)
 app.include_router(lookups.router)
 app.include_router(health.router)
 app.include_router(roles.router)
+app.include_router(permissions.router)
 
 
 # Mount the static directory
