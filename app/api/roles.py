@@ -8,8 +8,9 @@ from app.core.database import get_db_session
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
-from app.schemas.roles_schema import (RoleCreate, RoleNoPermissionsResponse, RoleResponse,
-                                      RoleSearchResponse, RoleUpdate, RoleUpdatePermissions)
+from app.schemas.roles_schema import (RoleCreate, RoleNoPermissionsResponse,
+                                      RoleResponse, RoleSearchResponse,
+                                      RoleUpdate, RoleUpdatePermissions)
 from app.services.role_service import RoleService
 
 router = APIRouter(prefix="/roles", tags=["Roles"], dependencies=[Depends(get_user_in_token)])
@@ -25,7 +26,7 @@ def create_role(role: RoleCreate, db: Session = Depends(get_db_session)):
         return role_service.create_role(role_data=role.model_dump())
     except EntityAlreadyExistsError as e:
         logger.error(f"Role already exists: {e.message}", exc_info=True)
-        raise HTTPException(status_code=400, detail=f"{e.message}")
+        raise HTTPException(status_code=400, detail=f"Role already exists")
     except ServiceError as e:
         logger.error(f"Service error: {e.message}", exc_info=True)
         raise HTTPException(status_code=500, detail='Service error')
@@ -58,7 +59,7 @@ def get_role(role_id: int, db: Session = Depends(get_db_session)):
     """
     try:
         role_service = RoleService(db)
-        return role_service.get_role_by_id(role_id)
+        return role_service.get_role_by_role_id(role_id)
     except EntityDoesNotExistError as e:
         logger.error(f"Role not found: {e.message}", exc_info=True)
         raise HTTPException(status_code=404, detail=f"Role not found")

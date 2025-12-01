@@ -29,7 +29,7 @@ class RoleRepository(BaseRepository[Role]):
                 name="Database Error"
             )
 
-    def get_role_by_id(self, id: int) -> Role | None:
+    def get_role_by_role_id(self, id: int) -> Role | None:
         """
         Retrieve a role by its ID.
         """
