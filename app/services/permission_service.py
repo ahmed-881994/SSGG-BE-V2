@@ -14,7 +14,7 @@ class PermissionService:
     def __init__(self, db_session: Session):
         self.db_session = db_session
         self.permission_repository = PermissionRepository(db_session)
-        
+
     def get_permission_by_permission_id(self, id: int) -> Dict | None:
         """
         Retrieve a permission by its ID.
@@ -45,7 +45,7 @@ class PermissionService:
                 message="An unexpected error occurred while retrieving the permission",
                 name="Unexpected Error"
             )
-            
+
     def search_permissions(self, name: str | None, category: str | None) -> Dict | None:
         """
         Search permissions by name and/or category.
@@ -78,7 +78,7 @@ class PermissionService:
                 message="An unexpected error occurred while searching for permissions",
                 name="Unexpected Error"
             )
-            
+
     def create_permission(self, permission_data: dict) -> Dict:
         """
         Create a new permission.
@@ -109,7 +109,7 @@ class PermissionService:
                 message="An unexpected error occurred while creating the permission",
                 name="Unexpected Error"
             )
-            
+
     def update_permission(self, permission_id: int, update_data: dict) -> Dict:
         """
         Update an existing permission.
@@ -140,7 +140,7 @@ class PermissionService:
                 message="An unexpected error occurred while updating the permission",
                 name="Unexpected Error"
             )
-            
+
     def delete_permission(self, permission_id: int) -> None:
         """
         Delete a permission by its ID.

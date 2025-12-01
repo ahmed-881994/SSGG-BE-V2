@@ -12,7 +12,7 @@ class PermissionCreate(BaseSchema):
     display_name: str = Field(alias="DisplayName")
     description: Optional[str] = Field(alias="Description", default=None)
     category: str = Field(alias="Category")
-    # is_active: bool = Field(alias="IsActive", default=True)
+
     
 class PermissionUpdate(BaseSchema):
     name: str = Field(alias="Name")

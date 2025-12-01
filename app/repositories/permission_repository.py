@@ -17,7 +17,7 @@ class PermissionRepository(BaseRepository[Permission]):
     
     def __init__(self, db: Session):
         super().__init__(db, Permission)
-        
+
     def _get_next_permission_id(self) -> int:
         """Get the next available permission ID."""
         try:
@@ -27,7 +27,7 @@ class PermissionRepository(BaseRepository[Permission]):
                 message=f"Failed to retrieve next permission ID: {str(e)}",
                 name="Database Error"
             )
-        
+
     def get_permission_by_name(self, name: str) -> Permission | None:
         """
         Retrieve a permission by its name.
@@ -37,8 +37,8 @@ class PermissionRepository(BaseRepository[Permission]):
         except SQLAlchemyError as e:
             logger.error(f"Error retrieving permission by name {name}: {e}")
             raise ServiceError(message=f"Failed to retrieve permission: {str(e)}",
-                name="Database Error")    
-    
+                name="Database Error")
+
     def get_permission_by_permission_id(self, id: int) -> Permission | None:
         """
         Retrieve a permission by its ID.
@@ -49,7 +49,7 @@ class PermissionRepository(BaseRepository[Permission]):
             logger.error(f"Error retrieving permission by ID {id}: {e}")
             raise ServiceError(message=f"Failed to retrieve permission: {str(e)}",
                 name="Database Error")
-            
+
     def search_permissions(self, name: str | None, category: str | None) -> list[Permission]|None:
         """
         Search permissions by name.
@@ -65,7 +65,7 @@ class PermissionRepository(BaseRepository[Permission]):
             logger.error(f"Error searching permissions with name {name}: {e}")
             raise ServiceError(message=f"Failed to search permissions: {str(e)}",
                 name="Database Error")
-            
+
     def create_permission(self, name: str, display_name: str, description: str = '', category: str = '') -> Permission:
         """
         Create a new permission.

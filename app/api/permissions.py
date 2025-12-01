@@ -49,15 +49,14 @@ def get_permission(permission_id: int, db: Session = Depends(get_db_session)):
         logger.error(f"Unexpected error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail='Unexpected error')
 
-@router.put("/{permission_id}", tags=["Permissions"])
+@router.put("/{permission_id}", tags=["Permissions"], response_model=PermissionResponse)
 def update_permission(permission_id: int, permission_data: PermissionUpdate, db: Session = Depends(get_db_session)):
     """
     Update permission by ID
     """
     try:
         permission_service = PermissionService(db)
-        permission_service.update_permission(permission_id, permission_data.model_dump())
-        return {"message": "Permission updated successfully"}
+        return permission_service.update_permission(permission_id, permission_data.model_dump())
     except EntityDoesNotExistError as e:
         logger.error(f"Permission not found: {e.message}", exc_info=True)
         raise HTTPException(status_code=404, detail="Permission not found")
