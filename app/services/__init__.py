@@ -13,6 +13,7 @@ from .lookup_service import LookupService
 from .member_service import MemberService
 from .user_service import UserService
 from .role_service import RoleService
+from .permission_service import PermissionService
 
 __all__ = [
     "AuthService",
@@ -22,5 +23,6 @@ __all__ = [
     "EntityService",
     "EventService",
     "LookupService",
-    "RoleService"
+    "RoleService",
+    "PermissionService"
 ]

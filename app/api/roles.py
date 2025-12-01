@@ -8,7 +8,7 @@ from app.core.database import get_db_session
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
-from app.schemas.roles_schema import (RoleCreate, RoleNoPermissionsResponse,
+from app.schemas.role_schema import (RoleCreate, RoleNoPermissionsResponse,
                                       RoleResponse, RoleSearchResponse,
                                       RoleUpdate, RoleUpdatePermissions)
 from app.services.role_service import RoleService
