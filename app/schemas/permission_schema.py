@@ -15,11 +15,11 @@ class PermissionCreate(BaseSchema):
 
     
 class PermissionUpdate(BaseSchema):
-    name: str = Field(alias="Name")
-    display_name: str = Field(alias="DisplayName")
+    name: Optional[str] = Field(alias="Name")
+    display_name: Optional[str] = Field(alias="DisplayName")
     description: Optional[str] = Field(alias="Description", default=None)
-    category: str = Field(alias="Category")
-    is_active: bool = Field(alias="IsActive", default=True)
+    category: Optional[str] = Field(alias="Category")
+    is_active: Optional[bool] = Field(alias="IsActive", default=True)
     
 # Responses
 class PermissionResponse(BaseSchema):

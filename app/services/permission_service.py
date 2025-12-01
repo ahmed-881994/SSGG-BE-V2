@@ -121,6 +121,14 @@ class PermissionService:
                     message=f"Permission with ID {permission_id} does not exist",
                     name="Permission Not Found"
                 )
+            # Check for name conflicts if name is being updated  
+            if 'name' in update_data and update_data['name'] != permission.name:  
+                existing = self.permission_repository.get_permission_by_name(update_data['name'])  
+                if existing:  
+                    raise EntityAlreadyExistsError(  
+                        message=f"Permission with name {update_data['name']} already exists",  
+                        name="Permission Already Exists"  
+                    )  
             updated_permission = self.permission_repository.update_permission(permission, update_data)
             return {
                 "id": updated_permission.permission_id,

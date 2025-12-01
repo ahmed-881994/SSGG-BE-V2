@@ -56,7 +56,7 @@ def update_permission(permission_id: int, permission_data: PermissionUpdate, db:
     """
     try:
         permission_service = PermissionService(db)
-        return permission_service.update_permission(permission_id, permission_data.model_dump())
+        return permission_service.update_permission(permission_id, permission_data.model_dump(exclude_none=True))
     except EntityDoesNotExistError as e:
         logger.error(f"Permission not found: {e.message}", exc_info=True)
         raise HTTPException(status_code=404, detail="Permission not found")
