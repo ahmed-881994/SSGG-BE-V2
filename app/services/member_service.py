@@ -32,9 +32,9 @@ class MemberService:
         return member_data
     
     def _generate_member_id(self, stage_joined: str, join_year: int, birth_year: str, gender: str) -> str:
-        serial_number_query = text("SELECT COUNT(*) + 1 FROM members WHERE date_joined = :join_year")
-        serial_number = self.db_session.execute(serial_number_query, {"join_year": join_year}).scalar()
         
+        serial_number_query = self.db_session.query(Member).filter(Member.date_joined == join_year)
+        serial_number = serial_number_query.count() + 1
         
         group_letter = 'S' if gender.lower() == 'male' else 'G'
         stage_joined_char = self.join_stage_codes.get(stage_joined)
