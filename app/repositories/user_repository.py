@@ -162,7 +162,7 @@ class UserRepository(BaseRepository[User]):
             )
 
     def create_user(self, user_name: str, user_id: str, password_hash: str,
-                    # user_type: int, 
+                    role_id: int, 
                     salt: str, is_active: bool = True,
                     password_reset: bool = False) -> User:
         """Create a new user in the database.
@@ -206,7 +206,7 @@ class UserRepository(BaseRepository[User]):
             user.user_name = user_name
             user.user_id = user_id
             user.password_hash = password_hash
-            # user.user_type = user_type
+            user.role_id = role_id
             user.salt = salt
             user.is_active = is_active
             user.password_reset = password_reset
