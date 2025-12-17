@@ -1,5 +1,5 @@
 from datetime import date
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import Field, field_validator
 
@@ -8,11 +8,53 @@ from app.schemas.common_schema import NameObject
 
 # Requests
 
-class MemberRequest(BaseSchema):
+class MemberCreateRequest(BaseSchema):
+    member_id: Optional[str] = Field(default=None,alias='MemberID', description="The unique identifier for the member (for creation only till ID generation is implemented)")
+    name: NameObject = Field(alias='Name', description="The name of the member")
+    place_of_birth: Optional[str] = Field(default=None,alias='PlaceOfBirth', description="The place of birth of the member")
+    date_of_birth: date = Field(alias='DateOfBirth', description="The date of birth of the member")
+    gender: Literal['male', 'female'] = Field(alias='Gender', description="The gender of the member")
+    address: Optional[str] = Field(default=None,alias='Address', description="The address of the member")
+    national_id_no: Optional[str] = Field(default=None,alias='NationalIdNo', description="The national ID number of the member")
+    club_id_no: Optional[str] = Field(default=None,alias='ClubIdNo', description="The club ID number of the member")
+    passport_no: Optional[str] = Field(default=None,alias='PassportNo', description="The passport number of the member")
+    date_joined: int = Field(alias='DateJoined', ge=2003, description="The date the member joined")
+    mobile_number: Optional[str] = Field(default=None,alias='MobileNo', description="The mobile number of the member")
+    home_contact: Optional[str] = Field(default=None,alias='HomeContact', description="The home contact number of the member")
+    email: Optional[str] = Field(default=None,alias='Email', description="The email address of the member")
+    facebook_url: Optional[str] = Field(default=None,alias='FacebookURL', description="The Facebook profile URL of the member")
+    school_name: Optional[str] = Field(default=None,alias='SchoolName', description="The school name of the member")
+    education_type: Optional[str] = Field(default=None,alias='EducationType', description="The education type of the member")
+    father_name: Optional[str] = Field(default=None,alias='FatherName', description="The father's name of the member")
+    father_contact: Optional[str] = Field(default=None,alias='FatherContact', description="The father's contact number of the member")
+    father_job: Optional[str] = Field(default=None,alias='FatherJob', description="The father's job of the member")
+    mother_name: Optional[str] = Field(default=None,alias='MotherName', description="The mother's name of the member")
+    mother_contact: Optional[str] = Field(default=None,alias='MotherContact', description="The mother's contact number of the member")
+    mother_job: Optional[str] = Field(default=None,alias='MotherJob', description="The mother's job of the member")
+    guardian_name: Optional[str] = Field(default=None,alias='GuardianName', description="The guardian's name of the member")
+    guardian_contact: Optional[str] = Field(default=None,alias='GuardianContact', description="The guardian's contact number of the member")
+    guardian_relationship: Optional[str] = Field(default=None,alias='GuardianRelationship', description="The guardian's relationship to the member")
+    hobbies: Optional[str] = Field(default=None,alias='Hobbies', description="The hobbies of the member")
+    health_issues: Optional[str] = Field(default=None,alias='HealthIssues', description="The health issues of the member")
+    medications: Optional[str] = Field(default=None,alias='Medications', description="The medications of the member")
+    qr_code_url: Optional[str] = Field(default=None,alias='QRCodeURL', description="The QR code URL of the member")
+    image_url: Optional[str] = Field(default=None,alias='ImageURL', description="The image URL of the member")
+    national_id_url: Optional[str] = Field(default=None,alias='NationalIdURL', description="The national ID URL of the member")
+    parent_national_id_url: Optional[str] = Field(default=None,alias='ParentNationalIdURL', description="The parent's national ID URL of the member")
+    club_id_url: Optional[str] = Field(default=None,alias='ClubIdURL', description="The club ID URL of the member")
+    passport_url: Optional[str] = Field(default=None,alias='PassportURL', description="The passport URL of the member")
+    birth_certificate_url: Optional[str] = Field(default=None,alias='BirthCertificateURL', description="The birth certificate URL of the member")
+    photo_consent: Optional[bool] = Field(default=None,alias='PhotoConsent', description="The photo consent status of the member")
+    conditions_consent: Optional[bool] = Field(default=None,alias='ConditionsConsent', description="The conditions consent status of the member")
+    stage_joined: Literal['Smurfs/Pres', 'Cubs/Jeanette', 'Scout/Guide', 'Senior/GA', 'Rover', 'Leader'] = Field(alias='StageJoined', description="The stage the member joined at (e.g., Smurfs/Pres, Cubs/Jeanette, Scout/Guide, Senior/GA, Rover, Leader)")
+    
+    
+class MemberUpdateRequest(BaseSchema):
     member_id: Optional[str] = Field(default=None,alias='MemberID', description="The unique identifier for the member (for creation only till ID generation is implemented)")
     name: Optional[NameObject] = Field(default=None,alias='Name', description="The name of the member")
     place_of_birth: Optional[str] = Field(default=None,alias='PlaceOfBirth', description="The place of birth of the member")
     date_of_birth: Optional[date] = Field(default=None,alias='DateOfBirth', description="The date of birth of the member")
+    gender: Optional[str] = Field(default=None,alias='Gender', description="The gender of the member")
     address: Optional[str] = Field(default=None,alias='Address', description="The address of the member")
     national_id_no: Optional[str] = Field(default=None,alias='NationalIdNo', description="The national ID number of the member")
     club_id_no: Optional[str] = Field(default=None,alias='ClubIdNo', description="The club ID number of the member")

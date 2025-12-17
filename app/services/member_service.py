@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import text
 
 from app.config.logging_config import logger
 from app.core.exceptions import (EntityAlreadyExistsError,
@@ -15,7 +16,13 @@ class MemberService:
     def __init__(self, db_session: Session):
         self.db_session = db_session
         self.member_repository = MemberRepository(db_session)
-
+        self.join_stage_codes = {
+            'Smurfs/Pres': 1,
+            'Cubs/Jeanette': 2,
+            'Scout/Guide': 3,
+            'Senior/GA': 4,
+            'Rover': 5,
+            'Leader': 6}
 
     def _transform_name_fields(self, member_data: Dict[str, Any]) -> Dict[str, Any]:
         """Transform name fields to separate English and Arabic names."""
@@ -23,6 +30,21 @@ class MemberService:
         member_data['name_ar'] = member_data.get('name', {}).get('ar', '').strip()
         member_data.pop('name', None)
         return member_data
+    
+    def _generate_member_id(self, stage_joined: str, join_year: int, birth_year: str, gender: str) -> str:
+        serial_number_query = text("SELECT COUNT(*) + 1 FROM members WHERE date_joined = :join_year")
+        serial_number = self.db_session.execute(serial_number_query, {"join_year": join_year}).scalar()
+        
+        
+        group_letter = 'S' if gender.lower() == 'male' else 'G'
+        stage_joined_char = self.join_stage_codes.get(stage_joined)
+        join_year_chars = str(join_year)[-2:]
+        birth_year_chars = birth_year[-2:]
+        serial_number_chars = str(serial_number).zfill(3)
+        
+        return f"{group_letter}{stage_joined_char}{join_year_chars}{birth_year_chars}{serial_number_chars}"
+        
+        
 
     def format_member_data(self, member: Member) -> Dict[str, Any]:
         """Format member data to include entities and roles."""
@@ -83,12 +105,21 @@ class MemberService:
             
     def create_member(self, member_data: Dict[str, Any]) -> Dict[str, Any]:
         try:
-            member = self.member_repository.get_member_by_member_id(member_data.get('member_id'))
-            if member:
-                raise EntityAlreadyExistsError("Member with this ID already exists.", name="Member Creation Error")
+            member_id = member_data.get('member_id')
+            if member_id:
+                member = self.member_repository.get_member_by_member_id(member_id)
+                # If member with provided member_id already exists, raise error
+                if member:
+                    raise EntityAlreadyExistsError("Member with this ID already exists.", name="Member Creation Error")
 
-            # TODO Generate member_id if not provided
-            
+            # Generate member_id if not provided
+            else:
+                member_data['member_id'] = self._generate_member_id(
+                    stage_joined=member_data.get('stage_joined', ''),
+                    join_year=member_data.get('date_joined', 2003),
+                    birth_year=str(member_data.get('date_of_birth', 0))[:4],
+                    gender=member_data.get('gender', '')
+                )
             # format member_data as needed
             member_data = self._transform_name_fields(member_data)
             # If member does not exist, create a new record

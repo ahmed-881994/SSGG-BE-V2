@@ -8,7 +8,7 @@ from app.core.database import get_db_session
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
-from app.schemas.member_schema import (MemberAttendanceResponse, MemberRequest,
+from app.schemas.member_schema import (MemberAttendanceResponse, MemberCreateRequest, MemberUpdateRequest,
                                        MemberResponse, SearchMembersResponse)
 from app.services.member_service import MemberService
 
@@ -37,7 +37,7 @@ def search_members(name: Optional[str] = None, entityID: Optional[int] = None, d
 
 @router.post("", status_code=201, responses={
     201: {"description": "Member created successfully", "model": MemberResponse}})
-def create_member(body: MemberRequest, db: Session = Depends(get_db_session)):
+def create_member(body: MemberCreateRequest, db: Session = Depends(get_db_session)):
     """
     Creates a new member
     """
@@ -77,7 +77,7 @@ def get_member(member_id: str, db: Session = Depends(get_db_session)):
 
 @router.put("/{member_id}", response_model=MemberResponse, responses={
     200: {"description": "Member updated successfully", "model": MemberResponse}})
-def update_member(member_id: str, body: MemberRequest, db: Session = Depends(get_db_session)):
+def update_member(member_id: str, body: MemberUpdateRequest, db: Session = Depends(get_db_session)):
     """
     Updates a member
     """
