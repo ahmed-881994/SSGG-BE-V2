@@ -22,6 +22,7 @@ class Member(Base):
     place_of_birth: Mapped[str] = mapped_column(String(255), nullable=True)  # Birth location
     date_of_birth: Mapped[Date] = mapped_column(Date, nullable=True)          # Birth date for age calculations
     address: Mapped[str] = mapped_column(Text, nullable=True)                # Residential address (can be long)
+    gender: Mapped[str] = mapped_column(String(100), nullable=True)
 
     # Identity document numbers
     national_id_no: Mapped[str] = mapped_column(String(50), nullable=True)   # National ID number
@@ -107,6 +108,7 @@ class Member(Base):
             # "entities": [self.entity.to_dict() for self in self.entity_memberships],
             "place_of_birth": self.place_of_birth,
             "date_of_birth": self.date_of_birth,
+            "gender": self.gender,
             "address": self.address,
             "national_id_no": self.national_id_no,
             "club_id_no": self.club_id_no,
