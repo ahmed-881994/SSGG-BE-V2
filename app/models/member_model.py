@@ -22,7 +22,7 @@ class Member(Base):
     place_of_birth: Mapped[str] = mapped_column(String(255), nullable=True)  # Birth location
     date_of_birth: Mapped[Date] = mapped_column(Date, nullable=True)          # Birth date for age calculations
     address: Mapped[str] = mapped_column(Text, nullable=True)                # Residential address (can be long)
-    gender: Mapped[str] = mapped_column(String(100), nullable=True)
+    gender: Mapped[str] = mapped_column(String(100), nullable=True)         # Gebder of the member
 
     # Identity document numbers
     national_id_no: Mapped[str] = mapped_column(String(50), nullable=True)   # National ID number
@@ -41,6 +41,7 @@ class Member(Base):
     # Educational information
     school_name: Mapped[str] = mapped_column(String(255), nullable=True)     # Current/last school
     education_type: Mapped[str] = mapped_column(String(100), nullable=True)  # Education level/type
+    job: Mapped[str] = mapped_column(String(100), nullable=True)             # Current occupation/job
 
     # Family information - Father details
     father_name: Mapped[str] = mapped_column(String(255), nullable=True)     # Father's full name
@@ -120,6 +121,7 @@ class Member(Base):
             "facebook_url": self.facebook_url,
             "school_name": self.school_name,
             "education_type": self.education_type,
+            "job": self.job,
             "father_name": self.father_name,
             "father_contact": self.father_contact,
             "father_job": self.father_job,
