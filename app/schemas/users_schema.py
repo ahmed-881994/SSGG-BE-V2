@@ -17,7 +17,7 @@ class UserCreate(BaseSchema):
 
 class UserUpdate(BaseSchema):
     user_name: Optional[str] = Field(alias="UserName", default=None)
-    role_id: Optional[int] = Field(alias="RoleID", default=None, ge=1, le=3)
+    role_id: Optional[int] = Field(alias="RoleID", default=0)
     is_active: Optional[bool] = Field(alias="IsActive", default=True)
     password_reset: Optional[bool] = Field(alias="PasswordReset", default=False)
     
