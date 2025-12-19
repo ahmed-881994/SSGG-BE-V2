@@ -1,7 +1,6 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pymysql import MySQLError
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db_session
