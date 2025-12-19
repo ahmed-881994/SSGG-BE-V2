@@ -73,12 +73,12 @@ class EventResponse(BaseSchema):
     event_id: int = Field(alias="EventID")
     event_name: NameObject = Field(alias="EventName")
     event_start_date: date = Field(alias="EventStartDate")
-    event_end_date: Optional[date] = Field(alias="EventEndDate")
-    event_location: Optional[str] = Field(alias="EventLocation")
+    event_end_date: Optional[date] = Field(alias="EventEndDate", default=None)
+    event_location: Optional[str] = Field(alias="EventLocation", default=None)
     is_multi_team: bool = Field(alias="IsMultiTeam")
     event_type: EventType = Field(alias="EventType")
     organizing_entity: EventEntity = Field(alias="OrganizingEntity")
-    participating_entities: Optional[list[EventEntity]] = Field(alias="ParticipatingEntities")
+    participating_entities: Optional[list[EventEntity]] = Field(alias="ParticipatingEntities", default=None)
 
 
 class SearchEventsResponse(BaseSchema):

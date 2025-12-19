@@ -9,7 +9,7 @@ class LookupEntrySchema(BaseSchema):
     """Schema for individual lookup entries."""
     lookup_id: int = Field(alias="LookupID")
     en: str = Field(alias="EN")
-    ar: Optional[str] = Field(alias="AR")
+    ar: Optional[str] = Field(alias="AR", default=None)
 
 class LookupObjectSchema(BaseSchema):
     """Schema for Lookup table."""

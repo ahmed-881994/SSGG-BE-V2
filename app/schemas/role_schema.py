@@ -14,9 +14,9 @@ class Permission(BaseSchema):
     category: str = Field(alias="Category")
     is_active: bool = Field(alias="IsActive")
     created_at: datetime = Field(alias="CreatedAt")
-    updated_at: Optional[datetime] = Field(alias="UpdatedAt")
-    assigned_at: Optional[datetime] = Field(alias="AssignedAt")
-    assigned_by: Optional[int] = Field(alias="AssignedBy")
+    updated_at: Optional[datetime] = Field(alias="UpdatedAt", default=None)
+    assigned_at: Optional[datetime] = Field(alias="AssignedAt", default=None)
+    assigned_by: Optional[int] = Field(alias="AssignedBy", default=None)
 
 # Requests
 class RoleCreate(BaseSchema):
@@ -27,11 +27,11 @@ class RoleCreate(BaseSchema):
     # is_active: bool = Field(alias="IsActive", default=True)
     
 class RoleUpdate(BaseSchema):
-    name: Optional[str] = Field(alias="Name")
-    display_name: Optional[str] = Field(alias="DisplayName")
-    description: Optional[str] = Field(alias="Description")
-    is_system_role: Optional[bool] = Field(alias="IsSystemRole")
-    is_active: Optional[bool] = Field(alias="IsActive")
+    name: Optional[str] = Field(alias="Name", default=None)
+    display_name: Optional[str] = Field(alias="DisplayName", default=None)
+    description: Optional[str] = Field(alias="Description", default=None)
+    is_system_role: Optional[bool] = Field(alias="IsSystemRole", default=None)
+    is_active: Optional[bool] = Field(alias="IsActive", default=None)
     
 class RoleUpdatePermissions(BaseSchema):
     permissions_ids: List[int] = Field(alias="PermissionsIDs")
@@ -46,8 +46,8 @@ class RoleResponse(BaseSchema):
     is_system_role: bool = Field(alias="IsSystemRole")
     is_active: bool = Field(alias="IsActive")
     created_at: datetime = Field(alias="CreatedAt")
-    updated_at: Optional[datetime] = Field(alias="UpdatedAt")
-    permissions: Optional[List[Permission]] = Field(alias="Permissions")
+    updated_at: Optional[datetime] = Field(alias="UpdatedAt", default=None)
+    permissions: Optional[List[Permission]] = Field(alias="Permissions", default=None)
 
 class RoleNoPermissionsResponse(BaseSchema):
     id: int = Field(alias="ID")
@@ -57,7 +57,7 @@ class RoleNoPermissionsResponse(BaseSchema):
     is_system_role: bool = Field(alias="IsSystemRole")
     is_active: bool = Field(alias="IsActive")
     created_at: datetime = Field(alias="CreatedAt")
-    updated_at: Optional[datetime] = Field(alias="UpdatedAt")
+    updated_at: Optional[datetime] = Field(alias="UpdatedAt", default=None)
     # permissions: Optional[List[Permission]] = Field(alias="Permissions")
     
 class RoleSearchResponse(BaseSchema):
