@@ -53,7 +53,7 @@ def update_user(user_id: str, user: UserUpdate, db: Session = Depends(get_db_ses
     """Update an existing user."""
     try:
         user_service = UserService(db)
-        return user_service.update_user(user_id=user_id, **user.model_dump())
+        return user_service.update_user(user_id=user_id, **user.model_dump(exclude_none=True))
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except ServiceError as e:

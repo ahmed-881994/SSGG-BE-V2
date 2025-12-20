@@ -120,6 +120,19 @@ class UserRepository(BaseRepository[User]):
             ServiceError: If a database error occurs during the update.
         """
         try:
+            
+            user_with_same_username = None
+            if 'user_name' in kwargs:
+                user_with_same_username = self.db.query(User).filter(
+                    User.user_name == kwargs['user_name'],
+                    User.user_id != user_id
+                ).first()
+            if user_with_same_username:
+                raise EntityAlreadyExistsError(
+                    message="User with this username already exists.",
+                    name="User Update Error"
+                )
+            
             user = self.db.query(User).filter(User.user_id == user_id).first()
 
             if not user:
