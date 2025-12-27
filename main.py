@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from pymysql import DataError, IntegrityError
 from contextlib import asynccontextmanager
 
-from app.api import auth, entities, events, health, lookups, members, permissions, roles, users
+from app.api import auth, entities, events, health, lookups, members, permissions, roles, users, visualizer
 from app.config.logging_config import logger
 from app.config.settings import settings
 from app.core.access_control_middleware import access_control_middleware
@@ -101,7 +101,10 @@ tags_metadata = [
     {
         "name": "Users",
         "description": "User management endpoints for creating, updating, retrieving, and deleting user accounts. Handles user profiles, roles, and access permissions within the SSGG system.",
-    }
+    },
+    {   "name": "Visualizer",
+        "description": "Endpoints for executing visualization queries and retrieving data for graphical representations. Supports custom query execution and data formatting for visual analytics.",
+    },
 ]
 
 app.openapi_tags = tags_metadata
@@ -119,6 +122,7 @@ app.include_router(lookups.router)
 app.include_router(health.router)
 app.include_router(roles.router)
 app.include_router(permissions.router)
+app.include_router(visualizer.router)
 
 
 # Mount the static directory
