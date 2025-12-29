@@ -23,6 +23,16 @@ jobs:
           else
             echo "environment=development" >> $GITHUB_OUTPUT
           fi
+      - name: Set up environment variables
+        run: |
+          echo "=========================================="
+          echo "Deployment Information"
+          echo "=========================================="
+          echo "Environment: ${{ github.environment }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "=========================================="
   build:
     needs: setup
     runs-on: ubuntu-latest
