@@ -70,8 +70,8 @@ jobs:
           file: ./dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/ssgg-be-v2:${{ needs.setup.outputs.environment }}-${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/ssgg-be-v2:${{ needs.setup.outputs.environment }}-latest
+            ghcr.io/${{ github.repository_owner }}/ssgg-be-v2:${{ needs.setup.outputs.environment }}-${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/ssgg-be-v2:${{ needs.setup.outputs.environment }}-latest
 
   deploy:
     needs: 
