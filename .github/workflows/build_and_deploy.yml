@@ -28,7 +28,7 @@ jobs:
           echo "=========================================="
           echo "Deployment Information"
           echo "=========================================="
-          echo "Environment: ${{ github.environment }}"
+          echo "Environment: ${{ steps.set-env.outputs.environment }}"
           echo "Branch: ${{ github.ref_name }}"
           echo "Repository: ${{ github.repository }}"
           echo "Actor: ${{ github.actor }}"
