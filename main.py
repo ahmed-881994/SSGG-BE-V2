@@ -8,17 +8,20 @@ from fastapi.staticfiles import StaticFiles
 from pymysql import DataError, IntegrityError
 from contextlib import asynccontextmanager
 
-from app.api import auth, entities, events, health, lookups, members, teams
+from app.api import auth, entities, events, health, lookups, members, permissions, roles, users, visualizer
 from app.config.logging_config import logger
 from app.config.settings import settings
-from app.exceptions.exceptions import (AuthenticationFailed,
+from app.core.access_control_middleware import access_control_middleware
+from app.core.exceptions import (AuthenticationFailed,
                                        EntityDoesNotExistError,
                                        InvalidOperationError,
                                        InvalidTokenError, ServiceError,
                                        SSGGApiError)
-from app.middleware.logging_middleware import logging_middleware
-from app.middleware.rate_limitting import setup_rate_limiting
-from app.schema.common import ErrorResponse
+from app.core.logging_middleware import logging_middleware
+from app.core.auditing_middleware import auditing_middleware
+from app.core.rate_limitting import setup_rate_limiting
+from app.core.user_context_middleware import user_context_middleware
+from app.schemas.common_schema import ErrorResponse
 
 
 # Add lifespan to the application
@@ -34,25 +37,29 @@ app = FastAPI(
     version="2.0.0",
     responses={
         400: {"description": "Bad request", "model": ErrorResponse},
+        401: {"description": "Unauthorized", "model": ErrorResponse},
         500: {"description": "Internal server error", "model": ErrorResponse},
     },
-    lifespan=lifespan,
-    root_path='/' + settings.environment if settings.environment != "prd" else "",
+    # lifespan=lifespan,
 )
 
+app.middleware("http")(access_control_middleware)
+app.middleware("http")(user_context_middleware)
+app.middleware("http")(auditing_middleware)
 @app.middleware("http")
 async def add_logging_middleware(request: Request, call_next):
     return await logging_middleware(request, call_next)
 
 
+
+
+
 # Setup rate limiting
 setup_rate_limiting(app)
 
-origins = ['*']
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=[s for s in settings.cors_origins.split(",")],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["*"],
@@ -62,10 +69,6 @@ tags_metadata = [
     {
         "name": "Members",
         "description": "Operations for managing member profiles, including registration, updates, queries, and membership status management. Handles individual member data and their associated roles.",
-    },
-    {
-        "name": "Teams",
-        "description": "Operations for team management and organization. Note: This API group is deprecated and will be removed in future versions. Please refer to Entities for the updated endpoints.",
     },
     {
         "name": "Events",
@@ -82,7 +85,26 @@ tags_metadata = [
     {
         "name": "Lookups",
         "description": "Reference data endpoints providing access to system-wide lookup tables, including member types, roles, ranks, badges, and other standardized classifications used across the application.",
-    }
+    },
+    {
+        "name": "Roles",
+        "description": "Endpoints for managing user roles and permissions within the SSGG system. Includes role creation, updates, deletions, and permission assignments to control access to various features and data.",
+    },
+    {
+        "name": "Permissions",
+        "description": "Management of permissions associated with roles and users. Endpoints to create, update, delete, and query permissions that define access levels within the SSGG application.",
+    },
+    {
+        "name": "Health",
+        "description": "Health check endpoints to monitor the status and performance of the SSGG backend services. Provides basic uptime and diagnostics information.",
+    },
+    {
+        "name": "Users",
+        "description": "User management endpoints for creating, updating, retrieving, and deleting user accounts. Handles user profiles, roles, and access permissions within the SSGG system.",
+    },
+    {   "name": "Visualizer",
+        "description": "Endpoints for executing visualization queries and retrieving data for graphical representations. Supports custom query execution and data formatting for visual analytics.",
+    },
 ]
 
 app.openapi_tags = tags_metadata
@@ -93,11 +115,14 @@ app.openapi_tags = tags_metadata
 # ------------------------------#
 app.include_router(auth.router)
 app.include_router(members.router)
-app.include_router(teams.router, deprecated=True)
+app.include_router(users.router)
 app.include_router(events.router)
 app.include_router(entities.router)
 app.include_router(lookups.router)
 app.include_router(health.router)
+app.include_router(roles.router)
+app.include_router(permissions.router)
+app.include_router(visualizer.router)
 
 
 # Mount the static directory

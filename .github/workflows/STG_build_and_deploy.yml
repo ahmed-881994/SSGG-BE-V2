@@ -2,7 +2,7 @@ name: Deploy to Staging
 
 on:
   push:
-    branches: [staging]
+    branches: [stage]
   workflow_dispatch:
 
 env:
@@ -16,6 +16,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        ref: stage
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -31,11 +33,11 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile
+        file: ./dockerfile
         push: true
         tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}:${{ env.ENVIRONMENT }}-${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ github.repository }}:${{ env.ENVIRONMENT }}-latest
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/ssgg-be-v2:${{ env.ENVIRONMENT }}-${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/ssgg-be-v2:${{ env.ENVIRONMENT }}-latest
 
   deploy:
     needs: build
@@ -44,10 +46,25 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        ref: stage
+
+    - name: Docker Stack Deploy Traefik
+      uses: cssnr/stack-deploy-action@v1
+      with:
+        name: traefik
+        file: docker-stack-traefik.yml
+        mode: swarm
+        host: ${{ secrets.SSH_HOST }}
+        user: ${{ secrets.SSH_USER }}
+        ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+        summary: true
 
     - name: Create environment file
       run: |
         cat > .env << EOF
+        # Application environment
+        environment=${{ env.ENVIRONMENT }}
         # DB settings
         db_host=${{ secrets.STAGING_DB_HOST }}
         db_port=${{ secrets.STAGING_DB_PORT }}
@@ -68,17 +85,23 @@ jobs:
         # JWT settings
         secret_key=${{ secrets.STAGING_JWT_SECRET }}
         algorithm=${{ secrets.STAGING_JWT_ALGORITHM }}
-        access_token_expire_minutes=${{ secrets.STAGING_JWT_EXPIRES_IN }}
+        access_token_expires_minutes=${{ secrets.STAGING_JWT_EXPIRES_IN }}
 
 
         # Security settings
-        cors_origins=["${{ secrets.STAGING_CORS_ORIGINS }}"]
+        cors_origins="*"
         rate_limit_per_minute=${{ secrets.STAGING_RATE_LIMIT_PER_MINUTE }}
 
 
         # Logging settings
         log_level=${{ secrets.STAGING_LOG_LEVEL }}
-        log_format=%(asctime)s - %(name)s - %(levelname)s - %(message)s
+
+        # Email settings
+        smtp_server=${{ secrets.SMTP_SERVER }}
+        smtp_port=${{ secrets.SMTP_PORT }}
+        smtp_username=${{ secrets.SMTP_USERNAME }}
+        smtp_password=${{ secrets.SMTP_PASSWORD }}
+        from_email=${{ secrets.SMTP_USERNAME }}
 
 
         MYSQL_ROOT_PASSWORD=${{ secrets.STAGING_MYSQL_ROOT_PASSWORD }}
@@ -90,35 +113,52 @@ jobs:
         GIT_COMMIT_HASH=${{ github.sha }}
         EOF
 
+    - name: Debug Environment File
+      run: |
+        echo "=== Generated .env file ==="
+        cat .env
+        echo "=== Environment variable check ==="
+        grep "environment=" .env || echo "ERROR: environment variable missing!"
+      
     - name: Docker Stack Deploy
       uses: cssnr/stack-deploy-action@v1
       with:
-        name: ssgg-v2-staging
-        file: docker-stack.staging.yml
+        name: ssgg-be-v2-staging
+        file: docker-stack.stg.yml
+        mode: swarm
         host: ${{ secrets.SSH_HOST }}
         user: ${{ secrets.SSH_USER }}
         ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+        registry_host: 'ghcr.io'
+        registry_user: ${{ github.repository_owner }}
+        registry_pass: ${{ secrets.GH_TOKEN }}
         env_file: ./.env
-
-    - name: Health Check
-      run: |
-        echo "Waiting for the application to start..."
-        sleep 60
-        
-        HEALTH_URL="https://${{ secrets.DOMAIN }}/${{ secrets.STAGING_BASE_PATH }}/health"
-
-        echo "Testing: $HEALTH_URL"
-          for i in {1..5}; do
-            if curl -f -m 10 "$HEALTH_URL" 2>/dev/null; then
-              echo "✅ Staging deployment successful!"
-              exit 0
-            fi
-            sleep 15
-          done
-        
-        echo "❌ Staging health check failed"
-        exit 1
+        registry_auth: true
+        summary: true
 
     - name: Cleanup
       if: always()
       run: rm -f .env
+  health-check:
+    needs: deploy
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Health Check
+      run: |
+        echo "Waiting for the application to start..."
+        sleep 60
+
+        HEALTH_URL="https://${{ secrets.STAGING_DOMAIN }}/health"
+
+        echo "Testing: $HEALTH_URL"
+        for i in {1..5}; do
+          if curl -f -m 10 "$HEALTH_URL" 2>/dev/null; then
+            echo "✅ Staging deployment successful!"
+            exit 0
+          fi
+          sleep 15
+        done
+
+        echo "❌ Staging health check failed"
+        exit 1

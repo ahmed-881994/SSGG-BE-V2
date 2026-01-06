@@ -1,0 +1,28 @@
+"""
+Services package initialization.
+
+This package contains business logic services that orchestrate
+between repositories and API layers.
+"""
+
+from .auth_service import AuthService
+from .entity_service import EntityService
+from .event_service import EventService
+from .healthcheck_service import HealthCheckService
+from .lookup_service import LookupService
+from .member_service import MemberService
+from .user_service import UserService
+from .role_service import RoleService
+from .permission_service import PermissionService
+
+__all__ = [
+    "AuthService",
+    "UserService",
+    "MemberService",
+    "HealthCheckService",
+    "EntityService",
+    "EventService",
+    "LookupService",
+    "RoleService",
+    "PermissionService"
+]

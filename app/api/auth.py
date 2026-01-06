@@ -1,78 +1,162 @@
-import os
+"""
+Authentication API Router
+
+Handles authentication endpoints including login, logout, and token refresh.
+"""
+
 from datetime import timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pymysql import MySQLError
+from sqlalchemy.orm import Session
 
 from app.config.logging_config import logger
-from app.config.settings import settings
-from app.exceptions.exceptions import ServiceError
-from app.middleware.rate_limitting import rate_limit
-from app.schema.auth.Token import Token
-from app.service.auth.users import authenticate_user, logout_user
-from app.util.token import (create_access_token, create_refresh_token, oauth2_scheme,
-                           verify_refresh_token)
+from app.core.database import get_db_session
+from app.core.exceptions import AuthenticationFailed, ServiceError
+from app.core.rate_limitting import rate_limit
+from app.schemas.auth_schema import Token
+from app.services.auth_service import AuthService, oauth2_scheme
+from app.services.token_service import token_service
+from app.services.user_service import UserService
 
 router = APIRouter(tags=["Authentication"])
-
-ACCESS_TOKEN_EXPIRE_MINUTES = int(settings.access_token_expires_minutes)
 
 
 @router.post("/token", response_model=Token)
 @rate_limit("10/minute")
-def get_token(request: Request,form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+def login(request: Request, form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db_session)):
+    """
+    Authenticate user and return access and refresh tokens
+    
+    Args:
+        request: FastAPI request object (for rate limiting)
+        form_data: OAuth2 form data containing username and password
+        
+    Returns:
+        Token: Object containing access_token, token_type, and refresh_token
+        
+    Raises:
+        HTTPException: If authentication fails or user is inactive
+        ServiceError: If database error occurs
+    """
+    logger.info(f"Login attempt for user: {form_data.username}")
+    # start_time = time.time()
+    
     try:
-        user = authenticate_user(form_data.username, form_data.password)
-        if not user:
+        auth_service = AuthService(db)
+        user = auth_service.authenticate_user(form_data.username, form_data.password)
+
+        if not user.is_active:
+            raise AuthenticationFailed(message="User is not active", name="Authentication")
+        
+        user_service = UserService(db)
+        
+        user_permissions = user_service.get_user_permissions_by_id(user.id)
+
+        token_data = {"sub": str(user.id), "member_id": str(user.user_id), "role": user.role.name if user.role else None, "permissions": user_permissions}
+        access_token = token_service.create_access_token(
+            data=token_data, 
+            expires_delta=timedelta(minutes=token_service.access_token_expires_minutes)
+        )
+        refresh_token = token_service.create_refresh_token(
+            data=token_data, 
+            expires_delta=timedelta(days=7)
+        )
+        
+        return Token(
+            access_token=access_token, 
+            token_type="bearer", 
+            refresh_token=refresh_token
+        )
+    except AuthenticationFailed as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=e.message,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except ServiceError as e:
+        logger.error(f"Database error during login for user {form_data.username}: {e.message}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+    except Exception as e:
+        logger.error(f"Unexpected error during login for user {form_data.username}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Unexpected error")
+@router.post("/refresh", response_model=Token)
+@rate_limit("5/minute")
+def refresh_access_token(request: Request, refresh_token: str):
+    """
+    Refresh access token using refresh token
+    
+    Args:
+        request: FastAPI request object (for rate limiting)
+        refresh_token: Valid refresh token
+        
+    Returns:
+        Token: Object containing new access_token and token_type
+        
+    Raises:
+        HTTPException: If refresh token is invalid or expired
+    """
+    logger.info("Access token refresh requested")
+    
+    try:
+        payload = token_service.verify_token(refresh_token, "refresh")
+        id = payload.get("sub")
+
+        if not id:
+            logger.warning("Token refresh failed: Missing user subject in refresh token")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
+                detail="Invalid refresh token",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        refresh_token_expires = timedelta(days=7)
-        access_token = create_access_token(
-            data={"sub": user.user_name, "user_type": user.user_type}, expires_delta=access_token_expires
+        
+        access_token = token_service.create_access_token(
+            data=payload,
+            expires_delta=timedelta(minutes=token_service.access_token_expires_minutes)
         )
-        refresh_token = create_refresh_token(
-            data={"sub": user.user_name, "user_type": user.user_type}, expires_delta=refresh_token_expires
-        )
-        return Token(access_token=access_token, token_type="bearer", refresh_token=refresh_token)
-    except MySQLError as error:
-        # raise HTTPException(status_code=500, detail=error.args)
-        logger.error(f"Database Error: {error.args}")
-        raise ServiceError(message=error.args[1], name="Database Error" )
 
-@router.post("/refresh", response_model=Token)
-def refresh_token(refresh_token: str):
-    payload = verify_refresh_token(refresh_token)
-    if not payload:
+        logger.info(f"Token refresh successful for user '{id}'")
+
+        return Token(access_token=access_token, token_type="bearer", refresh_token=None)
+        
+    except Exception as e:
+        logger.warning(f"Token refresh failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    user_name = payload.get("sub")
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user_name}, expires_delta=access_token_expires
-    )
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
 
 @router.post("/logout")
 @rate_limit("10/minute")
 def logout(request: Request, token: str = Depends(oauth2_scheme)):
-    """Logout user by blacklisting their token"""
-    success = logout_user(token)
-    if success:
-        return {"message": "Successfully logged out"}
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid token"
-        )
+    """
+    Logout user by blacklisting their access token
+    
+    Args:
+        request: FastAPI request object (for rate limiting)
+        token: Current access token to blacklist
+        
+    Returns:
+        dict: Success message
+        
+    Raises:
+        HTTPException: If token is invalid
+    """
+    logger.info("User logout requested")
+    
+    try:
+        success = token_service.blacklist_token(token)
+        
+        if success:
+            logger.info(f"User logout successful")
+            return {"message": "Successfully logged out"}
+        else:
+            logger.warning(f"Logout failed: Invalid token")
+            raise HTTPException(status_code=400, detail="Invalid token")
+            
+    except Exception as e:
+        logger.error(f"Unexpected error during logout: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")

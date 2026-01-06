@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+  traefik:
+    image: traefik:v3.1
+    command:
+      # Swarm provider
+      - "--providers.swarm=true"
+      - "--providers.swarm.endpoint=unix:///var/run/docker.sock"
+      - "--providers.swarm.exposedbydefault=false"
+
+      # Entrypoints & redirect
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+
+      # Let's Encrypt
+      - "--certificatesresolvers.letsencrypt.acme.email=dtc@sportingscout.org"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+
+      # Dashboard
+      - "--api=true"
+      - "--api.insecure=false"
+
+      # Logging
+      - "--log.level=DEBUG"
+    ports:
+      - "8080:8080"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - traefik-public-certificates:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - traefik-public
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        # Dashboard route
+        - "traefik.http.routers.dashboard.rule=Host(`traefik.sportingscout.org`)"
+        - "traefik.http.routers.dashboard.entrypoints=websecure"
+        - "traefik.http.routers.dashboard.tls=true"
+        - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+        - "traefik.http.routers.dashboard.middlewares=traefik-auth"
+        - "traefik.http.services.dashboard.loadbalancer.server.port=8080"
+        - "traefik.http.routers.dashboard.service=api@internal"
+        # - "traefik.http.services.dummy-svc.loadbalancer.server.port=8080"
+        # Basic auth for dashboard (admin:password)
+        - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$2y$$05$$ADW88D26tyHY2b3aNU8yPOYPfo7ix6Z8dMbjwBYqh0OAfHEZa9Mam"
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+
+volumes:
+  traefik-public-certificates:
+
+networks:
+  traefik-public:
+    external: true

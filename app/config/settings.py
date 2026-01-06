@@ -1,8 +1,8 @@
-from pydantic import BaseSettings, validator
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    #APP settings
+    # #APP settings
     environment: str
     
     # Database settings
@@ -28,28 +28,36 @@ class Settings(BaseSettings):
     access_token_expires_minutes: int = 30
     
     # Security settings
-    cors_origins: list = ["*"]
+    cors_origins: str = "*"
     rate_limit_per_minute: int = 60
     
     # Logging settings
     log_level: str = "INFO"
-    log_format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     
-    @validator("secret_key")
-    def validate_secret_key(cls, v):
-        if len(v) < 32:
-            raise ValueError("Secret key must be at least 32 characters long")
-        return v
+    # SMTP settings
+    smtp_server: str
+    smtp_port: int = 587
+    smtp_username: str
+    smtp_password: str
+    from_email: str
+
+    # @validator("secret_key")
+    # def validate_secret_key(cls, v):
+    #     if len(v) < 32:
+    #         raise ValueError("Secret key must be at least 32 characters long")
+    #     return v
     
-    @validator("db_password")
-    def validate_password(cls, v):
-        if not v:
-            raise ValueError("Database password cannot be empty")
-        return v
+    # @validator("db_password")
+    # def validate_password(cls, v):
+    #     if not v:
+    #         raise ValueError("Database password cannot be empty")
+    #     return v
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": False,
+        "extra": "ignore"  # This will ignore extra fields in .env
+    }
 
 # Global settings instance
 settings = Settings()

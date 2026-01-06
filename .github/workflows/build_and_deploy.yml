@@ -1,0 +1,197 @@
+name: Build and deploy
+
+on:
+  push:
+    branches:
+      - main
+      - stage
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+    steps:
+      - name: Determine environment
+        id: set-env
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/stage" ]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          else
+            echo "environment=development" >> $GITHUB_OUTPUT
+          fi
+      - name: Display deployment info
+        run: |
+          echo "=========================================="
+          echo "Deployment Information"
+          echo "=========================================="
+          echo "Environment: ${{ steps.set-env.outputs.environment }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "=========================================="
+  build:
+    needs: setup
+    runs-on: ubuntu-latest
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Debug Info
+        run: |
+          echo "=========================================="
+          echo "Build Information"
+          echo "=========================================="
+          echo "Environment: ${{ needs.setup.outputs.environment }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "=========================================="
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: https://ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GH_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/ssgg-be-v2:${{ needs.setup.outputs.environment }}-${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/ssgg-be-v2:${{ needs.setup.outputs.environment }}-latest
+
+  deploy:
+    needs: 
+      - setup
+      - build
+    runs-on: ubuntu-latest
+    environment: ${{ needs.setup.outputs.environment }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: stage
+
+      - name: Docker Stack Deploy Traefik
+        uses: cssnr/stack-deploy-action@v1
+        with:
+          name: traefik
+          file: docker-stack-traefik.yml
+          mode: swarm
+          host: ${{ secrets.SSH_HOST }}
+          user: ${{ secrets.SSH_USER }}
+          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          summary: true
+
+      - name: Create environment file
+        run: |
+          cat > .env << EOF
+          # Application environment
+          environment=${{ needs.setup.outputs.environment }}
+          # DB settings
+          db_host=${{ secrets.DB_HOST }}
+          db_port=${{ secrets.DB_PORT }}
+          db_database=${{ secrets.DB_NAME }}
+          db_username=${{ secrets.DB_USER }}
+          db_password=${{ secrets.DB_PASSWORD }}
+
+
+          # Database connection pool settings
+          db_max_connections=${{ secrets.DB_MAX_CONNECTIONS }}
+          db_min_connections=${{ secrets.DB_MIN_CONNECTIONS }}
+
+          # Redis
+          rds_host=${{ secrets.REDIS_HOST }}
+          rds_port=${{ secrets.REDIS_PORT }}
+          rds_database=${{ secrets.REDIS_DATABASE }}
+
+          # JWT settings
+          secret_key=${{ secrets.STAGING_JWT_SECRET }}
+          algorithm=${{ secrets.STAGING_JWT_ALGORITHM }}
+          access_token_expires_minutes=${{ secrets.STAGING_JWT_EXPIRES_IN }}
+
+
+          # Security settings
+          cors_origins="*"
+          rate_limit_per_minute=${{ vars.RATE_LIMIT_PER_MINUTE }}
+
+
+          # Logging settings
+          log_level=${{ vars.LOG_LEVEL }}
+
+          # Email settings
+          smtp_server=${{ secrets.SMTP_SERVER }}
+          smtp_port=${{ secrets.SMTP_PORT }}
+          smtp_username=${{ secrets.SMTP_USERNAME }}
+          smtp_password=${{ secrets.SMTP_PASSWORD }}
+          from_email=${{ secrets.SMTP_USERNAME }}
+
+
+          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE=${{ secrets.DB_NAME }}
+          MYSQL_USER=${{ secrets.DB_USER }}
+          MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }}        
+
+          # Docker Compose settings
+          GIT_COMMIT_HASH=${{ github.sha }}
+          EOF
+
+      - name: Docker Stack Deploy
+        uses: cssnr/stack-deploy-action@v1
+        with:
+          name: ssgg-be-v2-staging
+          file: docker-stack.${{ needs.setup.outputs.environment }}.yml
+          mode: swarm
+          host: ${{ secrets.SSH_HOST }}
+          user: ${{ secrets.SSH_USER }}
+          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          registry_host: "ghcr.io"
+          registry_user: ${{ github.repository_owner }}
+          registry_pass: ${{ secrets.GH_TOKEN }}
+          env_file: ./.env
+          registry_auth: true
+          summary: true
+
+      - name: Cleanup
+        if: always()
+        run: rm -f .env
+  health-check:
+    needs: 
+      - setup
+      - deploy
+    runs-on: ubuntu-latest
+    environment: ${{ needs.setup.outputs.environment }}
+
+    steps:
+      - name: Health Check
+        run: |
+          echo "Waiting for the application to start..."
+          sleep 60
+
+          HEALTH_URL="https://${{ secrets.DOMAIN }}/health"
+
+          echo "Testing: $HEALTH_URL"
+          for i in {1..5}; do
+            if curl -f -m 10 "$HEALTH_URL" 2>/dev/null; then
+              echo "✅ Staging deployment successful!"
+              exit 0
+            fi
+            sleep 15
+          done
+
+          echo "❌ Staging health check failed"
+          exit 1
