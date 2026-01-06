@@ -154,7 +154,7 @@ jobs:
         uses: cssnr/stack-deploy-action@v1
         with:
           name: ssgg-be-v2-staging
-          file: docker-stack.stg.yml
+          file: docker-stack.${{ needs.setup.outputs.environment }}.yml
           mode: swarm
           host: ${{ secrets.SSH_HOST }}
           user: ${{ secrets.SSH_USER }}

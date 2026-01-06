@@ -1,0 +1,115 @@
+version: "3.9"
+
+services:
+  #------ mysql ------
+  mysql:
+    image: mysql:lts
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s                 # Let the app boot before first check
+    networks:
+      - prd-internal
+    deploy:
+      restart_policy:
+        condition: any
+
+  #------ api ------
+  api:
+    image: ghcr.io/ahmed-881994/ssgg-be-v2:production-${GIT_COMMIT_HASH}
+    # ports:
+    #   - "8001:8000"
+    environment:
+      - environment=${environment}
+      - db_host=${db_host}
+      - db_port=${db_port}
+      - db_database=${db_database}
+      - db_username=${db_username}
+      - db_password=${db_password}
+      - db_max_connections=${db_max_connections}
+      - db_min_connections=${db_min_connections}
+      - rds_host=${rds_host}
+      - rds_port=${rds_port}
+      - rds_database=${rds_database}
+      - secret_key=${secret_key}
+      - algorithm=${algorithm}
+      - access_token_expires_minutes=${access_token_expires_minutes}
+      - cors_origins=${cors_origins}
+      - rate_limit_per_minute=${rate_limit_per_minute}
+      - log_level=${log_level}
+      - smtp_server=${smtp_server}
+      - smtp_port=${smtp_port}
+      - smtp_username=${smtp_username}
+      - smtp_password=${smtp_password}
+      - from_email=${from_email}
+    deploy:
+      labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.sportingscout.org`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls=true"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.api.loadbalancer.server.port=8000"
+      - "traefik.docker.network=traefik-public"
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      update_config:
+        order: start-first
+        parallelism: 1           # only update 1 task at a time
+        delay: 5s                # wait before moving to next
+        failure_action: rollback # revert if update fails
+    stop_grace_period: 5s              # Kill old container quickly after swap
+    networks:
+      - traefik-public
+      - prd-internal
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s                 # Let the app boot before first check
+
+  #------ redis ------
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s                 # Let the app boot before first check
+    networks:
+      - prd-internal
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  redis_data:
+  mysql_data:
+  traefik-public-certificates:
+
+networks:
+  traefik-public:
+    external: true
+  prd-internal:
+    driver: overlay
