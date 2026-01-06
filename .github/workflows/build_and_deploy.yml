@@ -86,7 +86,24 @@ jobs:
         with:
           ref: stage
 
+      - name: Check if Traefik is already deployed
+        id: check-traefik
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            if docker stack ls | grep -q "^traefik"; then
+              echo "TRAEFIK_EXISTS=true" >> $GITHUB_OUTPUT
+              echo "✅ Traefik stack already deployed"
+            else
+              echo "TRAEFIK_EXISTS=false" >> $GITHUB_OUTPUT
+              echo "⚠️  Traefik stack not found"
+            fi
+
       - name: Docker Stack Deploy Traefik
+        if: steps.check-traefik.outputs.TRAEFIK_EXISTS != 'true'
         uses: cssnr/stack-deploy-action@v1
         with:
           name: traefik
@@ -96,6 +113,14 @@ jobs:
           user: ${{ secrets.SSH_USER }}
           ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
           summary: true
+
+      - name: Skip Traefik deployment
+        if: steps.check-traefik.outputs.TRAEFIK_EXISTS == 'true'
+        run: |
+          echo "=========================================="
+          echo "⏭️  Skipping Traefik deployment"
+          echo "Traefik stack is already running"
+          echo "=========================================="
 
       - name: Create environment file
         run: |
