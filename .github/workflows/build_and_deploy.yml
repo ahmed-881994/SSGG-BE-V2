@@ -153,7 +153,7 @@ jobs:
       - name: Docker Stack Deploy
         uses: cssnr/stack-deploy-action@v1
         with:
-          name: ssgg-be-v2-staging
+          name: ssgg-be-v2-${{ needs.setup.outputs.environment }}
           file: docker-stack.${{ needs.setup.outputs.environment }}.yml
           mode: swarm
           host: ${{ secrets.SSH_HOST }}
@@ -187,11 +187,11 @@ jobs:
           echo "Testing: $HEALTH_URL"
           for i in {1..5}; do
             if curl -f -m 10 "$HEALTH_URL" 2>/dev/null; then
-              echo "✅ Staging deployment successful!"
+              echo "✅ ${{ needs.setup.outputs.environment }} deployment successful!"
               exit 0
             fi
             sleep 15
           done
 
-          echo "❌ Staging health check failed"
+          echo "❌ ${{ needs.setup.outputs.environment }} health check failed"
           exit 1
