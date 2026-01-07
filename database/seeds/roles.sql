@@ -1,0 +1,1 @@
+INSERT INTO SSGG.roles (role_id, name, display_name, description, is_system_role, is_active, created_at, updated_at) VALUES(1, 'super_admin', 'Super Administrator', 'Full system access with all permissions', 0, 1, '', '');

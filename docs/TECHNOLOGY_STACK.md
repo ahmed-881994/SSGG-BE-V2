@@ -1,0 +1,49 @@
+# Technology Stack
+
+This project is a Python FastAPI backend with a layered architecture (API → Services → Repositories → Models) and operational middleware.
+
+- Language and Runtime
+  - Python 3.12 (see the badge in [../README.md](../README.md))
+- Web Framework
+  - FastAPI (ASGI) — app entrypoint: [../main.py](../main.py)
+- HTTP Server (local/dev)
+  - Uvicorn (run with: `uvicorn main:app --reload`)
+- ORM and Database
+  - SQLAlchemy ORM (sync/async setup) defined in [../app/core/database.py](../app/core/database.py)
+    - Sync engine: `mysql+pymysql`
+    - Async engine: `mysql+aiomysql`
+    - `QueuePool` for connection pooling
+  - MySQL (charset `utf8mb4`)
+- Caching / Token blacklist
+  - Redis (configuration in [../app/config/settings.py](../app/config/settings.py))
+- AuthN/AuthZ
+  - JWT (HS256) via [../app/services/token_service.py](../app/services/token_service.py)
+  - Password hashing/verification used by [../app/services/auth_service.py](../app/services/auth_service.py)
+  - RBAC models: [../app/models/rbac_models.py](../app/models/rbac_models.py) and related repositories/services:
+    - Permissions API: [../app/api/permissions.py](../app/api/permissions.py), [../app/services/permission_service.py](../app/services/permission_service.py), [../app/repositories/permission_repository.py](../app/repositories/permission_repository.py)
+    - Roles API: [../app/api/roles.py](../app/api/roles.py), [../app/repositories/role_repository.py](../app/repositories/role_repository.py)
+  - Access control middleware: [../app/core/access_control_middleware.py](../app/core/access_control_middleware.py)
+- Middleware and Observability
+  - Structured logging middleware: [../app/core/logging_middleware.py](../app/core/logging_middleware.py), config in [../app/config/logging_config.py](../app/config/logging_config.py)
+  - Auditing middleware with DB persistence: [../app/core/auditing_middleware.py](../app/core/auditing_middleware.py) → [../app/models/audit_model.py](../app/models/audit_model.py)
+  - User context propagation: [../app/core/user_context_middleware.py](../app/core/user_context_middleware.py)
+  - Rate limiting setup: [../app/core/rate_limitting.py](../app/core/rate_limitting.py)
+- Email
+  - SMTP via [../app/services/email_service.py](../app/services/email_service.py)
+- Deployment and Packaging
+  - Dockerfile at [../dockerfile](../dockerfile)
+  - Docker Swarm stack files: [../docker-stack-traefik.yml](../docker-stack-traefik.yml), [../docker-stack.staging.yml](../docker-stack.staging.yml), [../docker-stack.production.yml](../docker-stack.production.yml)
+  - Traefik integration for reverse proxy and TLS via [../letsencrypt/](../letsencrypt)
+  - GitHub Actions workflows in [../.github/workflows/](../.github/workflows)
+- Configuration
+  - Pydantic BaseSettings in [../app/config/settings.py](../app/config/settings.py)
+  - Environment presets: [../env/](../env/) (`dev.env`, `staging.env`, `prd.env`)
+- Static assets
+  - [../static/](../static/) mounted by FastAPI in [../main.py](../main.py)
+- Domain layers
+  - API routers: [../app/api/](../app/api)
+  - Services: [../app/services/](../app/services)
+  - Repositories: [../app/repositories/](../app/repositories)
+  - Models: [../app/models/](../app/models)
+  - Schemas: [../app/schemas/](../app/schemas)
+  - Core (DB, middlewares, exceptions): [../app/core/](../app/core)
