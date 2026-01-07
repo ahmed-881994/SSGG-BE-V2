@@ -1,0 +1,1 @@
+INSERT INTO SSGG.users (user_name, user_id, role_id, password_hash, is_active, password_reset, salt) VALUES('su', 'S00300001', 1, 'uk3PjaLENXRsRECDYsn6/t2Xc6FF3CFVVAb8my3TPMQ=', 1, 0, '5a07bda5f173620349f77932e9dc7e7776f0db48ec3cf09c0146643ed9125e51');
