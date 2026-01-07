@@ -44,14 +44,14 @@ class AuthService:
             if not user:
                 logger.warning(f"Authentication failed: User '{login}' not found")
                 raise AuthenticationFailed(
-                    message="User not found",
+                    message="Invalid credentials",
                     name="Authentication"
                 )
             
             if not verify_password(password, user.password_hash, user.salt):
                 logger.warning(f"Authentication failed: Invalid password for user '{login}'")
                 raise AuthenticationFailed(
-                    message="Invalid password",
+                    message="Invalid credentials",
                     name="Authentication"
                 )
                 
@@ -61,9 +61,11 @@ class AuthService:
         except EntityDoesNotExistError:
             logger.warning(f"Authentication failed: User '{login}' not found")
             raise AuthenticationFailed(
-                message="User not found",
+                message="Invalid credentials",
                 name="Authentication"
             )
+        except AuthenticationFailed:
+            raise
         except Exception as e:
             logger.error(f"Authentication error for user '{login}': {str(e)}", exc_info=True)
             raise ServiceError(message=f"Authentication error: {str(e)}", name="Authentication")
