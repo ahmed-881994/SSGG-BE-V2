@@ -1,0 +1,79 @@
+name: PR Build Check
+
+on:
+  pull_request:
+    branches:
+      - main
+      - stage
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'  # Adjust to your Python version
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint with flake8 (optional)
+        run: |
+          pip install flake8
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Exit-zero treats all errors as warnings
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        continue-on-error: true
+
+      - name: Verify application can start
+        env:
+          environment: test
+          db_host: localhost
+          db_port: 3306
+          db_database: test_db
+          db_username: test_user
+          db_password: test_password
+          db_max_connections: 5
+          db_min_connections: 2
+          rds_host: localhost
+          rds_port: 6379
+          rds_database: 0
+          secret_key: test_secret_key_at_least_32_characters_long
+          algorithm: HS256
+          access_token_expires_minutes: 30
+          cors_origins: "*"
+          rate_limit_per_minute: 60
+          log_level: INFO
+          smtp_server: smtp.test.com
+          smtp_port: 587
+          smtp_username: test@test.com
+          smtp_password: test_password
+          from_email: noreply@test.com
+        run: |
+          # Test that the application can import without errors
+          python -c "from main import app; print('✓ Application imports successfully')"
+
+      - name: Run tests (if you have them)
+        run: |
+          # Uncomment when you add tests
+          # pytest tests/ -v
+          echo "No tests configured yet"
+
+      - name: Build Docker image
+        run: |
+          docker build -t ssgg-be:pr-check -f dockerfile .
+
+      - name: Verify Docker image
+        run: |
+          docker images ssgg-be:pr-check
+          echo "✓ Docker image built successfully"
