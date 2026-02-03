@@ -109,12 +109,13 @@ class EventRepository(BaseRepository[Event]):
                 for entity_id in event["participating_entities_ids"]:
                     participating_entity = self.db.query(Entity).filter(Entity.entity_id == entity_id).first()
                     participating_entity_members = participating_entity.members
-                    # Create join table row
+                    # Create event entity record
                     event_entity = EventEntity()
                     event_entity.event_id = new_event.event_id
                     event_entity.entity_id = entity_id
                     new_event.event_entities.append(event_entity)
 
+                    # Create attendance records for members of participating entity
                     for member in participating_entity_members:
                         if member not in organizing_entity_members:
                             member_attendance = Attendance()
@@ -122,6 +123,22 @@ class EventRepository(BaseRepository[Event]):
                             member_attendance.member_id = member.member_id
                             member_attendance.attendance_state_id = not_specified_state.attendance_state_id
                             new_event.attendance_records.append(member_attendance)
+                            
+                    # Create attendance records for members of child entities & add entity as participant
+                    # if participating_entity.children:
+                    #     for child_entity in participating_entity.children:
+                    #         event_entity = EventEntity()
+                    #         event_entity.event_id = new_event.event_id
+                    #         event_entity.entity_id = child_entity.entity_id
+                    #         new_event.event_entities.append(event_entity)
+                    #         child_entity_members = child_entity.members
+                    #         for member in child_entity_members:
+                    #             if member not in organizing_entity_members:
+                    #                 member_attendance = Attendance()
+                    #                 member_attendance.event_id = new_event.event_id
+                    #                 member_attendance.member_id = member.member_id
+                    #                 member_attendance.attendance_state_id = not_specified_state.attendance_state_id
+                    #                 new_event.attendance_records.append(member_attendance)
                             
             self.db.commit()
 
