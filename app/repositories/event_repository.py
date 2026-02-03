@@ -107,7 +107,14 @@ class EventRepository(BaseRepository[Event]):
 
             if event.get("is_multi_team") and event.get("participating_entities_ids"):
                 for entity_id in event["participating_entities_ids"]:
-                    participating_entity_members = self.db.query(Entity).filter(Entity.entity_id == entity_id).first().members
+                    participating_entity = self.db.query(Entity).filter(Entity.entity_id == entity_id).first()
+                    participating_entity_members = participating_entity.members
+                    # Create join table row
+                    event_entity = EventEntity()
+                    event_entity.event_id = new_event.event_id
+                    event_entity.entity_id = entity_id
+                    new_event.event_entities.append(event_entity)
+
                     for member in participating_entity_members:
                         if member not in organizing_entity_members:
                             member_attendance = Attendance()
