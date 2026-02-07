@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import and_, func, or_
+from sqlalchemy import func, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -103,6 +103,11 @@ class EventRepository(BaseRepository[Event]):
                 member_attendance.member_id = member.member_id
                 member_attendance.attendance_state_id = not_specified_state.attendance_state_id
                 new_event.attendance_records.append(member_attendance)
+                
+            
+            logger.info(f"is_multi_team: {event.get('is_multi_team')}")
+            logger.info(f"participating_entities_ids: {event.get('participating_entities_ids')}")
+            logger.info(f"Event dict keys: {event.keys()}")
 
             if event.get("is_multi_team") and event.get("participating_entities_ids"):
                 for entity_id in event["participating_entities_ids"]:
