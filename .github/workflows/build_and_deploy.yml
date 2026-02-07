@@ -122,6 +122,31 @@ jobs:
           echo "Traefik stack is already running"
           echo "=========================================="
 
+      - name: Ensure internal networks exist
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "📡 Ensuring internal networks exist..."
+            # Create stg-internal network if it doesn't exist
+            if ! docker network ls --filter name=^stg-internal$ | grep -q "stg-internal"; then
+              echo "Creating stg-internal network..."
+              docker network create --driver overlay --attachable stg-internal
+              echo "✅ Created stg-internal network"
+            else
+              echo "✅ stg-internal network already exists"
+            fi
+            # Create prd-internal network if it doesn't exist
+            if ! docker network ls --filter name=^prd-internal$ | grep -q "prd-internal"; then
+              echo "Creating prd-internal network..."
+              docker network create --driver overlay --attachable prd-internal
+              echo "✅ Created prd-internal network"
+            else
+              echo "✅ prd-internal network already exists"
+            fi
+
       - name: Create environment file
         run: |
           cat > .env << EOF
