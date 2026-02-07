@@ -112,4 +112,4 @@ networks:
   traefik-public:
     external: true
   stg-internal:
-    external: true
+    driver: overlay

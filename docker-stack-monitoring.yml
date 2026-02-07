@@ -125,9 +125,9 @@ networks:
   traefik-public:
     external: true
   stg-internal:
-    external: true
+    driver: overlay
   prd-internal:
-    external: true
+    driver: overlay
 
 volumes:
   prometheus-data:
