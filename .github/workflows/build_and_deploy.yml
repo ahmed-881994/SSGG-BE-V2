@@ -122,26 +122,6 @@ jobs:
           echo "Traefik stack is already running"
           echo "=========================================="
 
-      - name: Docker Stack Deploy Monitoring
-        if: steps.check-monitoring.outputs.MONITORING_EXISTS != 'true'
-        uses: cssnr/stack-deploy-action@v1
-        with:
-          name: monitoring
-          file: docker-stack-monitoring.yml
-          mode: swarm
-          host: ${{ secrets.SSH_HOST }}
-          user: ${{ secrets.SSH_USER }}
-          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
-          summary: true
-
-      - name: Skip Monitoring deployment
-        if: steps.check-monitoring.outputs.MONITORING_EXISTS == 'true'
-        run: |
-          echo "=========================================="
-          echo "⏭️  Skipping Monitoring deployment"
-          echo "Monitoring stack is already running"
-          echo "=========================================="
-
       - name: Create environment file
         run: |
           cat > .env << EOF
