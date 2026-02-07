@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import func, or_
+from sqlalchemy import and_, func, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -57,9 +57,8 @@ class EventRepository(BaseRepository[Event]):
                 query = query.filter(
                     or_(
                         Event.organizing_entity_id == entity_id,
-                        Event.event_entities.any(Entity.entity_id == entity_id)
+                        and_(Event.event_entities.any(EventEntity.entity_id == entity_id),Event.event_entities.event_id == Event.event_id))
                     )
-                )
             return query.all()
         except SQLAlchemyError as e:
             logger.error(f"Error searching events: {e}")
