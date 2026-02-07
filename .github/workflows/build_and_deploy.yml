@@ -102,7 +102,7 @@ jobs:
               echo "⚠️  Traefik stack not found"
             fi
 
-      - name: Prepare Traefil env variables
+      - name: Prepare Traefik env variables
         if: steps.check-traefik.outputs.TRAEFIK_EXISTS != 'true'
         run: |
           cat > .env << EOF
