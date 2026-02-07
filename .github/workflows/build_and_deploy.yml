@@ -102,6 +102,14 @@ jobs:
               echo "⚠️  Traefik stack not found"
             fi
 
+      - name: Prepare Traefil env variables
+        if: steps.check-traefik.outputs.TRAEFIK_EXISTS != 'true'
+        run: |
+          cat > .env << EOF
+          # Traefik auth
+          TRAEFIK_AUTH=${{ secrets.TRAEFIK_AUTH }}
+          EOF
+
       - name: Docker Stack Deploy Traefik
         if: steps.check-traefik.outputs.TRAEFIK_EXISTS != 'true'
         uses: cssnr/stack-deploy-action@v1
@@ -112,7 +120,12 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           user: ${{ secrets.SSH_USER }}
           ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          env_file: ./.env
           summary: true
+
+      - name: cleanup Traefik env file
+        if: steps.check-traefik.outputs.TRAEFIK_EXISTS != 'true'
+        run: rm -f .env
 
       - name: Skip Traefik deployment
         if: steps.check-traefik.outputs.TRAEFIK_EXISTS == 'true'
@@ -216,6 +229,10 @@ jobs:
           registry_auth: true
           summary: true
 
+      - name: Cleanup env file
+        if: always()
+        run: rm -f .env
+
       - name: Ensure monitoring networks exist
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -255,6 +272,16 @@ jobs:
               echo "⚠️  Monitoring stack not found - will deploy"
             fi
 
+      - name: Prepare Monitoring env variables
+        if: steps.check-monitoring.outputs.MONITORING_EXISTS != 'true'
+        run: |
+          cat > .env << EOF
+          # Monitoring auth
+          MONITORING_AUTH=${{ secrets.MONITORING_AUTH }}
+          GRAFANA_ADMIN_USER=${{ secrets.GRAFANA_ADMIN_USER }}
+          GRAFANA_PASSWORD=${{ secrets.GRAFANA_PASSWORD }}
+          EOF
+
       - name: Docker Stack Deploy Monitoring
         if: steps.check-monitoring.outputs.MONITORING_EXISTS != 'true'
         uses: cssnr/stack-deploy-action@v1
@@ -265,7 +292,12 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           user: ${{ secrets.SSH_USER }}
           ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          env_file: ./.env
           summary: true
+
+      - name: Cleanup Monitoring env file
+        if: steps.check-monitoring.outputs.MONITORING_EXISTS != 'true'
+        run: rm -f .env
 
       - name: Skip Monitoring deployment
         if: steps.check-monitoring.outputs.MONITORING_EXISTS == 'true'
@@ -275,9 +307,6 @@ jobs:
           echo "Monitoring stack is already running"
           echo "=========================================="
 
-      - name: Cleanup
-        if: always()
-        run: rm -f .env
   health-check:
     needs: 
       - setup
