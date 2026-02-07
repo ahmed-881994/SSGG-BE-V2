@@ -26,6 +26,10 @@ services:
 
       # Logging
       - "--log.level=DEBUG"
+
+      # Metrics
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.buckets=0.1,0.3,1.2,5.0"
     ports:
       - "8080:8080"
       - "80:80"
