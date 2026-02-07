@@ -1,0 +1,60 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'ssgg'
+
+scrape_configs:
+  # Staging API - scrape all replicas
+  - job_name: 'ssgg-api-staging'
+    dns_sd_configs:
+      - names:
+          - 'tasks.ssgg-staging_api'
+        type: 'A'
+        port: 8000
+    metrics_path: '/metrics'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: environment
+        replacement: 'staging'
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '([^:]+):.*'
+        replacement: '${1}'
+    
+  # Production API - scrape all 5 replicas
+  - job_name: 'ssgg-api-production'
+    dns_sd_configs:
+      - names:
+          - 'tasks.ssgg-production_api'
+        type: 'A'
+        port: 8000
+    metrics_path: '/metrics'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: environment
+        replacement: 'production'
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '([^:]+):.*'
+        replacement: '${1}'
+
+  # Node Exporter - System metrics from all nodes
+  - job_name: 'node-exporter'
+    dns_sd_configs:
+      - names:
+          - 'tasks.ssgg-monitoring_node-exporter'
+        type: 'A'
+        port: 9100
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '([^:]+):.*'
+        replacement: '${1}'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          environment: 'monitoring'
