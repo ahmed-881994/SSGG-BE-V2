@@ -67,7 +67,15 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          echo "📡 Ensuring internal networks exist..."
+          echo "📡 Ensuring networks exist..."
+          # Create traefik-public network if it doesn't exist
+          if ! docker network ls --filter name=^traefik-public$ | grep -q "traefik-public"; then
+            echo "Creating traefik-public network..."
+            docker network create --driver overlay --attachable traefik-public
+            echo "✅ Created traefik-public network"
+          else
+            echo "✅ traefik-public network already exists"
+          fi
           # Create stg-internal network if it doesn't exist
           if ! docker network ls --filter name=^stg-internal$ | grep -q "stg-internal"; then
             echo "Creating stg-internal network..."
