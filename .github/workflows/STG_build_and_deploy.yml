@@ -60,42 +60,6 @@ jobs:
         ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
         summary: true
 
-    - name: Check if Monitoring stack is already deployed
-      id: check-monitoring
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          if docker stack ls | grep -q "^ssgg-monitoring"; then
-            echo "MONITORING_EXISTS=true" >> $GITHUB_OUTPUT
-            echo "✅ Monitoring stack already deployed"
-          else
-            echo "MONITORING_EXISTS=false" >> $GITHUB_OUTPUT
-            echo "⚠️  Monitoring stack not found"
-          fi
-
-    - name: Docker Stack Deploy Monitoring
-      if: steps.check-monitoring.outputs.MONITORING_EXISTS != 'true'
-      uses: cssnr/stack-deploy-action@v1
-      with:
-        name: ssgg-monitoring
-        file: docker-stack-monitoring.yml
-        mode: swarm
-        host: ${{ secrets.SSH_HOST }}
-        user: ${{ secrets.SSH_USER }}
-        ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
-        summary: true
-
-    - name: Skip Monitoring deployment
-      if: steps.check-monitoring.outputs.MONITORING_EXISTS == 'true'
-      run: |
-        echo "=========================================="
-        echo "⏭️  Skipping Monitoring deployment"
-        echo "Monitoring stack is already running"
-        echo "=========================================="
-
     - name: Create environment file
       run: |
         cat > .env << EOF
@@ -171,6 +135,29 @@ jobs:
         env_file: ./.env
         registry_auth: true
         summary: true
+
+    - name: Ensure monitoring networks exist
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          echo "📡 Ensuring monitoring networks exist..."
+          # Create stg-internal network if it doesn't exist
+          if ! docker network ls | grep -q "stg-internal"; then
+            echo "Creating stg-internal network..."
+            docker network create --driver overlay stg-internal
+          else
+            echo "✅ stg-internal network exists"
+          fi
+          # Create prd-internal network if it doesn't exist
+          if ! docker network ls | grep -q "prd-internal"; then
+            echo "Creating prd-internal network..."
+            docker network create --driver overlay prd-internal
+          else
+            echo "✅ prd-internal network exists"
+          fi
 
     - name: Check if Monitoring stack is already deployed
       id: check-monitoring
