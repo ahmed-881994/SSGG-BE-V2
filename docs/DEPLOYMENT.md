@@ -85,7 +85,10 @@ Configure `db_host` and `rds_host` accordingly:
 ## 4) Docker Swarm + Traefik (Production / Staging)
 
 > [!NOTE]
-> below steps are performed by the `build_and_deploy` workflow.
+> The following steps are performed automatically by the `build_and_deploy` workflow:
+> - Traefik reverse proxy deployment (if not already deployed)
+> - Monitoring stack deployment (if not already deployed)
+> - Application stack deployment (staging or production based on branch)
 
 Files:
 - [../docker-stack-traefik.yml](../docker-stack-traefik.yml) (Traefik reverse proxy)
@@ -148,6 +151,188 @@ CI/CD:
 	- Visualizer endpoint strictly validates SELECTs and excludes sensitive tables (see [../app/api/visualizer.py](../app/api/visualizer.py))
 - Backups:
 	- Maintain DB backups and snapshot policies externally (see any provided SQL dumps like [../Dump20250715.sql](../Dump20250715.sql))
+
+## 6.1) Monitoring Stack (Prometheus & Grafana)
+
+> [!NOTE]
+> The monitoring stack is automatically deployed by the `build_and_deploy` workflow, similar to the Traefik stack. Manual deployment is only needed for initial setup or custom configurations.
+
+The project includes a comprehensive observability stack using Prometheus and Grafana to monitor both staging and production environments.
+
+### Architecture
+
+- **Prometheus**: Collects metrics from API instances, system resources, and services
+- **Grafana**: Visualizes metrics through dashboards
+- **Node Exporter**: Collects system-level metrics (CPU, memory, disk, network)
+
+### Metrics Exposed
+
+The FastAPI application exposes metrics at `/metrics` endpoint, including:
+
+**Application Metrics** (auto-instrumented):
+- `http_requests_total` - Total HTTP requests by method, endpoint, and status
+- `http_request_duration_seconds` - Request duration histograms (p50, p95, p99)
+- `http_request_size_bytes` - Request size metrics
+- `http_response_size_bytes` - Response size metrics
+
+**Custom Health Metrics**:
+- `ssgg_db_health_status` - Database health status (1=healthy, 0=unhealthy)
+- `ssgg_db_response_time_ms` - Database query response time
+- `ssgg_db_connection_pool_size` - Connection pool size
+- `ssgg_db_active_connections` - Active database connections
+- `ssgg_redis_health_status` - Redis health status (1=healthy, 0=unhealthy)
+- `ssgg_redis_response_time_ms` - Redis operation response time
+- `ssgg_redis_operations_total` - Total Redis operations by type and status
+
+All metrics are labeled with `environment="staging"` or `environment="production"` for easy filtering.
+
+### Deployment
+
+**Automated via CI/CD**:
+
+The monitoring stack is automatically deployed by the GitHub Actions workflows (`build_and_deploy.yml` and `STG_build_and_deploy.yml`) when:
+- The stack doesn't already exist on the target server
+- The application stack deployment is triggered
+
+The workflow checks if the monitoring stack is already deployed and only deploys it if needed, preventing duplicate deployments.
+
+**Prerequisites**:
+1. Add monitoring credentials to your environment (if not already configured):
+   ```bash
+   # Generate basic auth for Prometheus (using htpasswd)
+   htpasswd -nb admin your-password
+   # Add to .env:
+   MONITORING_AUTH=admin:$$apr1$$...
+   GRAFANA_PASSWORD=your-grafana-password
+   GRAFANA_ADMIN_USER=admin
+   ```
+
+2. Ensure DNS records point to your server:
+   - `prometheus.sportingscout.org`
+   - `grafana.sportingscout.org`
+
+**Manual deployment** (if needed for initial setup or custom configuration):
+```bash
+# Deploy after staging/production stacks are running
+docker stack deploy -c docker-stack-monitoring.yml ssgg-monitoring
+```
+
+**Verify deployment**:
+```bash
+# Check services
+docker stack ps ssgg-monitoring
+
+# View logs
+docker service logs ssgg-monitoring_prometheus -f
+docker service logs ssgg-monitoring_grafana -f
+
+# Check Prometheus targets
+curl -u admin:password https://prometheus.sportingscout.org/targets
+```
+
+### Access
+
+- **Prometheus**: https://prometheus.sportingscout.org (requires basic auth)
+- **Grafana**: https://grafana.sportingscout.org (login: admin / `$GRAFANA_PASSWORD`)
+
+### Grafana Dashboard Setup
+
+Import recommended community dashboards:
+
+1. **FastAPI Observability** (Dashboard ID: 16110)
+   - API request rates, latencies, error rates
+   - Environment-based filtering
+
+2. **Node Exporter Full** (Dashboard ID: 1860)
+   - System metrics: CPU, memory, disk, network
+   - Per-node monitoring
+
+3. **Docker Swarm** (Dashboard ID: 9792)
+   - Swarm cluster health and service status
+
+Import steps:
+1. Go to Grafana → Dashboards → Import
+2. Enter dashboard ID
+3. Select "Prometheus" as data source
+4. Click Import
+
+### Sample Queries
+
+Monitor production API performance:
+```promql
+# Request rate (requests per second)
+rate(http_requests_total{environment="production"}[5m])
+
+# 95th percentile latency
+histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{environment="production"}[5m]))
+
+# Error rate
+rate(http_requests_total{environment="production",status=~"5.."}[5m])
+
+# Database health across all replicas
+min(ssgg_db_health_status{environment="production"})
+
+# Connection pool utilization
+ssgg_db_active_connections / ssgg_db_connection_pool_size * 100
+```
+
+Compare staging vs production:
+```promql
+# Response time comparison
+ssgg_db_response_time_ms{environment=~"staging|production"}
+```
+
+### Alerting (Optional)
+
+To configure alerts, create `prometheus-alerts.yml` and add to Prometheus config:
+```yaml
+groups:
+  - name: ssgg_alerts
+    interval: 30s
+    rules:
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+      
+      - alert: DatabaseUnhealthy
+        expr: ssgg_db_health_status == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database health check failing"
+      
+      - alert: HighDatabaseLatency
+        expr: ssgg_db_response_time_ms > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database queries are slow"
+```
+
+### Maintenance
+
+**Data retention**: Prometheus retains 30 days of metrics (configurable in `docker-stack-monitoring.yml`)
+
+**Reload configuration**:
+```bash
+# Prometheus will auto-reload when prometheus.yml changes
+# Or manually reload:
+curl -X POST https://prometheus.sportingscout.org/-/reload
+```
+
+**Backup Grafana dashboards**:
+```bash
+# Export volume
+docker run --rm -v ssgg-monitoring_grafana-data:/data -v $(pwd):/backup alpine tar czf /backup/grafana-backup.tar.gz /data
+```
+
+See [../grafana/provisioning/dashboards/README.md](../grafana/provisioning/dashboards/README.md) for detailed dashboard configuration.
 
 ## 7) Post-Deploy Verification
 

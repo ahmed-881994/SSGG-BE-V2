@@ -3,10 +3,12 @@ import os
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pymysql import DataError, IntegrityError
 from contextlib import asynccontextmanager
+from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_fastapi_instrumentor import Instrumentor
 
 from app.api import auth, entities, events, health, lookups, members, permissions, roles, users, visualizer
 from app.config.logging_config import logger
@@ -42,6 +44,18 @@ app = FastAPI(
     },
     # lifespan=lifespan,
 )
+
+# Instrument FastAPI app with Prometheus
+Instrumentor().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+
+# Custom Prometheus metrics for application-specific monitoring
+db_connection_pool_gauge = Gauge('ssgg_db_connection_pool_size', 'Database connection pool size')
+db_active_connections_gauge = Gauge('ssgg_db_active_connections', 'Active database connections')
+db_health_gauge = Gauge('ssgg_db_health_status', 'Database health status (1=healthy, 0=unhealthy)')
+db_response_time_gauge = Gauge('ssgg_db_response_time_ms', 'Database response time in milliseconds')
+redis_health_gauge = Gauge('ssgg_redis_health_status', 'Redis health status (1=healthy, 0=unhealthy)')
+redis_response_time_gauge = Gauge('ssgg_redis_response_time_ms', 'Redis response time in milliseconds')
+redis_operations_counter = Counter('ssgg_redis_operations_total', 'Total Redis operations', ['operation', 'status'])
 
 app.middleware("http")(access_control_middleware)
 app.middleware("http")(user_context_middleware)
