@@ -48,7 +48,7 @@ services:
         - "traefik.http.routers.dashboard.service=api@internal"
         # - "traefik.http.services.dummy-svc.loadbalancer.server.port=8080"
         # Basic auth for dashboard (admin:password)
-        - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_AUTH}"
+        - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$FMoKEvB2$$rGbDwykG0E01SSKLz1/lo1"
       placement:
         constraints:
           - node.role == manager

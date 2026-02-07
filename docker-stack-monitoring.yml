@@ -29,7 +29,7 @@ services:
         - traefik.docker.network=traefik-public
         # Add basic auth for security
         - traefik.http.routers.prometheus.middlewares=prometheus-auth
-        - traefik.http.middlewares.prometheus-auth.basicauth.users=${MONITORING_AUTH}
+        - traefik.http.middlewares.prometheus-auth.basicauth.users=admin:$$apr1$$FMoKEvB2$$rGbDwykG0E01SSKLz1/lo1
       restart_policy:
         condition: on-failure
 
@@ -103,7 +103,7 @@ services:
         - traefik.http.services.loki.loadbalancer.server.port=3100
         - traefik.docker.network=traefik-public
         - traefik.http.routers.loki.middlewares=loki-auth
-        - traefik.http.middlewares.loki-auth.basicauth.users=${MONITORING_AUTH}
+        - traefik.http.middlewares.loki-auth.basicauth.users=admin:$$apr1$$FMoKEvB2$$rGbDwykG0E01SSKLz1/lo1
       restart_policy:
         condition: on-failure
 
