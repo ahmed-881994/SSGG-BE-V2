@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from pymysql import DataError, IntegrityError
 from contextlib import asynccontextmanager
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
-from prometheus_fastapi_instrumentor import Instrumentor
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api import auth, entities, events, health, lookups, members, permissions, roles, users, visualizer
 from app.config.logging_config import logger
@@ -46,7 +46,7 @@ app = FastAPI(
 )
 
 # Instrument FastAPI app with Prometheus
-Instrumentor().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
 
 # Custom Prometheus metrics for application-specific monitoring
 db_connection_pool_gauge = Gauge('ssgg_db_connection_pool_size', 'Database connection pool size')
