@@ -20,16 +20,16 @@ services:
         constraints:
           - node.role == manager
       labels:
-        - traefik.enable=true
-        - traefik.http.routers.prometheus.rule=Host(`prometheus.sportingscout.org`)
-        - traefik.http.routers.prometheus.entrypoints=websecure
-        - traefik.http.routers.prometheus.tls=true
-        - traefik.http.routers.prometheus.tls.certresolver=letsencrypt
-        - traefik.http.services.prometheus.loadbalancer.server.port=9090
-        - traefik.docker.network=traefik-public
+        - "traefik.enable=true"
+        - "traefik.http.routers.prometheus.rule=Host(`prometheus.sportingscout.org`)"
+        - "traefik.http.routers.prometheus.entrypoints=websecure"
+        - "traefik.http.routers.prometheus.tls=true"
+        - "traefik.http.routers.prometheus.tls.certresolver=letsencrypt"
+        - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+        - "traefik.docker.network=traefik-public"
         # Add basic auth for security
-        - traefik.http.routers.prometheus.middlewares=prometheus-auth
-        - traefik.http.middlewares.prometheus-auth.basicauth.users=admin:$$apr1$$FMoKEvB2$$rGbDwykG0E01SSKLz1/lo1
+        - "traefik.http.routers.prometheus.middlewares=prometheus-auth"
+        - "traefik.http.middlewares.prometheus-auth.basicauth.users=admin:$$apr1$$KZ9sWrDc$$0J1yO/63mY6bdqAxmAj.q0"
       restart_policy:
         condition: on-failure
 
@@ -51,13 +51,13 @@ services:
         constraints:
           - node.role == manager
       labels:
-        - traefik.enable=true
-        - traefik.http.routers.grafana.rule=Host(`grafana.sportingscout.org`)
-        - traefik.http.routers.grafana.entrypoints=websecure
-        - traefik.http.routers.grafana.tls=true
-        - traefik.http.routers.grafana.tls.certresolver=letsencrypt
-        - traefik.http.services.grafana.loadbalancer.server.port=3000
-        - traefik.docker.network=traefik-public
+        - "traefik.enable=true"
+        - "traefik.http.routers.grafana.rule=Host(`grafana.sportingscout.org`)"
+        - "traefik.http.routers.grafana.entrypoints=websecure"
+        - "traefik.http.routers.grafana.tls=true"
+        - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
+        - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+        - "traefik.docker.network=traefik-public"
       restart_policy:
         condition: on-failure
 
@@ -95,15 +95,15 @@ services:
         constraints:
           - node.role == manager
       labels:
-        - traefik.enable=true
-        - traefik.http.routers.loki.rule=Host(`loki.sportingscout.org`)
-        - traefik.http.routers.loki.entrypoints=websecure
-        - traefik.http.routers.loki.tls=true
-        - traefik.http.routers.loki.tls.certresolver=letsencrypt
-        - traefik.http.services.loki.loadbalancer.server.port=3100
-        - traefik.docker.network=traefik-public
-        - traefik.http.routers.loki.middlewares=loki-auth
-        - traefik.http.middlewares.loki-auth.basicauth.users=admin:$$apr1$$FMoKEvB2$$rGbDwykG0E01SSKLz1/lo1
+        - "traefik.enable=true"
+        - "traefik.http.routers.loki.rule=Host(`loki.sportingscout.org`)"
+        - "traefik.http.routers.loki.entrypoints=websecure"
+        - "traefik.http.routers.loki.tls=true"
+        - "traefik.http.routers.loki.tls.certresolver=letsencrypt"
+        - "traefik.http.services.loki.loadbalancer.server.port=3100"
+        - "traefik.docker.network=traefik-public"
+        - "traefik.http.routers.loki.middlewares=loki-auth"
+        - "traefik.http.middlewares.loki-auth.basicauth.users=admin:$$apr1$$KZ9sWrDc$$0J1yO/63mY6bdqAxmAj.q0"
       restart_policy:
         condition: on-failure
 
