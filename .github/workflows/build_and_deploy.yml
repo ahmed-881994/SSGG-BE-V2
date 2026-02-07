@@ -122,22 +122,6 @@ jobs:
           echo "Traefik stack is already running"
           echo "=========================================="
 
-      - name: Check if Monitoring stack is already deployed
-        id: check-monitoring
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            if docker stack ls | grep -q "^monitoring"; then
-              echo "MONITORING_EXISTS=true" >> $GITHUB_OUTPUT
-              echo "✅ Monitoring stack already deployed"
-            else
-              echo "MONITORING_EXISTS=false" >> $GITHUB_OUTPUT
-              echo "⚠️  Monitoring stack not found"
-            fi
-
       - name: Docker Stack Deploy Monitoring
         if: steps.check-monitoring.outputs.MONITORING_EXISTS != 'true'
         uses: cssnr/stack-deploy-action@v1
