@@ -33,6 +33,29 @@ def _get_client_ip(request: Request) -> str:
         return forwarded.split(",")[0].strip()
     return request.client.host if request.client else ""
 
+def _is_internal_request(request: Request) -> bool:
+    """
+    Check if request is internal (from Docker overlay network).
+    
+    Logic:
+    - If no X-Forwarded-For header, it's a direct internal call (not through Traefik)
+    - If X-Forwarded-For exists, check if the original client IP is internal
+    """
+    forwarded = request.headers.get("x-forwarded-for")
+    
+    # No X-Forwarded-For means direct call within Docker network (e.g., Prometheus)
+    # External requests always go through Traefik which adds this header
+    if not forwarded:
+        client_ip = request.client.host if request.client else ""
+        logger.debug(f"/metrics request from direct connection, client IP: {client_ip}")
+        return True  # Direct internal call
+    
+    # Has X-Forwarded-For, check if original client is internal
+    client_ip = forwarded.split(",")[0].strip()
+    is_internal = _is_internal_ip(client_ip)
+    logger.debug(f"/metrics request via proxy, X-Forwarded-For: {forwarded}, is_internal: {is_internal}")
+    return is_internal
+
 class AccessControlMiddleware:
 
     async def __call__(self, request: Request, call_next):
@@ -41,21 +64,21 @@ class AccessControlMiddleware:
             path = request.url.path
             method = request.method
             
-            # Get database session
-            db = next(get_db_session())
 
             # Allow /metrics only from internal networks (Prometheus)
             if path == "/metrics":
-                client_ip = _get_client_ip(request)
-                if _is_internal_ip(client_ip):
+                if _is_internal_request(request):
                     return await call_next(request)
                 else:
+                    client_ip = _get_client_ip(request)
                     logger.warning(f"Blocked /metrics access from external IP: {client_ip}")
                     return JSONResponse(
                         status_code=status.HTTP_403_FORBIDDEN,
                         content={"detail": "Metrics endpoint is internal only"}
                     )
 
+            # Get database session
+            db = next(get_db_session())
             # Initialize access control service
             access_service = AccessControlService(db)
             # Skip public routes
@@ -107,6 +130,7 @@ class AccessControlMiddleware:
                 content={"detail": "Internal server error"}
             )
         finally:
-            db.close()
+            if db:
+                db.close()
 
 access_control_middleware = AccessControlMiddleware()
