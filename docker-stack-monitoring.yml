@@ -146,9 +146,9 @@ configs:
   promtail_config:
     file: ./promtail-config.yml
   grafana_datasources:
-    file: ./grafana/provisioning/datasources/datasources.yml
+    file: ./grafana/provisioning/datasources/prometheus.yml
   grafana_dashboards:
-    file: ./grafana/provisioning/dashboards/dashboards.yml
+    file: ./grafana/provisioning/dashboards/default.yml
 
 networks:
   traefik-public:
