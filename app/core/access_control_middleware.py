@@ -130,7 +130,7 @@ class AccessControlMiddleware:
                 content={"detail": "Internal server error"}
             )
         finally:
-            if db:
+            if 'db' in locals():
                 db.close()
 
 access_control_middleware = AccessControlMiddleware()
