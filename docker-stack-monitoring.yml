@@ -124,7 +124,6 @@ services:
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./promtail-config.yml:/etc/promtail/config.yml:ro
     configs:
       - source: promtail_config
         target: /etc/promtail/config.yml
