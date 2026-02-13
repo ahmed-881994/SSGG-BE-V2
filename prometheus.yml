@@ -6,10 +6,10 @@ global:
 
 scrape_configs:
   # Staging API - scrape all replicas
-  - job_name: 'ssgg-api-staging'
+  - job_name: 'ssgg-be-v2-api-staging'
     dns_sd_configs:
       - names:
-          - 'tasks.ssgg-staging_api'
+          - 'tasks.ssgg-be-v2-staging_api'
         type: 'A'
         port: 8000
     metrics_path: '/metrics'
@@ -23,10 +23,10 @@ scrape_configs:
         replacement: '${1}'
     
   # Production API - scrape all 5 replicas
-  - job_name: 'ssgg-api-production'
+  - job_name: 'ssgg-be-v2-api-production'
     dns_sd_configs:
       - names:
-          - 'tasks.ssgg-production_api'
+          - 'tasks.ssgg-be-v2-production_api'
         type: 'A'
         port: 8000
     metrics_path: '/metrics'
