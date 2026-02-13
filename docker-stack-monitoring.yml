@@ -5,7 +5,9 @@ services:
     image: prom/prometheus:latest
     volumes:
       - prometheus-data:/prometheus
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    configs:
+      - source: prometheus_yml
+        target: /etc/prometheus/prometheus.yml
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -37,7 +39,11 @@ services:
     image: grafana/grafana:latest
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    configs:
+      - source: grafana_datasources
+        target: /etc/grafana/provisioning/datasources/prometheus.yml
+      - source: grafana_dashboards
+        target: /etc/grafana/provisioning/dashboards/default.yml
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
@@ -46,6 +52,8 @@ services:
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
     networks:
       - traefik-public
+      - stg-internal
+      - prd-internal
     deploy:
       placement:
         constraints:
@@ -73,6 +81,8 @@ services:
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     networks:
       - traefik-public
+      - stg-internal
+      - prd-internal
     deploy:
       mode: global  # Run on every node
       restart_policy:
@@ -84,7 +94,9 @@ services:
       - "3100:3100"
     volumes:
       - loki-data:/loki
-      - ./loki-config.yml:/etc/loki/local-config.yaml:ro
+    configs:
+      - source: loki_config
+        target: /etc/loki/local-config.yaml
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - traefik-public
@@ -113,13 +125,30 @@ services:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./promtail-config.yml:/etc/promtail/config.yml:ro
+    configs:
+      - source: promtail_config
+        target: /etc/promtail/config.yml
     command: -config.file=/etc/promtail/config.yml
     networks:
       - traefik-public
+      - stg-internal
+      - prd-internal
     deploy:
       mode: global  # Run on every node to collect all container logs
       restart_policy:
         condition: on-failure
+
+configs:
+  prometheus_yml:
+    file: ./prometheus.yml
+  loki_config:
+    file: ./loki-config.yml
+  promtail_config:
+    file: ./promtail-config.yml
+  grafana_datasources:
+    file: ./grafana/provisioning/datasources/datasources.yml
+  grafana_dashboards:
+    file: ./grafana/provisioning/dashboards/dashboards.yml
 
 networks:
   traefik-public:
