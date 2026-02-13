@@ -1,11 +1,37 @@
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
+import ipaddress
 
 from app.config.logging_config import logger
 from app.core.database import get_db_session
 from app.services.access_control_service import AccessControlService
 
 #TODO: #18 The method fetches the user from the database every time permissions are checked, even though the user is already authenticated and their permissions could be cached in the request context. Consider using permissions from the JWT token (which are already included in the token payload) to avoid this database query on every request.
+
+# Docker overlay network ranges (internal only)
+INTERNAL_NETWORKS = [
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+    ipaddress.ip_network("127.0.0.0/8"),
+]
+
+def _is_internal_ip(ip_str: str) -> bool:
+    """Check if IP is from internal Docker networks."""
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        return any(ip in network for network in INTERNAL_NETWORKS)
+    except ValueError:
+        return False
+
+def _get_client_ip(request: Request) -> str:
+    """Get real client IP, accounting for reverse proxy headers."""
+    # Trust X-Forwarded-For from Traefik
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        # First IP is the original client
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else ""
 
 class AccessControlMiddleware:
 
@@ -14,9 +40,21 @@ class AccessControlMiddleware:
             # Check if the route is public
             path = request.url.path
             method = request.method
-
+            
             # Get database session
             db = next(get_db_session())
+
+            # Allow /metrics only from internal networks (Prometheus)
+            if path == "/metrics":
+                client_ip = _get_client_ip(request)
+                if _is_internal_ip(client_ip):
+                    return await call_next(request)
+                else:
+                    logger.warning(f"Blocked /metrics access from external IP: {client_ip}")
+                    return JSONResponse(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        content={"detail": "Metrics endpoint is internal only"}
+                    )
 
             # Initialize access control service
             access_service = AccessControlService(db)
