@@ -265,6 +265,7 @@ jobs:
           MONITORING_AUTH=${{ secrets.MONITORING_AUTH }}
           GRAFANA_ADMIN_USER=${{ secrets.GRAFANA_ADMIN_USER }}
           GRAFANA_PASSWORD=${{ secrets.GRAFANA_PASSWORD }}
+          CONFIG_VERSION=${{ github.sha }}
           EOF
 
       - name: Docker Stack Deploy Monitoring
