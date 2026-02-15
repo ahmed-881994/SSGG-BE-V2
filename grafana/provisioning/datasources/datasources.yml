@@ -5,11 +5,11 @@ datasources:
     type: prometheus
     access: proxy
     url: http://prometheus:9090
-    isDefault: true
+    isDefault: false
     jsonData:
       timeInterval: 15s
       httpMethod: POST
-    editable: false
+    editable: true
 
   - name: Loki
     type: loki
@@ -23,4 +23,4 @@ datasources:
           matcherRegex: '"request_id":"([^"]+)"'
           name: RequestID
           url: '$${__value.raw}'
-    editable: false
+    editable: true

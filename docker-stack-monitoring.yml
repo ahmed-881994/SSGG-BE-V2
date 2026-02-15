@@ -41,7 +41,7 @@ services:
       - grafana-data:/var/lib/grafana
     configs:
       - source: grafana_datasources
-        target: /etc/grafana/provisioning/datasources/prometheus.yml
+        target: /etc/grafana/provisioning/datasources/datasources.yml
       - source: grafana_dashboards
         target: /etc/grafana/provisioning/dashboards/default.yml
     environment:
@@ -149,7 +149,7 @@ configs:
     file: ./promtail-config.yml
   grafana_datasources:
     name: grafana_datasources-${CONFIG_VERSION:-v1}
-    file: ./grafana/provisioning/datasources/prometheus.yml
+    file: ./grafana/provisioning/datasources/datasources.yml
   grafana_dashboards:
     name: grafana_dashboards-${CONFIG_VERSION:-v1}
     file: ./grafana/provisioning/dashboards/default.yml

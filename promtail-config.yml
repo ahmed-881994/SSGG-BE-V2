@@ -52,12 +52,12 @@ scrape_configs:
       
       # Determine environment from stack name
       - source_labels: ['stack']
-        regex: 'ssgg-production'
+        regex: 'ssgg-be-v2-production'
         target_label: 'environment'
         replacement: 'production'
       
       - source_labels: ['stack']
-        regex: 'ssgg-staging'
+        regex: 'ssgg-be-v2-staging'
         target_label: 'environment'
         replacement: 'staging'
       
@@ -68,7 +68,7 @@ scrape_configs:
       
       # Only scrape containers from our stacks
       - source_labels: ['stack']
-        regex: '(ssgg-production|ssgg-staging|ssgg-monitoring)'
+        regex: '(ssgg-be-v2-production|ssgg-be-v2-staging|ssgg-monitoring)'
         action: keep
 
     # Parse logs based on application
@@ -78,6 +78,7 @@ scrape_configs:
           expressions:
             timestamp: timestamp
             level: level
+            severity: severity
             message: message
             logger: logger
             module: module
@@ -89,32 +90,29 @@ scrape_configs:
             method: method
             url: url
             status_code: status_code
-            process_time: process_time
-            duration: duration
+            duration_ms: duration_ms
             client_ip: client_ip
-            environment: environment
+            env: env
             app: app
+            job: job
             version: version
             pid: pid
             thread: thread
       
-      # Extract labels from parsed JSON
+      # Extract labels from parsed JSON (only low-cardinality fields)
       - labels:
           level:
-          module:
-          endpoint:
-          method:
-          status_code:
           app:
-          environment: # This will override the relabel_config environment if present in JSON
+          job:
+          env:
       
-      # Set timestamp from log if available
+      # Set timestamp from log if available (ISO 8601 format)
       - timestamp:
           source: timestamp
-          format: Unix
+          format: RFC3339
           fallback_formats:
-            - RFC3339
             - RFC3339Nano
+            - '2006-01-02T15:04:05.999999999Z07:00'
       
       # If JSON parsing fails, try to extract log level from plain text
       - regex:
