@@ -15,7 +15,7 @@ async def logging_middleware(request: Request, call_next):
     # Log request
     start_time = time.time()
     logger.info(
-        "Request started",
+        "Request started " + " " + str(request.method) + " " + str(request.url.path) + " " + str(request_id),
         extra={
             "request_id": request_id,
             "method": request.method,
@@ -34,7 +34,7 @@ async def logging_middleware(request: Request, call_next):
         
         # Log response
         logger.info(
-            "Request completed",
+            "Request completed " + str(request_id) + " " + str(response.status_code),
             extra={
                 "request_id": request_id,
                 "status_code": response.status_code,
