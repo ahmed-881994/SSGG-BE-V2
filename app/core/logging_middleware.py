@@ -5,12 +5,28 @@ from fastapi import Request
 
 from app.config.logging_config import logger
 
+# Endpoints to exclude from logging
+EXCLUDED_PATHS = {
+    "/health",
+    "/metrics",
+    "/favicon.ico",
+    "/docs",
+    "/redoc",
+    "/openapi.json"
+}
+
+# Methods to exclude from logging
+EXCLUDED_METHODS = {"OPTIONS", "HEAD"}
 
 async def logging_middleware(request: Request, call_next):
     """Middleware for request/response logging"""
     # Generate request ID
     request_id = request.state.request_id if hasattr(request.state, 'request_id') else str(uuid.uuid4())
     request.state.request_id = request_id
+    
+    # Skip logging for excluded paths and methods
+    if request.url.path in EXCLUDED_PATHS or request.method in EXCLUDED_METHODS:
+        return await call_next(request)
     
     # Log request
     start_time = time.time()

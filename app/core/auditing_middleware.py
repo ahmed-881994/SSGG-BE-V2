@@ -14,6 +14,7 @@ from app.util.egy_time import get_egypt_time
 # Endpoints to exclude from auditing
 EXCLUDED_PATHS = {
     "/health",
+    "/metrics",
     "/favicon.ico",
     "/docs",
     "/redoc",
