@@ -21,7 +21,7 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
         ).isoformat()
         
         # Standard fields - lowercase level for Loki label consistency
-        log_record['level'] = record.levelname.lower()
+        log_record['level'] = record.levelname
         log_record['severity'] = record.levelname  # Original case for compatibility
         log_record['logger'] = record.name
         log_record['module'] = record.module
@@ -97,23 +97,46 @@ class StandardFormatter(logging.Formatter):
 
 def setup_logging():
     """Setup structured logging with JSON format for Loki compatibility"""
-    # Create logger
-    logger = logging.getLogger("ssgg")
-    logger.setLevel(getattr(logging, settings.log_level.upper()))
-
-    # Use JSON formatter for all environments
+    
+    # Create JSON formatter
     formatter = CustomJsonFormatter(
         '%(timestamp)s %(level)s %(name)s %(message)s'
     )
-
+    
     # Create console handler
     console_handler = logging.StreamHandler()
     console_handler.setLevel(settings.log_level.upper())
     console_handler.setFormatter(formatter)
-
-    # Add handlers to logger
+    
+    # Setup root logger to catch all logs
+    root_logger = logging.getLogger()
+    root_logger.setLevel(settings.log_level.upper())
+    root_logger.handlers.clear()
+    root_logger.addHandler(console_handler)
+    
+    # Setup app logger
+    logger = logging.getLogger("ssgg")
+    logger.setLevel(settings.log_level.upper())
+    logger.handlers.clear()
     logger.addHandler(console_handler)
-
+    logger.propagate = False
+    
+    # Configure SQLAlchemy loggers
+    for sql_logger_name in ['sqlalchemy.engine.Engine', 'sqlalchemy.engine', 'sqlalchemy']:
+        sql_logger = logging.getLogger(sql_logger_name)
+        sql_logger.handlers.clear()
+        sql_logger.addHandler(console_handler)
+        sql_logger.propagate = False
+        # Set to WARNING to reduce noise, or keep INFO if you need SQL queries
+        sql_logger.setLevel(logging.WARNING)
+    
+    # Configure Uvicorn loggers
+    for uvicorn_logger_name in ['uvicorn', 'uvicorn.error', 'uvicorn.access']:
+        uvi_logger = logging.getLogger(uvicorn_logger_name)
+        uvi_logger.handlers.clear()
+        uvi_logger.addHandler(console_handler)
+        uvi_logger.propagate = False
+    
     return logger
 
 

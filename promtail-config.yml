@@ -122,5 +122,5 @@ scrape_configs:
           level:
       
       # Add output template (use message if parsed, otherwise use full line)
-      - output:
-          source: message
+      # - output:
+      #     source: message

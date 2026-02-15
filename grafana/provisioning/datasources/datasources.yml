@@ -19,8 +19,9 @@ datasources:
       maxLines: 1000
       derivedFields:
         # Link request_id from logs to related logs
-        - datasourceUid: loki
-          matcherRegex: '"request_id":"([^"]+)"'
-          name: RequestID
-          url: '$${__value.raw}'
+        - name: request_id
+          matcherRegex: '"request_id":\s*"([^"]+)"'
+          url: ''
+          datasourceUid: self
+          urlDisplayLabel: 'Filter by Request ID'
     editable: true
