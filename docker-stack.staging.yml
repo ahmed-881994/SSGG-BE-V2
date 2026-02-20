@@ -1,5 +1,13 @@
 version: "3.9"
 
+x-logging: &default-logging
+  driver: loki
+  options:
+    loki-url: "http://localhost:3100/loki/api/v1/push"
+    loki-batch-size: "400"
+    loki-retries: "2"
+    loki-external-labels: "environment=staging,stack=ssgg-be-v2"
+
 services:
   #------ mysql ------
   mysql:
@@ -24,6 +32,7 @@ services:
     deploy:
       restart_policy:
         condition: any
+    logging: *default-logging
 
   #------ api ------
   api:
@@ -53,6 +62,9 @@ services:
       - smtp_username=${smtp_username}
       - smtp_password=${smtp_password}
       - from_email=${from_email}
+      - otel_exporter_otlp_endpoint=${otel_exporter_otlp_endpoint}
+      - otel_service_name=${otel_service_name}
+      - otel_log_correlation=${otel_log_correlation}
     deploy:
       labels:
       - "traefik.enable=true"
@@ -83,6 +95,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s                 # Let the app boot before first check
+    logging: *default-logging
 
   #------ redis ------
   redis:
@@ -102,6 +115,7 @@ services:
     deploy:
       restart_policy:
         condition: on-failure
+    logging: *default-logging
 
 volumes:
   redis_data:

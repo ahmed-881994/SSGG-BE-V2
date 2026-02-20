@@ -119,6 +119,36 @@ services:
       restart_policy:
         condition: on-failure
 
+  tempo:
+    image: grafana/tempo:2.6.1
+    ports:
+      - "3200:3200"
+      - "4317:4317"
+    volumes:
+      - tempo-data:/var/tempo
+    configs:
+      - source: tempo_config
+        target: /etc/tempo/tempo.yml
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    networks:
+      - traefik-public
+      - stg-internal
+      - prd-internal
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.tempo.rule=Host(`tempo.sportingscout.org`)"
+        - "traefik.http.routers.tempo.entrypoints=websecure"
+        - "traefik.http.routers.tempo.tls=true"
+        - "traefik.http.routers.tempo.tls.certresolver=letsencrypt"
+        - "traefik.http.services.tempo.loadbalancer.server.port=3200"
+        - "traefik.docker.network=traefik-public"
+      restart_policy:
+        condition: on-failure
+
   promtail:
     image: grafana/promtail:3.0.0
     volumes:
@@ -147,6 +177,9 @@ configs:
   promtail_config:
     name: promtail_config-${CONFIG_VERSION:-v1}
     file: ./promtail-config.yml
+  tempo_config:
+    name: tempo_config-${CONFIG_VERSION:-v1}
+    file: ./tempo-config.yml
   grafana_datasources:
     name: grafana_datasources-${CONFIG_VERSION:-v1}
     file: ./grafana/provisioning/datasources/datasources.yml
@@ -166,3 +199,4 @@ volumes:
   prometheus-data:
   grafana-data:
   loki-data:
+  tempo-data:

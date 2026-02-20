@@ -30,6 +30,10 @@ services:
       # Metrics
       - "--metrics.prometheus=true"
       - "--metrics.prometheus.buckets=0.1,0.3,1.2,5.0"
+      - "--metrics.prometheus.addrouterslabels=true"
+      - "--metrics.prometheus.addserviceslabels=true"
+      # ping
+      - "--ping=true"
     ports:
       - "8080:8080"
       - "80:80"
