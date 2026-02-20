@@ -31,7 +31,6 @@ jobs:
       - name: cleanup Traefik env file
         if: always()
         run: rm -f .env
-
   health-check:
     needs: deploy
     runs-on: ubuntu-latest
