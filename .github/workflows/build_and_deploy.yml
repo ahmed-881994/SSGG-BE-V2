@@ -176,16 +176,20 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            if ! docker plugin ls --format '{{.Name}}' | grep -q '^loki$'; then
+            if ! docker plugin inspect loki > /dev/null 2>&1; then
               ARCH=$(uname -m)
               if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-                PLUGIN_IMAGE="grafana/loki-docker-driver:3.3.2-arm64"
+                PLUGIN_IMAGE="grafana/loki-docker-driver:3.6.0-arm64"
               else
-                PLUGIN_IMAGE="grafana/loki-docker-driver:3.3.2-amd64"
+                PLUGIN_IMAGE="grafana/loki-docker-driver:3.6.0-amd64"
               fi
+              echo "Installing Loki Docker plugin: $PLUGIN_IMAGE"
               docker plugin install "$PLUGIN_IMAGE" --alias loki --grant-all-permissions
+            else
+              echo "✅ Loki plugin already installed"
             fi
             docker plugin enable loki || true
+            echo "✅ Loki plugin is enabled"
 
       - name: Create environment file
         run: |
