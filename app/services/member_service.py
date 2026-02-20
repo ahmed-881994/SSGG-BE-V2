@@ -1,7 +1,7 @@
+from datetime import date
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import text
 
 from app.config.logging_config import logger
 from app.core.exceptions import (EntityAlreadyExistsError,
@@ -169,11 +169,17 @@ class MemberService:
                 name="Member Deletion Error"
             )
 
-    def get_member_attendance(self, member_id: str) -> Dict[str, List[Dict[str, Any]]]:
+    def get_member_attendance(self, member_id: str, from_date: Optional[date] = None, to_date: Optional[date] = None) -> Dict[str, List[Dict[str, Any]]]:
         try:
             member = self.member_repository.get_member_by_member_id(member_id)
             if not member:
                 raise EntityDoesNotExistError(f"Member with ID {member_id} does not exist.", name="Member Retrieval Error")
+            
+            if from_date:
+                member.attendance_records = [record for record in member.attendance_records if record.event.event_start_date >= from_date]
+            if to_date:
+                member.attendance_records = [record for record in member.attendance_records if record.event.event_end_date <= to_date]
+            
             member_attendance = {
                 "member_attendance": [
                     {

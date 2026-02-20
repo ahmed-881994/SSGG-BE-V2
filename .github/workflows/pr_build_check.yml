@@ -73,9 +73,10 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ssgg-be:pr-check -f dockerfile .
+          docker build -t ssgg-be:pr-check -f ./docker/dockerfile .
+          echo "✓ Docker image built successfully"
 
       - name: Verify Docker image
         run: |
           docker images ssgg-be:pr-check
-          echo "✓ Docker image built successfully"
+          echo "✓ Docker image verified successfully"

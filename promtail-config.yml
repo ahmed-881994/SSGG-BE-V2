@@ -1,0 +1,126 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Scrape logs from all Docker containers
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["com.docker.stack.namespace"]
+    
+    relabel_configs:
+      # Extract container name
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      
+      # Extract container ID (short)
+      - source_labels: ['__meta_docker_container_id']
+        regex: '([a-z0-9]{12}).*'
+        target_label: 'container_id'
+      
+      # Extract container image
+      - source_labels: ['__meta_docker_container_image']
+        target_label: 'image'
+      
+      # Extract stack name (Docker Swarm)
+      - source_labels: ['__meta_docker_container_label_com_docker_stack_namespace']
+        target_label: 'stack'
+      
+      # Extract service name (Docker Swarm)
+      - source_labels: ['__meta_docker_container_label_com_docker_swarm_service_name']
+        target_label: 'service'
+      
+      # Extract task ID (Docker Swarm)
+      - source_labels: ['__meta_docker_container_label_com_docker_swarm_task_id']
+        regex: '([a-z0-9]{12}).*'
+        target_label: 'task_id'
+      
+      # Extract node ID
+      - source_labels: ['__meta_docker_container_label_com_docker_swarm_node_id']
+        target_label: 'node_id'
+      
+      # Determine environment from stack name
+      - source_labels: ['stack']
+        regex: 'ssgg-be-v2-production'
+        target_label: 'environment'
+        replacement: 'production'
+      
+      - source_labels: ['stack']
+        regex: 'ssgg-be-v2-staging'
+        target_label: 'environment'
+        replacement: 'staging'
+      
+      - source_labels: ['stack']
+        regex: 'ssgg-monitoring'
+        target_label: 'environment'
+        replacement: 'monitoring'
+      
+      # Only scrape containers from our stacks
+      - source_labels: ['stack']
+        regex: '(ssgg-be-v2-production|ssgg-be-v2-staging|ssgg-monitoring)'
+        action: keep
+
+    # Parse logs based on application
+    pipeline_stages:
+      # Try to parse as JSON first (for structured logs from FastAPI)
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            severity: severity
+            message: message
+            logger: logger
+            module: module
+            function: function
+            line: line
+            request_id: request_id
+            user_id: user_id
+            endpoint: endpoint
+            method: method
+            url: url
+            status_code: status_code
+            duration_ms: duration_ms
+            client_ip: client_ip
+            env: env
+            app: app
+            job: job
+            version: version
+            pid: pid
+            thread: thread
+      
+      # Extract labels from parsed JSON (only low-cardinality fields)
+      - labels:
+          level:
+          app:
+          job:
+          env:
+      
+      # Set timestamp from log if available (ISO 8601 format)
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+          fallback_formats:
+            - RFC3339Nano
+            - '2006-01-02T15:04:05.999999999Z07:00'
+      
+      # If JSON parsing fails, try to extract log level from plain text
+      - regex:
+          expression: '^(?P<level>(DEBUG|INFO|WARNING|ERROR|CRITICAL)):'
+      
+      - labels:
+          level:
+      
+      # Add output template (use message if parsed, otherwise use full line)
+      # - output:
+      #     source: message

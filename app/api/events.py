@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db_session
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/events", tags=["Events"], dependencies=[Depends(get_
 
 
 @router.get("", response_model=SearchEventsResponse)
-def search_events(entityID: Optional[int] = None, startDate: Optional[str] = None, endDate: Optional[str] = None, name: Optional[str] = None, db: Session = Depends(get_db_session)):
+def search_events(entityID: Optional[int] = None, startDate: Optional[str] = Query(default=None, example="2023-01-01"), endDate: Optional[str] = Query(default=None, example="2023-01-01"), name: Optional[str] = None, db: Session = Depends(get_db_session)):
     """
     Search events by (Name, Team, Start and End dates)
     """

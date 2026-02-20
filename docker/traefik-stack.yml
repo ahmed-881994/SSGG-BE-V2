@@ -26,6 +26,14 @@ services:
 
       # Logging
       - "--log.level=DEBUG"
+
+      # Metrics
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.buckets=0.1,0.3,1.2,5.0"
+      - "--metrics.prometheus.addrouterslabels=true"
+      - "--metrics.prometheus.addserviceslabels=true"
+      # ping
+      - "--ping=true"
     ports:
       - "8080:8080"
       - "80:80"
@@ -48,7 +56,7 @@ services:
         - "traefik.http.routers.dashboard.service=api@internal"
         # - "traefik.http.services.dummy-svc.loadbalancer.server.port=8080"
         # Basic auth for dashboard (admin:password)
-        - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$2y$$05$$ADW88D26tyHY2b3aNU8yPOYPfo7ix6Z8dMbjwBYqh0OAfHEZa9Mam"
+        - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$KZ9sWrDc$$0J1yO/63mY6bdqAxmAj.q0"
       placement:
         constraints:
           - node.role == manager

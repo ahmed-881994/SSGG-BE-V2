@@ -1,6 +1,7 @@
+from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.config.logging_config import logger
@@ -8,8 +9,10 @@ from app.core.database import get_db_session
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
-from app.schemas.member_schema import (MemberAttendanceResponse, MemberCreateRequest, MemberUpdateRequest,
-                                       MemberResponse, SearchMembersResponse)
+from app.schemas.member_schema import (MemberAttendanceResponse,
+                                       MemberCreateRequest, MemberResponse,
+                                       MemberUpdateRequest,
+                                       SearchMembersResponse)
 from app.services.member_service import MemberService
 
 router = APIRouter(prefix="/members", tags=["Members"], dependencies=[Depends(get_user_in_token)])
@@ -17,13 +20,13 @@ router = APIRouter(prefix="/members", tags=["Members"], dependencies=[Depends(ge
 
 @router.get("", tags=["Members"], response_model=SearchMembersResponse, responses={
     200: {"description": "Success", "model": SearchMembersResponse}})
-def search_members(name: Optional[str] = None, entityID: Optional[int] = None, db: Session = Depends(get_db_session)):
+def search_members(name: Optional[str] = None, entity_id: Optional[int] = None, db: Session = Depends(get_db_session)):
     """
     Search members by (Name, Entity)
     """
     try:
         member_service = MemberService(db)
-        return member_service.search_members(name=name, entity_id=entityID)
+        return member_service.search_members(name=name, entity_id=entity_id)
     except EntityDoesNotExistError as e:
         logger.error(f"No members found matching criteria: {e.message}", exc_info=True)
         raise HTTPException(status_code=404, detail='No members found matching criteria')
@@ -116,13 +119,13 @@ def delete_member(member_id: str, db: Session = Depends(get_db_session)):
 
 
 @router.get("/{member_id}/attendance",response_model=MemberAttendanceResponse)
-def get_member_attendance(member_id: str, db: Session = Depends(get_db_session)):
+def get_member_attendance(member_id: str, from_date: Optional[date] = Query(default=None, example="2023-01-01"), to_date: Optional[date] = Query(default=None, example="2023-01-01"), db: Session = Depends(get_db_session)):
     """
-    Gets member attendance by ID
+    Gets member attendance by ID 
     """
     try:
         member_service = MemberService(db)
-        return member_service.get_member_attendance(member_id)
+        return member_service.get_member_attendance(member_id, from_date, to_date)
     except EntityDoesNotExistError as e:
         logger.error(f"Member not found: {e.message}", exc_info=True)
         raise HTTPException(status_code=404, detail='Member not found')
