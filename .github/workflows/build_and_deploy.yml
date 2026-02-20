@@ -5,6 +5,13 @@ on:
     branches:
       - main
       - stage
+    paths:
+      - 'docker/docker-stack-*.yml'
+      - 'docker/dockerfile'
+      - 'app/**'
+      - 'main.py'
+      - 'requirements.txt'
+      - '.github/workflows/build_and_deploy.yml'
   workflow_dispatch:
 
 jobs:
@@ -67,7 +74,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./dockerfile
+          file: ./docker/dockerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/ssgg-be-v2:${{ needs.setup.outputs.environment }}-${{ github.sha }}

@@ -24,7 +24,7 @@ jobs:
           uses: cssnr/stack-deploy-action@v1
           with:
             name: ssgg-monitoring
-            file: docker-stack-monitoring.yml
+            file: docker/monitoring-stack.yml
             mode: swarm
             host: ${{ secrets.SSH_HOST }}
             user: ${{ secrets.SSH_USER }}
