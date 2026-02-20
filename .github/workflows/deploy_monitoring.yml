@@ -7,69 +7,72 @@ on:
   workflow_dispatch:
 
 jobs:
-    deploy:
-        runs-on: ubuntu-latest
-        steps:
-        - name: Prepare Monitoring env variables
-          run: |
-            cat > .env << EOF
-            # Monitoring auth
-            MONITORING_AUTH=${{ secrets.MONITORING_AUTH }}
-            GRAFANA_ADMIN_USER=${{ secrets.GRAFANA_ADMIN_USER }}
-            GRAFANA_PASSWORD=${{ secrets.GRAFANA_PASSWORD }}
-            CONFIG_VERSION=${{ github.sha }}
-            EOF
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-        - name: Docker Stack Deploy Monitoring
-          uses: cssnr/stack-deploy-action@v1
-          with:
-            name: ssgg-monitoring
-            file: docker/monitoring-stack.yml
-            mode: swarm
-            host: ${{ secrets.SSH_HOST }}
-            user: ${{ secrets.SSH_USER }}
-            ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
-            env_file: ./.env
-            summary: true
+      - name: Prepare Monitoring env variables
+        run: |
+          cat > .env << EOF
+          # Monitoring auth
+          MONITORING_AUTH=${{ secrets.MONITORING_AUTH }}
+          GRAFANA_ADMIN_USER=${{ secrets.GRAFANA_ADMIN_USER }}
+          GRAFANA_PASSWORD=${{ secrets.GRAFANA_PASSWORD }}
+          CONFIG_VERSION=${{ github.sha }}
+          EOF
 
-        - name: Cleanup Monitoring env file
-          if: always()
-          run: rm -f .env
-    
-    health-check:
-        needs: deploy
-        runs-on: ubuntu-latest
-        steps:
-        - name: Health Check
-          run: |
-            # Check Prometheus
-            if curl -s -o /dev/null -w "%{http_code}" https://prometheus.sportingscout.org/-/ready | grep -q "200"; then
-              echo "Prometheus is healthy"
-            else
-              echo "Prometheus is unhealthy"
-              exit 1
-            fi
-        - name: Check Grafana
-          run: |
-            if curl -s -o /dev/null -w "%{http_code}" https://grafana.sportingscout.org/api/health | grep -q "200"; then
-              echo "Grafana is healthy"
-            else
-              echo "Grafana is unhealthy"
-              exit 1
-            fi
-        - name: Check Tempo
-          run: |
-            if curl -s -o /dev/null -w "%{http_code}" https://tempo.sportingscout.org/ready | grep -q "200"; then
-              echo "Tempo is healthy"
-            else
-              echo "Tempo is unhealthy"
-              exit 1
-            fi
-        - name: Check Loki
-          run: |
-            if curl -s -o /dev/null -w "%{http_code}" https://loki.sportingscout.org/ready | grep -q "200"; then
-              echo "Loki is healthy"
-            else
-              echo "Loki is unhealthy"
-              exit 1
-            fi
+      - name: Docker Stack Deploy Monitoring
+        uses: cssnr/stack-deploy-action@v1
+        with:
+          name: ssgg-monitoring
+          file: docker/monitoring-stack.yml
+          mode: swarm
+          host: ${{ secrets.SSH_HOST }}
+          user: ${{ secrets.SSH_USER }}
+          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          env_file: ./.env
+          summary: true
+
+      - name: Cleanup Monitoring env file
+        if: always()
+        run: rm -f .env
+
+  health-check:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health Check
+        run: |
+          # Check Prometheus
+          if curl -s -o /dev/null -w "%{http_code}" https://prometheus.sportingscout.org/-/ready | grep -q "200"; then
+            echo "Prometheus is healthy"
+          else
+            echo "Prometheus is unhealthy"
+            exit 1
+          fi
+      - name: Check Grafana
+        run: |
+          if curl -s -o /dev/null -w "%{http_code}" https://grafana.sportingscout.org/api/health | grep -q "200"; then
+            echo "Grafana is healthy"
+          else
+            echo "Grafana is unhealthy"
+            exit 1
+          fi
+      - name: Check Tempo
+        run: |
+          if curl -s -o /dev/null -w "%{http_code}" https://tempo.sportingscout.org/ready | grep -q "200"; then
+            echo "Tempo is healthy"
+          else
+            echo "Tempo is unhealthy"
+            exit 1
+          fi
+      - name: Check Loki
+        run: |
+          if curl -s -o /dev/null -w "%{http_code}" https://loki.sportingscout.org/ready | grep -q "200"; then
+            echo "Loki is healthy"
+          else
+            echo "Loki is unhealthy"
+            exit 1
+          fi
