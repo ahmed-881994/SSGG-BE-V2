@@ -7,38 +7,39 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-        - name: Prepare Traefik env variables
-          run: |
-            cat > .env << EOF
-            # Traefik auth
-            TRAEFIK_AUTH=${{ secrets.TRAEFIK_AUTH }}
-            EOF
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare Traefik env variables
+        run: |
+          cat > .env << EOF
+          # Traefik auth
+          TRAEFIK_AUTH=${{ secrets.TRAEFIK_AUTH }}
+          EOF
 
-        - name: Docker Stack Deploy Traefik
-          uses: cssnr/stack-deploy-action@v1
-          with:
-            name: traefik
-            file: docker/traefik-stack.yml
-            mode: swarm
-            host: ${{ secrets.SSH_HOST }}
-            user: ${{ secrets.SSH_USER }}
-            ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
-            env_file: ./.env
-            summary: true
+      - name: Docker Stack Deploy Traefik
+        uses: cssnr/stack-deploy-action@v1
+        with:
+          name: traefik
+          file: docker/traefik-stack.yml
+          mode: swarm
+          host: ${{ secrets.SSH_HOST }}
+          user: ${{ secrets.SSH_USER }}
+          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          env_file: ./.env
+          summary: true
 
-        - name: cleanup Traefik env file
-          if: always()
-          run: rm -f .env
-    
+      - name: cleanup Traefik env file
+        if: always()
+        run: rm -f .env
   health-check:
     needs: deploy
     runs-on: ubuntu-latest
     steps:
-    - name: Health Check Traefik
-      run: |
-        if curl -s -o /dev/null -w "%{http_code}" https://traefik.sportingscout.org/ping | grep -q "200"; then
-            echo "Traefik is healthy"
-        else
-            echo "Traefik is unhealthy"
-            exit 1
-        fi
+      - name: Health Check Traefik
+        run: |
+          if curl -s -o /dev/null -w "%{http_code}" https://traefik.sportingscout.org/ping | grep -q "200"; then
+              echo "Traefik is healthy"
+          else
+              echo "Traefik is unhealthy"
+              exit 1
+          fi
