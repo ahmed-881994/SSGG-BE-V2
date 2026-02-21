@@ -1,11 +1,25 @@
 apiVersion: 1
 
+deleteDataSourcesFromDashboards: false
+
 datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      timeInterval: 15s
+      httpMethod: POST
+    editable: true
+
   - name: Loki
     uid: loki
     type: loki
     access: proxy
     url: http://loki:3100
+    isDefault: false
     jsonData:
       maxLines: 1000
     editable: true
@@ -20,18 +34,9 @@ datasources:
       nodeGraph:
         enabled: true
       tracesToLogsV2:
-        datasourceUid: loki  # Link traces to logs
+        datasourceUid: loki
         spanStartTimeShift: 1h
         spanEndTimeShift: 1h
-    editable: true
-
-  - name: Prometheus
-    uid: prometheus
-    type: prometheus
-    access: proxy
-    url: http://prometheus:9090
-    isDefault: false
-    jsonData:
-      timeInterval: 15s
-      httpMethod: POST
+      tracesToMetrics:
+        datasourceUid: prometheus
     editable: true
