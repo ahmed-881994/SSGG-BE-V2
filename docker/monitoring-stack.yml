@@ -40,8 +40,8 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
     configs:
-      - source: grafana_datasources
-        target: /etc/grafana/provisioning/datasources/datasources.yml
+      # - source: grafana_datasources
+      #   target: /etc/grafana/provisioning/datasources/datasources.yml
       - source: grafana_dashboards
         target: /etc/grafana/provisioning/dashboards/default.yml
     environment:
