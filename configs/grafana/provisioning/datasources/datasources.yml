@@ -29,21 +29,55 @@ datasources:
           url: "$${__value.raw}"
     editable: true
 
-  - name: Tempo
-    uid: tempo
+  - name: Tempo (yes streaming)
     type: tempo
     access: proxy
+    orgId: 1
     url: http://tempo:3200
-    isDefault: false
+    basicAuth: false
+    isDefault: true
+    version: 1
+    editable: false
+    apiVersion: 1
+    uid: tempo-streaming-enabled
     jsonData:
-      nodeGraph:
-        enabled: true
-      tracesToLogsV2:
-        customQuery: false
-        datasourceUid: loki
-        filterBySpanID: false
-        filterByTraceID: true
-        tags:
-          - key: service.name
-            value: service
-    editable: true
+      httpMethod: GET
+      serviceMap:
+        datasourceUid: prometheus
+      streamingEnabled:
+        search: true
+        metrics: true
+  - name: Tempo (no streaming)
+    type: tempo
+    access: proxy
+    orgId: 1
+    url: http://tempo:3200
+    basicAuth: false
+    isDefault: false
+    version: 1
+    editable: false
+    apiVersion: 1
+    uid: tempo-streaming-disabled
+    jsonData:
+      httpMethod: GET
+      serviceMap:
+        datasourceUid: prometheus
+
+  # - name: Tempo
+  #   uid: tempo
+  #   type: tempo
+  #   access: proxy
+  #   url: http://tempo:3200
+  #   isDefault: false
+  #   jsonData:
+  #     nodeGraph:
+  #       enabled: true
+  #     tracesToLogsV2:
+  #       customQuery: false
+  #       datasourceUid: loki
+  #       filterBySpanID: false
+  #       filterByTraceID: true
+  #       tags:
+  #         - key: service.name
+  #           value: service
+  #   editable: true
