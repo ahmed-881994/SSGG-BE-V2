@@ -1,18 +1,13 @@
 apiVersion: 1
 
 datasources:
-  - name: Prometheus
-    uid: prometheus
-    type: prometheus
+  - name: Loki
+    uid: loki
+    type: loki
     access: proxy
-    url: http://prometheus:9090
-    isDefault: false
+    url: http://loki:3100
     jsonData:
-      timeInterval: 15s
-      httpMethod: POST
-      exemplarTraceIdDestinations:
-        - datasourceUid: tempo
-          name: TraceID
+      maxLines: 1000
     editable: true
 
   - name: Tempo
@@ -24,27 +19,15 @@ datasources:
     jsonData:
       nodeGraph:
         enabled: true
-      tracesToLogsV2:
-        customQuery: false
-        datasourceUid: loki
-        filterBySpanID: false
-        filterByTraceID: true
-        tags:
-          - key: service.name
-            value: service
     editable: true
 
-  - name: Loki
-    uid: loki
-    type: loki
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
     access: proxy
-    url: http://loki:3100
+    url: http://prometheus:9090
+    isDefault: false
     jsonData:
-      maxLines: 1000
-      derivedFields:
-        - name: TraceID
-          matcherRegex: '"trace_id":\s*"([0-9a-fA-F]+)"'
-          datasourceUid: tempo
-          matcherType: regex
-          url: '$${__value.raw}'
+      timeInterval: 15s
+      httpMethod: POST
     editable: true
