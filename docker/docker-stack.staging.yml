@@ -3,10 +3,10 @@ version: "3.9"
 x-logging: &default-logging
   driver: loki
   options:
-    loki-url: "http://localhost:3100/loki/api/v1/push"
+    loki-url: "http://loki:3100/loki/api/v1/push"
     loki-batch-size: "400"
     loki-retries: "2"
-    loki-external-labels: "environment=staging,stack=ssgg-be-v2"
+    loki-external-labels: "environment=staging,stack=ssgg-be-v2-staging"
 
 services:
   #------ mysql ------

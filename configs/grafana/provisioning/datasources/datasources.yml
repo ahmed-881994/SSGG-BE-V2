@@ -19,6 +19,10 @@ datasources:
     jsonData:
       nodeGraph:
         enabled: true
+      tracesToLogsV2:
+        datasourceUid: loki  # Link traces to logs
+        spanStartTimeShift: 1h
+        spanEndTimeShift: 1h
     editable: true
 
   - name: Prometheus

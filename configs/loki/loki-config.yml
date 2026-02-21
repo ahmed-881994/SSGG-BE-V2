@@ -12,7 +12,7 @@ common:
       rules_directory: /loki/rules
   replication_factor: 1
   ring:
-    instance_addr: 127.0.0.1
+    instance_addr: 0.0.0.0:3100
     kvstore:
       store: inmemory
 
@@ -42,7 +42,7 @@ compactor:
   compaction_interval: 10m
   retention_enabled: true
   retention_delete_delay: 2h
-  retention_delete_worker_count: 150
+  retention_delete_worker_count: 10
   delete_request_store: filesystem  # Added this line
 
 table_manager:
