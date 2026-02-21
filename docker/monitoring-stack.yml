@@ -169,22 +169,22 @@ services:
 configs:
   prometheus_yml:
     name: prometheus_yml-${CONFIG_VERSION:-v1}
-    file: ./configs/prometheus/prometheus.yml
+    file: ../configs/prometheus/prometheus.yml
   loki_config:
     name: loki_config-${CONFIG_VERSION:-v1}
-    file: ./configs/loki/loki-config.yml
+    file: ../configs/loki/loki-config.yml
   promtail_config:
     name: promtail_config-${CONFIG_VERSION:-v1}
-    file: ./configs/promtail/promtail-config.yml
+    file: ../configs/promtail/promtail-config.yml
   tempo_config:
     name: tempo_config-${CONFIG_VERSION:-v1}
-    file: ./configs/tempo/tempo-config.yml
+    file: ../configs/tempo/tempo-config.yml
   grafana_datasources:
     name: grafana_datasources-${CONFIG_VERSION:-v1}
-    file: ./configs/grafana/provisioning/datasources/datasources.yml
+    file: ../configs/grafana/provisioning/datasources/datasources.yml
   grafana_dashboards:
     name: grafana_dashboards-${CONFIG_VERSION:-v1}
-    file: ./configs/grafana/provisioning/dashboards/default.yml
+    file: ../configs/grafana/provisioning/dashboards/default.yml
 
 networks:
   traefik-public:
