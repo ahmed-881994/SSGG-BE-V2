@@ -260,7 +260,7 @@ jobs:
         uses: cssnr/stack-deploy-action@v1
         with:
           name: ssgg-be-v2-${{ needs.setup.outputs.environment }}
-          file: docker-stack.${{ needs.setup.outputs.environment }}.yml
+          file: docker/docker-stack.${{ needs.setup.outputs.environment }}.yml
           mode: swarm
           host: ${{ secrets.SSH_HOST }}
           user: ${{ secrets.SSH_USER }}
@@ -290,7 +290,7 @@ jobs:
       #   uses: cssnr/stack-deploy-action@v1
       #   with:
       #     name: ssgg-monitoring
-      #     file: docker-stack-monitoring.yml
+      #     file: docker/monitoring-stack.yml
       #     mode: swarm
       #     host: ${{ secrets.SSH_HOST }}
       #     user: ${{ secrets.SSH_USER }}
