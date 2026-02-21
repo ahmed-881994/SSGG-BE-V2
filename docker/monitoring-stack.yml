@@ -42,7 +42,7 @@ services:
       - grafana-data:/var/lib/grafana
     configs:
       - source: grafana_datasources
-        target: /etc/grafana/provisioning/datasources/datasources.yml
+        target: /etc/grafana/provisioning/datasources/datasources.yml.disabled
       # - source: grafana_dashboards
       #   target: /etc/grafana/provisioning/dashboards/default.yml
     environment:
