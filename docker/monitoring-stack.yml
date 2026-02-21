@@ -50,9 +50,9 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - GF_SERVER_ROOT_URL=https://grafana.sportingscout.org
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=  # ✅ Empty - don't install any plugins
-      - GF_RENDERING_SERVER_URL=  # ✅ Disable rendering
-      - GF_RENDERING_CALLBACK_URL=  # ✅ Disable rendering
+      - GF_INSTALL_PLUGINS=
+      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=
+      - GF_LOG_LEVEL=debug  # ✅ Add debug logging temporarily
     networks:
       - traefik-public
       - stg-internal
@@ -69,6 +69,10 @@ services:
         - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
         - "traefik.http.services.grafana.loadbalancer.server.port=3000"
         - "traefik.docker.network=traefik-public"
+        # ✅ Add these headers for proper frontend loading
+        - "traefik.http.middlewares.grafana-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+        - "traefik.http.middlewares.grafana-headers.headers.customrequestheaders.X-Forwarded-Host=grafana.sportingscout.org"
+        - "traefik.http.routers.grafana.middlewares=grafana-headers"
       restart_policy:
         condition: on-failure
 
