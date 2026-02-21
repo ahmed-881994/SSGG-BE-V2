@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     
     # Logging settings
     log_level: str = "INFO"
+
+    # OpenTelemetry settings
+    otel_exporter_otlp_endpoint: str = ""
+    otel_service_name: str = "ssgg-api"
+    otel_log_correlation: bool = True
     
     # SMTP settings
     smtp_server: str

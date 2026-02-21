@@ -7,8 +7,7 @@ from fastapi.responses import JSONResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pymysql import DataError, IntegrityError
 from contextlib import asynccontextmanager
-from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
-from prometheus_fastapi_instrumentator import Instrumentator
+from prometheus_client import Counter, Gauge
 
 from app.api import auth, entities, events, health, lookups, members, permissions, roles, users, visualizer
 from app.config.logging_config import logger
@@ -23,6 +22,7 @@ from app.core.logging_middleware import logging_middleware
 from app.core.auditing_middleware import auditing_middleware
 from app.core.rate_limitting import setup_rate_limiting
 from app.core.user_context_middleware import user_context_middleware
+from app.core.prometheus_middleware import PrometheusMiddleware, metrics, setting_otlp
 from app.schemas.common_schema import ErrorResponse
 
 
@@ -45,8 +45,15 @@ app = FastAPI(
     # lifespan=lifespan,
 )
 
-# Instrument FastAPI app with Prometheus
-Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+if settings.otel_exporter_otlp_endpoint:
+    setting_otlp(
+        app=app,
+        app_name=settings.otel_service_name,
+        endpoint=settings.otel_exporter_otlp_endpoint,
+        log_correlation=settings.otel_log_correlation,
+    )
+
+app.add_middleware(PrometheusMiddleware, app_name=settings.otel_service_name)
 
 # Custom Prometheus metrics for application-specific monitoring
 db_connection_pool_gauge = Gauge('ssgg_db_connection_pool_size', 'Database connection pool size')
@@ -122,6 +129,11 @@ tags_metadata = [
 ]
 
 app.openapi_tags = tags_metadata
+
+
+@app.get("/metrics", include_in_schema=False)
+async def app_metrics(request: Request):
+    return metrics(request)
 
 
 # ------------------------------#

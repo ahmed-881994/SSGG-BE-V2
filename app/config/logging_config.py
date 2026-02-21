@@ -32,7 +32,20 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
         log_record['env'] = settings.environment
         log_record['app'] = 'ssgg-api'
         log_record['job'] = 'ssgg-api'  # Standard Prometheus/Loki convention
+        log_record['service'] = settings.otel_service_name
         log_record['version'] = '2.0.0'
+
+        otel_trace_id = getattr(record, 'otelTraceID', None)
+        if otel_trace_id:
+            log_record['trace_id'] = str(otel_trace_id)
+
+        otel_span_id = getattr(record, 'otelSpanID', None)
+        if otel_span_id:
+            log_record['span_id'] = str(otel_span_id)
+
+        otel_service_name = getattr(record, 'otelServiceName', None)
+        if otel_service_name:
+            log_record['service'] = str(otel_service_name)
         
         # Process context for multi-replica debugging
         log_record['pid'] = record.process
