@@ -50,6 +50,9 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - GF_SERVER_ROOT_URL=https://grafana.sportingscout.org
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=  # ✅ Empty - don't install any plugins
+      - GF_RENDERING_SERVER_URL=  # ✅ Disable rendering
+      - GF_RENDERING_CALLBACK_URL=  # ✅ Disable rendering
     networks:
       - traefik-public
       - stg-internal
