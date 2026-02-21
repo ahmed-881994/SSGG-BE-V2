@@ -6,7 +6,7 @@ x-logging: &default-logging
     loki-url: "http://localhost:3100/loki/api/v1/push"
     loki-batch-size: "400"
     loki-retries: "2"
-    loki-external-labels: "environment=production,stack=ssgg-be-v2"
+    loki-external-labels: "environment=production,stack=ssgg-be-v2-production"
 
 services:
   #------ mysql ------

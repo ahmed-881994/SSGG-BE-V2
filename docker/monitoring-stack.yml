@@ -13,6 +13,7 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=30d'
       - '--web.enable-lifecycle'
+      - '--web.enable-remote-write-receiver'
     networks:
       - traefik-public
       - stg-internal
@@ -169,19 +170,19 @@ services:
 
 configs:
   prometheus_yml:
-    name: prometheus_yml-${CONFIG_VERSION:-v1}
+    name: prometheus_yml-${CONFIG_VERSION:-v2}
     file: ../configs/prometheus/prometheus.yml
   loki_config:
-    name: loki_config-${CONFIG_VERSION:-v1}
+    name: loki_config-${CONFIG_VERSION:-v2}
     file: ../configs/loki/loki-config.yml
   promtail_config:
-    name: promtail_config-${CONFIG_VERSION:-v1}
+    name: promtail_config-${CONFIG_VERSION:-v2}
     file: ../configs/promtail/promtail-config.yml
   tempo_config:
-    name: tempo_config-${CONFIG_VERSION:-v1}
+    name: tempo_config-${CONFIG_VERSION:-v2}
     file: ../configs/tempo/tempo-config.yml
   grafana_datasources:
-    name: grafana_datasources-${CONFIG_VERSION:-v1}
+    name: grafana_datasources-${CONFIG_VERSION:-v2}
     file: ../configs/grafana/provisioning/datasources/datasources.yml
   # grafana_dashboards:
   #   name: grafana_dashboards-${CONFIG_VERSION:-v1}
