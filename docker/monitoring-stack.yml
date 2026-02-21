@@ -42,8 +42,8 @@ services:
     configs:
       - source: grafana_datasources
         target: /etc/grafana/provisioning/datasources/datasources.yml
-      - source: grafana_dashboards
-        target: /etc/grafana/provisioning/dashboards/default.yml
+      # - source: grafana_dashboards
+      #   target: /etc/grafana/provisioning/dashboards/default.yml
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
@@ -182,9 +182,9 @@ configs:
   grafana_datasources:
     name: grafana_datasources-${CONFIG_VERSION:-v1}
     file: ../configs/grafana/provisioning/datasources/datasources.yml
-  grafana_dashboards:
-    name: grafana_dashboards-${CONFIG_VERSION:-v1}
-    file: ../configs/grafana/provisioning/dashboards/default.yml
+  # grafana_dashboards:
+  #   name: grafana_dashboards-${CONFIG_VERSION:-v1}
+  #   file: ../configs/grafana/provisioning/dashboards/default.yml
 
 networks:
   traefik-public:
