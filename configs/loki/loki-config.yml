@@ -11,6 +11,13 @@ common:
     kvstore:
       store: inmemory
 
+ingester:
+  wal:
+    enabled: false  # ✅ EXPLICITLY DISABLE WAL
+  chunk_idle_period: 1h
+  max_chunk_age: 1h
+  chunk_retain_period: 30s
+
 schema_config:
   configs:
     - from: 2020-10-24
