@@ -49,7 +49,6 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - GF_SERVER_ROOT_URL=https://grafana.sportingscout.org
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_PLUGINS_PREINSTALL_SYNC=grafana-clock-panel,grafana-simple-json-datasource
     networks:
       - traefik-public
       - stg-internal
