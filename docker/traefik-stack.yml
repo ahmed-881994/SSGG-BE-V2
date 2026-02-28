@@ -25,7 +25,9 @@ services:
       - "--api.insecure=false"
 
       # Logging
-      - "--log.level=DEBUG"
+      - "--log.level=INFO"
+      - "--accesslog=true"
+      - "--metrics.prometheus=true"
 
       # Metrics
       - "--metrics.prometheus=true"
