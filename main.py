@@ -53,7 +53,7 @@ if settings.otel_exporter_otlp_endpoint:
         log_correlation=settings.otel_log_correlation,
     )
 
-app.add_middleware(PrometheusMiddleware, app_name=settings.otel_service_name)
+# app.add_middleware(PrometheusMiddleware, app_name=settings.otel_service_name)
 
 # Custom Prometheus metrics for application-specific monitoring
 db_connection_pool_gauge = Gauge('ssgg_db_connection_pool_size', 'Database connection pool size')
@@ -64,7 +64,7 @@ redis_health_gauge = Gauge('ssgg_redis_health_status', 'Redis health status (1=h
 redis_response_time_gauge = Gauge('ssgg_redis_response_time_ms', 'Redis response time in milliseconds')
 redis_operations_counter = Counter('ssgg_redis_operations_total', 'Total Redis operations', ['operation', 'status'])
 
-app.add_middleware(PrometheusMiddleware, app_name=settings.otel_service_name)
+# app.add_middleware(PrometheusMiddleware, app_name=settings.otel_service_name)
 app.middleware("http")(access_control_middleware)
 app.middleware("http")(user_context_middleware)
 app.middleware("http")(auditing_middleware)
