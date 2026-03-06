@@ -1,28 +1,27 @@
-from typing import Callable
 import os
+from contextlib import asynccontextmanager
+from typing import Callable
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pymysql import DataError, IntegrityError
-from contextlib import asynccontextmanager
 from prometheus_client import Counter, Gauge
+from pymysql import DataError, IntegrityError
 
-from app.api import auth, entities, events, health, lookups, members, permissions, roles, users, visualizer
+from app.api import (auth, entities, events, health, lookups, members,
+                     permissions, roles, users, visualizer)
 from app.config.logging_config import logger
 from app.config.settings import settings
 from app.core.access_control_middleware import access_control_middleware
-from app.core.exceptions import (AuthenticationFailed,
-                                       EntityDoesNotExistError,
-                                       InvalidOperationError,
-                                       InvalidTokenError, ServiceError,
-                                       SSGGApiError)
-from app.core.logging_middleware import logging_middleware
 from app.core.auditing_middleware import auditing_middleware
+from app.core.exceptions import (AuthenticationFailed, EntityDoesNotExistError,
+                                 InvalidOperationError, InvalidTokenError,
+                                 ServiceError, SSGGApiError)
+from app.core.logging_middleware import logging_middleware
 from app.core.rate_limitting import setup_rate_limiting
 from app.core.user_context_middleware import user_context_middleware
-from app.core.prometheus_middleware import PrometheusMiddleware, metrics, setting_otlp
+# from app.core.prometheus_middleware import PrometheusMiddleware, metrics, setting_otlp
 from app.schemas.common_schema import ErrorResponse
 
 
@@ -45,13 +44,13 @@ app = FastAPI(
     # lifespan=lifespan,
 )
 
-if settings.otel_exporter_otlp_endpoint:
-    setting_otlp(
-        app=app,
-        app_name=settings.otel_service_name,
-        endpoint=settings.otel_exporter_otlp_endpoint,
-        log_correlation=settings.otel_log_correlation,
-    )
+# if settings.otel_exporter_otlp_endpoint:
+#     setting_otlp(
+#         app=app,
+#         app_name=settings.otel_service_name,
+#         endpoint=settings.otel_exporter_otlp_endpoint,
+#         log_correlation=settings.otel_log_correlation,
+#     )
 
 # app.add_middleware(PrometheusMiddleware, app_name=settings.otel_service_name)
 
@@ -132,9 +131,9 @@ tags_metadata = [
 app.openapi_tags = tags_metadata
 
 
-@app.get("/metrics", include_in_schema=False)
-async def app_metrics(request: Request):
-    return metrics(request)
+# @app.get("/metrics", include_in_schema=False)
+# async def app_metrics(request: Request):
+#     return metrics(request)
 
 
 # ------------------------------#
