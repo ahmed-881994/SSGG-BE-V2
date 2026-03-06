@@ -109,11 +109,12 @@ class StandardFormatter(logging.Formatter):
 
 
 def setup_logging():
-    """Setup structured logging with JSON format for Loki compatibility"""
+    """Setup standard logging with default Python format"""
     
-    # Create JSON formatter
-    formatter = CustomJsonFormatter(
-        '%(timestamp)s %(level)s %(name)s %(message)s'
+    # Create standard formatter
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
     )
     
     # Create console handler
@@ -121,7 +122,7 @@ def setup_logging():
     console_handler.setLevel(settings.log_level.upper())
     console_handler.setFormatter(formatter)
     
-    # Setup root logger to catch all logs
+    # Setup root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(settings.log_level.upper())
     root_logger.handlers.clear()
@@ -140,7 +141,6 @@ def setup_logging():
         sql_logger.handlers.clear()
         sql_logger.addHandler(console_handler)
         sql_logger.propagate = False
-        # Set to WARNING to reduce noise, or keep INFO if you need SQL queries
         sql_logger.setLevel(logging.WARNING)
     
     # Configure Uvicorn loggers
