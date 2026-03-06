@@ -234,10 +234,10 @@ jobs:
           # Logging settings
           log_level=${{ vars.LOG_LEVEL }}
 
-          # OpenTelemetry settings
-          otel_exporter_otlp_endpoint=${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
-          otel_service_name=${{ vars.OTEL_SERVICE_NAME }}
-          otel_log_correlation=${{ vars.OTEL_LOG_CORRELATION }}
+          # # OpenTelemetry settings
+          # otel_exporter_otlp_endpoint=${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
+          # otel_service_name=${{ vars.OTEL_SERVICE_NAME }}
+          # otel_log_correlation=${{ vars.OTEL_LOG_CORRELATION }}
 
           # Email settings
           smtp_server=${{ secrets.SMTP_SERVER }}
