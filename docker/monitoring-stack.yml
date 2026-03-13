@@ -13,6 +13,7 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=30d'
       - '--web.enable-lifecycle'
+      - '--web.enable-remote-write-receiver'
     networks:
       - traefik-public
       - stg-internal
@@ -41,15 +42,17 @@ services:
       - grafana-data:/var/lib/grafana
     configs:
       - source: grafana_datasources
-        target: /etc/grafana/provisioning/datasources/datasources.yml
-      - source: grafana_dashboards
-        target: /etc/grafana/provisioning/dashboards/default.yml
+        target: /etc/grafana/provisioning/datasources/datasources.yml.disabled
+      # - source: grafana_dashboards
+      #   target: /etc/grafana/provisioning/dashboards/default.yml
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - GF_SERVER_ROOT_URL=https://grafana.sportingscout.org
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+      - GF_INSTALL_PLUGINS=
+      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=
+      - GF_LOG_LEVEL=debug  # ✅ Add debug logging temporarily
     networks:
       - traefik-public
       - stg-internal
@@ -66,6 +69,10 @@ services:
         - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
         - "traefik.http.services.grafana.loadbalancer.server.port=3000"
         - "traefik.docker.network=traefik-public"
+        # ✅ Add these headers for proper frontend loading
+        - "traefik.http.middlewares.grafana-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+        - "traefik.http.middlewares.grafana-headers.headers.customrequestheaders.X-Forwarded-Host=grafana.sportingscout.org"
+        - "traefik.http.routers.grafana.middlewares=grafana-headers"
       restart_policy:
         condition: on-failure
 
@@ -122,8 +129,9 @@ services:
   tempo:
     image: grafana/tempo:2.6.1
     ports:
-      - "3200:3200"
-      - "4317:4317"
+      - "3200:3200" # tempo
+      - "4317:4317" # Tempo OTLP GRPC
+      - "4318:4318" # Tempo OTLP HTTP
     volumes:
       - tempo-data:/var/tempo
     configs:
@@ -169,23 +177,23 @@ services:
 
 configs:
   prometheus_yml:
-    name: prometheus_yml-${CONFIG_VERSION:-v1}
-    file: ./prometheus.yml
+    name: prometheus_yml-${CONFIG_VERSION:-v2}
+    file: ../configs/prometheus/prometheus.yml
   loki_config:
-    name: loki_config-${CONFIG_VERSION:-v1}
-    file: ./loki-config.yml
+    name: loki_config-${CONFIG_VERSION:-v2}
+    file: ../configs/loki/loki-config.yml
   promtail_config:
-    name: promtail_config-${CONFIG_VERSION:-v1}
-    file: ./promtail-config.yml
+    name: promtail_config-${CONFIG_VERSION:-v2}
+    file: ../configs/promtail/promtail-config.yml
   tempo_config:
-    name: tempo_config-${CONFIG_VERSION:-v1}
-    file: ./tempo-config.yml
+    name: tempo_config-${CONFIG_VERSION:-v2}
+    file: ../configs/tempo/tempo-config.yml
   grafana_datasources:
-    name: grafana_datasources-${CONFIG_VERSION:-v1}
-    file: ./grafana/provisioning/datasources/datasources.yml
-  grafana_dashboards:
-    name: grafana_dashboards-${CONFIG_VERSION:-v1}
-    file: ./grafana/provisioning/dashboards/default.yml
+    name: grafana_datasources-${CONFIG_VERSION:-v2}
+    file: ../configs/grafana/provisioning/datasources/datasources.yml
+  # grafana_dashboards:
+  #   name: grafana_dashboards-${CONFIG_VERSION:-v1}
+  #   file: ../configs/grafana/provisioning/dashboards/default.yml
 
 networks:
   traefik-public:

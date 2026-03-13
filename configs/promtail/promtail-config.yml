@@ -105,6 +105,9 @@ scrape_configs:
           app:
           job:
           env:
+          url:
+          method:
+          status_code:
       
       # Set timestamp from log if available (ISO 8601 format)
       - timestamp:
@@ -122,5 +125,5 @@ scrape_configs:
           level:
       
       # Add output template (use message if parsed, otherwise use full line)
-      # - output:
-      #     source: message
+      - output:
+          source: message

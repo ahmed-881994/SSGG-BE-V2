@@ -32,7 +32,20 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
         log_record['env'] = settings.environment
         log_record['app'] = 'ssgg-api'
         log_record['job'] = 'ssgg-api'  # Standard Prometheus/Loki convention
+        log_record['service'] = settings.otel_service_name
         log_record['version'] = '2.0.0'
+
+        otel_trace_id = getattr(record, 'otelTraceID', None)
+        if otel_trace_id:
+            log_record['trace_id'] = str(otel_trace_id)
+
+        otel_span_id = getattr(record, 'otelSpanID', None)
+        if otel_span_id:
+            log_record['span_id'] = str(otel_span_id)
+
+        otel_service_name = getattr(record, 'otelServiceName', None)
+        if otel_service_name:
+            log_record['service'] = str(otel_service_name)
         
         # Process context for multi-replica debugging
         log_record['pid'] = record.process
@@ -96,11 +109,12 @@ class StandardFormatter(logging.Formatter):
 
 
 def setup_logging():
-    """Setup structured logging with JSON format for Loki compatibility"""
+    """Setup standard logging with default Python format"""
     
-    # Create JSON formatter
-    formatter = CustomJsonFormatter(
-        '%(timestamp)s %(level)s %(name)s %(message)s'
+    # Create standard formatter
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
     )
     
     # Create console handler
@@ -108,7 +122,7 @@ def setup_logging():
     console_handler.setLevel(settings.log_level.upper())
     console_handler.setFormatter(formatter)
     
-    # Setup root logger to catch all logs
+    # Setup root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(settings.log_level.upper())
     root_logger.handlers.clear()
@@ -127,7 +141,6 @@ def setup_logging():
         sql_logger.handlers.clear()
         sql_logger.addHandler(console_handler)
         sql_logger.propagate = False
-        # Set to WARNING to reduce noise, or keep INFO if you need SQL queries
         sql_logger.setLevel(logging.WARNING)
     
     # Configure Uvicorn loggers
