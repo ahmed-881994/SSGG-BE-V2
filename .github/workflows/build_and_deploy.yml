@@ -161,41 +161,71 @@ jobs:
       - name: Create environment file
         run: |
           cat > .env << EOF
-          environment=${{ vars.ENVIRONMENT }}
-          db_host=${{ vars.DB_HOST }}
-          db_port=${{ vars.DB_PORT }}
-          db_database=${{ vars.DB_DATABASE }}
-          db_user=${{ vars.DB_USER }}
+          environment=${{ needs.setup.outputs.environment }}
+          # DB settings
+          db_host=${{ secrets.DB_HOST }}
+          db_port=${{ secrets.DB_PORT }}
+          db_database=${{ secrets.DB_NAME }}
+          db_username=${{ secrets.DB_USER }}
           db_password=${{ secrets.DB_PASSWORD }}
-          db_max_connections=${{ vars.DB_MAX_CONNECTIONS }}
-          rds_host=${{ vars.RDS_HOST }}
-          rds_port=${{ vars.RDS_PORT }}
-          rds_database=${{ vars.RDS_DATABASE }}
-          secret_key=${{ secrets.SECRET_KEY }}
-          algorithm=${{ vars.ALGORITHM }}
-          access_token_expires_minutes=${{ vars.ACCESS_TOKEN_EXPIRES_MINUTES }}
-          cors_origins=${{ vars.CORS_ORIGINS }}
+
+          # Database connection pool settings
+          db_max_connections=${{ secrets.DB_MAX_CONNECTIONS }}
+          db_min_connections=${{ secrets.DB_MIN_CONNECTIONS }}
+
+          # Redis
+          rds_host=${{ secrets.REDIS_HOST }}
+          rds_port=${{ secrets.REDIS_PORT }}
+          rds_database=${{ secrets.REDIS_DATABASE }}
+
+          # JWT settings
+          secret_key=${{ secrets.JWT_SECRET }}
+          algorithm=${{ secrets.JWT_ALGORITHM }}
+          access_token_expires_minutes=${{ vars.JWT_EXPIRES_IN }}
+
+          # Security settings
+          cors_origins="*"
           rate_limit_per_minute=${{ vars.RATE_LIMIT_PER_MINUTE }}
+
+          # Logging settings
           log_level=${{ vars.LOG_LEVEL }}
-          otel_exporter_otlp_endpoint=${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
-          otel_service_name=${{ vars.OTEL_SERVICE_NAME }}
-          otel_log_correlation=${{ vars.OTEL_LOG_CORRELATION }}
+
+          # # OpenTelemetry settings
+          # otel_exporter_otlp_endpoint=${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
+          # otel_service_name=${{ vars.OTEL_SERVICE_NAME }}
+          # otel_log_correlation=${{ vars.OTEL_LOG_CORRELATION }}
+
+          # Email settings
+          smtp_server=${{ secrets.SMTP_SERVER }}
+          smtp_port=${{ secrets.SMTP_PORT }}
+          smtp_username=${{ secrets.SMTP_USERNAME }}
+          smtp_password=${{ secrets.SMTP_PASSWORD }}
+          from_email=${{ secrets.SMTP_USERNAME }}
+
+          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE=${{ secrets.DB_NAME }}
+          MYSQL_USER=${{ secrets.DB_USER }}
+          MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }}        
+
+          # Docker Compose settings
           GIT_COMMIT_HASH=${{ github.sha }}
-          IMAGE_TAG=${{ needs.setup.outputs.image-tag }}
           EOF
       
       - name: Deploy to Staging Swarm
         uses: cssnr/stack-deploy-action@v1
         with:
-          stack-name: ssgg-be-v2-staging
-          stack-file: docker/docker-stack.staging.yml
-          docker-host: ${{ secrets.STAGING_SSH_HOST }}
-          ssh-user: ${{ secrets.STAGING_SSH_USER }}
-          ssh-key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
-          registry: ghcr.io
-          registry-username: ${{ github.actor }}
-          registry-password: ${{ secrets.GITHUB_TOKEN }}
-          env-file: .env
+          name: ssgg-be-v2-staging
+          file: docker/docker-stack.staging.yml
+          mode: swarm
+          host: ${{ secrets.SSH_HOST }}
+          user: ${{ secrets.SSH_USER }}
+          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          registry_host: "ghcr.io"
+          registry_user: ${{ github.repository_owner }}
+          registry_pass: ${{ secrets.GH_TOKEN }}
+          env_file: ./.env
+          registry_auth: true
+          summary: true
       
       - name: Health check
         run: |
@@ -228,41 +258,72 @@ jobs:
       - name: Create environment file
         run: |
           cat > .env << EOF
-          environment=${{ vars.ENVIRONMENT }}
-          db_host=${{ vars.DB_HOST }}
-          db_port=${{ vars.DB_PORT }}
-          db_database=${{ vars.DB_DATABASE }}
-          db_user=${{ vars.DB_USER }}
+          environment=${{ needs.setup.outputs.environment }}
+          # DB settings
+          db_host=${{ secrets.DB_HOST }}
+          db_port=${{ secrets.DB_PORT }}
+          db_database=${{ secrets.DB_NAME }}
+          db_username=${{ secrets.DB_USER }}
           db_password=${{ secrets.DB_PASSWORD }}
-          db_max_connections=${{ vars.DB_MAX_CONNECTIONS }}
-          rds_host=${{ vars.RDS_HOST }}
-          rds_port=${{ vars.RDS_PORT }}
-          rds_database=${{ vars.RDS_DATABASE }}
-          secret_key=${{ secrets.SECRET_KEY }}
-          algorithm=${{ vars.ALGORITHM }}
-          access_token_expires_minutes=${{ vars.ACCESS_TOKEN_EXPIRES_MINUTES }}
-          cors_origins=${{ vars.CORS_ORIGINS }}
+
+          # Database connection pool settings
+          db_max_connections=${{ secrets.DB_MAX_CONNECTIONS }}
+          db_min_connections=${{ secrets.DB_MIN_CONNECTIONS }}
+
+          # Redis
+          rds_host=${{ secrets.REDIS_HOST }}
+          rds_port=${{ secrets.REDIS_PORT }}
+          rds_database=${{ secrets.REDIS_DATABASE }}
+
+          # JWT settings
+          secret_key=${{ secrets.JWT_SECRET }}
+          algorithm=${{ secrets.JWT_ALGORITHM }}
+          access_token_expires_minutes=${{ vars.JWT_EXPIRES_IN }}
+
+          # Security settings
+          cors_origins="*"
           rate_limit_per_minute=${{ vars.RATE_LIMIT_PER_MINUTE }}
+
+          # Logging settings
           log_level=${{ vars.LOG_LEVEL }}
-          otel_exporter_otlp_endpoint=${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
-          otel_service_name=${{ vars.OTEL_SERVICE_NAME }}
-          otel_log_correlation=${{ vars.OTEL_LOG_CORRELATION }}
+
+          # # OpenTelemetry settings
+          # otel_exporter_otlp_endpoint=${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
+          # otel_service_name=${{ vars.OTEL_SERVICE_NAME }}
+          # otel_log_correlation=${{ vars.OTEL_LOG_CORRELATION }}
+
+          # Email settings
+          smtp_server=${{ secrets.SMTP_SERVER }}
+          smtp_port=${{ secrets.SMTP_PORT }}
+          smtp_username=${{ secrets.SMTP_USERNAME }}
+          smtp_password=${{ secrets.SMTP_PASSWORD }}
+          from_email=${{ secrets.SMTP_USERNAME }}
+
+
+          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE=${{ secrets.DB_NAME }}
+          MYSQL_USER=${{ secrets.DB_USER }}
+          MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }}        
+
+          # Docker Compose settings
           GIT_COMMIT_HASH=${{ github.sha }}
-          IMAGE_TAG=${{ needs.setup.outputs.image-tag }}
           EOF
       
       - name: Deploy to Production Swarm
         uses: cssnr/stack-deploy-action@v1
         with:
-          stack-name: ssgg-be-v2-production
-          stack-file: docker/docker-stack.production.yml
-          docker-host: ${{ secrets.PRODUCTION_SSH_HOST }}
-          ssh-user: ${{ secrets.PRODUCTION_SSH_USER }}
-          ssh-key: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
-          registry: ghcr.io
-          registry-username: ${{ github.actor }}
-          registry-password: ${{ secrets.GITHUB_TOKEN }}
-          env-file: .env
+          name: ssgg-be-v2-production
+          file: docker/docker-stack.production.yml
+          mode: swarm
+          host: ${{ secrets.SSH_HOST }}
+          user: ${{ secrets.SSH_USER }}
+          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          registry_host: "ghcr.io"
+          registry_user: ${{ github.repository_owner }}
+          registry_pass: ${{ secrets.GH_TOKEN }}
+          env_file: ./.env
+          registry_auth: true
+          summary: true
       
       - name: Health check
         run: |
