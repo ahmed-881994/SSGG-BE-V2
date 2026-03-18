@@ -1,12 +1,31 @@
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict
 
 from pythonjsonlogger import jsonlogger
 
 from app.config.settings import settings
 from app.config.version import __version__
+from app.core.context import get_request_id, get_user_id
+
+
+class ContextFilter(logging.Filter):
+    """Logging filter that injects request_id and user_id from context into every log record"""
+    
+    def filter(self, record: logging.LogRecord) -> bool:
+        # Inject request_id if not already present
+        if not hasattr(record, 'request_id'):
+            request_id = get_request_id()
+            if request_id:
+                record.request_id = request_id
+        
+        # Inject user_id if not already present
+        if not hasattr(record, 'user_id'):
+            user_id = get_user_id()
+            if user_id:
+                record.user_id = user_id
+        
+        return True
 
 
 class CustomJsonFormatter(jsonlogger.JsonFormatter):
@@ -74,6 +93,9 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
 
 class StandardFormatter(logging.Formatter):
     """Custom formatter for human-readable logging (fallback)"""
+    
+    def __init__(self, fmt: str | None = None, datefmt: str | None = None) -> None:
+        super().__init__(fmt, datefmt)
 
     def format(self, record: logging.LogRecord) -> str:
         # Start with basic format
@@ -87,11 +109,11 @@ class StandardFormatter(logging.Formatter):
 
         method = getattr(record, 'method', None)
         if method:
-            extras.append(f"{method}")
+            extras.append(f"method={method}")
 
         url = getattr(record, 'url', None)
         if url:
-            extras.append(f"{url}")
+            extras.append(f"url={url}")
 
         status_code = getattr(record, 'status_code', None)
         if status_code:
@@ -121,21 +143,29 @@ def setup_logging():
     """Setup standard logging with default Python format"""
     
     # Create standard formatter
-    formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
+    # formatter = logging.Formatter(
+    #     '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    #     datefmt='%Y-%m-%d %H:%M:%S'
+    # )
+    
+    formatter = StandardFormatter(fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    
+    # Create context filter to inject request_id and user_id
+    context_filter = ContextFilter()
     
     # Create console handler
     console_handler = logging.StreamHandler()
     console_handler.setLevel(settings.log_level.upper())
     console_handler.setFormatter(formatter)
+    console_handler.addFilter(context_filter)
     
     # Setup root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(settings.log_level.upper())
     root_logger.handlers.clear()
     root_logger.addHandler(console_handler)
+    # # Add context filter to root logger (affects all loggers)
+    root_logger.addFilter(context_filter)
     
     # Setup app logger
     logger = logging.getLogger("ssgg")
@@ -143,6 +173,8 @@ def setup_logging():
     logger.handlers.clear()
     logger.addHandler(console_handler)
     logger.propagate = False
+    
+    
     
     # Configure SQLAlchemy loggers
     for sql_logger_name in ['sqlalchemy.engine.Engine', 'sqlalchemy.engine', 'sqlalchemy']:
