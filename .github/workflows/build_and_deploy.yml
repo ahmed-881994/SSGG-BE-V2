@@ -28,6 +28,11 @@ on:
         options:
           - staging
           - production
+
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   setup:
     name: Setup Environment
