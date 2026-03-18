@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt --use-deprecated=legacy-resol
 COPY app/ app/
 COPY main.py .
 COPY static/ static/
+COPY VERSION .
 
 EXPOSE 8000
 
