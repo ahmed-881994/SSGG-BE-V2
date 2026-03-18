@@ -4,6 +4,7 @@ import uuid
 from fastapi import Request
 
 from app.config.logging_config import logger
+from app.core.context import set_request_id, set_user_id, clear_context
 
 # Endpoints to exclude from logging
 EXCLUDED_PATHS = {
@@ -24,16 +25,22 @@ async def logging_middleware(request: Request, call_next):
     request_id = request.state.request_id if hasattr(request.state, 'request_id') else str(uuid.uuid4())
     request.state.request_id = request_id
     
+    # Set request_id in context (makes it available to all logs)
+    set_request_id(request_id)
+    
+    # Set user_id in context if available
+    if hasattr(request.state, 'user_id') and request.state.user_id:
+        set_user_id(request.state.user_id)
+    
     # Skip logging for excluded paths and methods
     if request.url.path in EXCLUDED_PATHS or request.method in EXCLUDED_METHODS:
         return await call_next(request)
     
-    # Log request
+    # Log request (request_id automatically injected from context)
     start_time = time.time()
     logger.info(
-        "Request started " + " " + str(request.method) + " " + str(request.url.path) + " " + str(request_id),
+        "Request started ", #+ " " + str(request.method) + " " + str(request.url.path) + " " + str(request_id),
         extra={
-            "request_id": request_id,
             "method": request.method,
             "url": str(request.url.path),
             "client_ip": request.client.host if request.client else None,
@@ -48,11 +55,10 @@ async def logging_middleware(request: Request, call_next):
         # Calculate processing time
         process_time = time.time() - start_time
         
-        # Log response
+        # Log response (request_id automatically injected from context)
         logger.info(
-            "Request completed " + str(request_id) + " " + str(response.status_code),
+            "Request completed ",# + str(request_id) + " " + str(response.status_code),
             extra={
-                "request_id": request_id,
                 "status_code": response.status_code,
                 "process_time": process_time,
             }
@@ -65,14 +71,16 @@ async def logging_middleware(request: Request, call_next):
         return response
         
     except Exception as e:
-        # Log error
+        # Log error (request_id automatically injected from context)
         logger.error(
             "Request failed",
             extra={
-                "request_id": request_id,
                 "error": str(e),
                 "error_type": type(e).__name__,
             },
             exc_info=True
         )
         raise
+    finally:
+        # Clear context after request completes
+        clear_context()
