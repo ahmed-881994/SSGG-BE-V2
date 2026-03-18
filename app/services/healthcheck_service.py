@@ -10,6 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.config.logging_config import logger
 from app.config.settings import settings
+from app.config.version import __version__
 from app.core.database import engine, get_db_session
 from app.util.egy_time import get_egypt_time
 
@@ -18,14 +19,10 @@ time_of_deployment = get_egypt_time().isoformat()
 # Import Prometheus metrics (lazy import to avoid circular dependency)
 def get_prometheus_metrics():
     try:
-        from main import (
-            db_health_gauge, 
-            db_response_time_gauge, 
-            db_connection_pool_gauge,
-            db_active_connections_gauge,
-            redis_health_gauge, 
-            redis_response_time_gauge
-        )
+        from main import (db_active_connections_gauge,
+                          db_connection_pool_gauge, db_health_gauge,
+                          db_response_time_gauge, redis_health_gauge,
+                          redis_response_time_gauge)
         return {
             'db_health': db_health_gauge,
             'db_response_time': db_response_time_gauge,
@@ -620,7 +617,7 @@ class HealthCheckService:
                 "status": overall_status,
                 "timestamp": get_egypt_time().isoformat(),
                 "time_of_deployment": time_of_deployment,
-                "version": "2.0.0",
+                "version": __version__,
                 "response_time_ms": total_response_time,
                 "summary": {
                     "total_services": len(all_services),
