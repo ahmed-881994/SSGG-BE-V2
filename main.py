@@ -13,6 +13,7 @@ from app.api import (auth, entities, events, health, lookups, members,
                      permissions, roles, users, visualizer)
 from app.config.logging_config import logger
 from app.config.settings import settings
+from app.config.version import __version__
 from app.core.access_control_middleware import access_control_middleware
 from app.core.auditing_middleware import auditing_middleware
 from app.core.exceptions import (AuthenticationFailed, EntityDoesNotExistError,
@@ -35,7 +36,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="SSGG",
     summary="This is the documentation for the backend APIs for the Sporting Scouts and Girl Guides members management app",
-    version="2.0.0",
+    version=__version__,
     responses={
         400: {"description": "Bad request", "model": ErrorResponse},
         401: {"description": "Unauthorized", "model": ErrorResponse},

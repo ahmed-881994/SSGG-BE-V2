@@ -1,9 +1,12 @@
-import logging
 import json
+import logging
 from datetime import datetime, timezone
 from typing import Any, Dict
+
 from pythonjsonlogger import jsonlogger
+
 from app.config.settings import settings
+from app.config.version import __version__
 
 
 class CustomJsonFormatter(jsonlogger.JsonFormatter):
@@ -33,7 +36,7 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
         log_record['app'] = 'ssgg-api'
         log_record['job'] = 'ssgg-api'  # Standard Prometheus/Loki convention
         log_record['service'] = settings.otel_service_name
-        log_record['version'] = '2.0.0'
+        log_record['version'] = __version__
 
         otel_trace_id = getattr(record, 'otelTraceID', None)
         if otel_trace_id:
@@ -101,6 +104,12 @@ class StandardFormatter(logging.Formatter):
         client_ip = getattr(record, 'client_ip', None)
         if client_ip:
             extras.append(f"ip={client_ip}")
+            
+        version = getattr(record, 'version', None)
+        if version:
+            extras.append(f"version={version}")
+        else:
+            extras.append(f"version={__version__}")
 
         if extras:
             base_format += f" [{', '.join(extras)}]"
