@@ -213,7 +213,7 @@ jobs:
           MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }}        
 
           # Docker Compose settings
-          GIT_COMMIT_HASH=${{ github.sha }}
+          IMAGE_TAG=${{ needs.setup.outputs.image-tag }}
           EOF
       
       - name: Deploy to Staging Swarm
@@ -311,7 +311,7 @@ jobs:
           MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }}        
 
           # Docker Compose settings
-          GIT_COMMIT_HASH=${{ github.sha }}
+          IMAGE_TAG=${{ needs.setup.outputs.image-tag }}
           EOF
       
       - name: Deploy to Production Swarm
