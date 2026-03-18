@@ -1,330 +1,290 @@
-name: Build and deploy
+name: Build and Deploy
 
 on:
   push:
     branches:
+      - 'release/**'  # Staging environment
+      - 'hotfix/**'   # Hotfix staging validation
+      - main          # Build only, no deploy
+      - 'feature/**'  # Build only for CI checks
+    tags:
+      - 'v*'          # Production deployment on tag creation
+  pull_request:
+    branches:
       - main
-      - stage
-    paths:
-      - 'docker/docker-stack-*.yml'
-      - 'docker/dockerfile'
-      - 'app/**'
-      - 'main.py'
-      - 'requirements.txt'
-      - '.github/workflows/build_and_deploy.yml'
-  workflow_dispatch:
-
+  workflow_dispatch:  # Manual trigger
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      version:
+        description: 'Version tag (for production manual deploy)'
+        required: false
+        type: choice
+        options:
+          - staging
+          - production
 jobs:
   setup:
-    runs-on: ubuntu-latest
+    name: Setup Environment
+    runs-on: ubuntu-24.04
     outputs:
       environment: ${{ steps.set-env.outputs.environment }}
+      should-deploy: ${{ steps.set-env.outputs.should-deploy }}
+      image-tag: ${{ steps.set-env.outputs.image-tag }}
+      version: ${{ steps.set-version.outputs.version }}
+    
     steps:
-      - name: Determine environment
-        id: set-env
-        run: |
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            echo "environment=production" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref }}" == "refs/heads/stage" ]; then
-            echo "environment=staging" >> $GITHUB_OUTPUT
-          else
-            echo "environment=development" >> $GITHUB_OUTPUT
-          fi
-      - name: Display deployment info
-        run: |
-          echo "=========================================="
-          echo "Deployment Information"
-          echo "=========================================="
-          echo "Environment: ${{ steps.set-env.outputs.environment }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Repository: ${{ github.repository }}"
-          echo "Actor: ${{ github.actor }}"
-          echo "=========================================="
-  build:
-    needs: setup
-    runs-on: ubuntu-latest
-    environment: ${{ needs.setup.outputs.environment }}
-    steps:
-      - name: Debug Info
-        run: |
-          echo "=========================================="
-          echo "Build Information"
-          echo "=========================================="
-          echo "Environment: ${{ needs.setup.outputs.environment }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Repository: ${{ github.repository }}"
-          echo "Actor: ${{ github.actor }}"
-          echo "=========================================="
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          fetch-depth: 0  # Fetch all history for version detection
+      
+      - name: Read VERSION file
+        id: set-version
+        run: |
+          VERSION=$(cat VERSION)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "📦 Version: ${VERSION}"
+      
+      - name: Determine environment from branch/tag
+        id: set-env
+        run: |
+          # Check if this is a tag push
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            # Tag creation triggers production deployment
+            TAG_NAME=${GITHUB_REF#refs/tags/}
+            ENVIRONMENT="production"
+            SHOULD_DEPLOY="true"
+            IMAGE_TAG="${TAG_NAME}"
+            echo "🏷️  Tag detected: ${TAG_NAME} → Production deployment"
+          else
+            # Branch push
+            BRANCH=${GITHUB_REF#refs/heads/}
+            echo "Branch: ${BRANCH}"
+            
+            if [[ "${BRANCH}" =~ ^release/.+ ]]; then
+              # Release branch → staging deployment
+              ENVIRONMENT="staging"
+              SHOULD_DEPLOY="true"
+              IMAGE_TAG="v${{ steps.set-version.outputs.version }}-rc"
+            elif [[ "${BRANCH}" =~ ^hotfix/.+ ]]; then
+              # Hotfix branch → staging deployment
+              ENVIRONMENT="staging"
+              SHOULD_DEPLOY="true"
+              IMAGE_TAG="v${{ steps.set-version.outputs.version }}-hotfix"
+            else
+              # Main, feature branches → build only, no deployment
+              ENVIRONMENT="none"
+              SHOULD_DEPLOY="false"
+              IMAGE_TAG="v${{ steps.set-version.outputs.version }}-${GITHUB_SHA:0:7}"
+            fi
+          fi
+          
+          echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
+          echo "should-deploy=${SHOULD_DEPLOY}" >> $GITHUB_OUTPUT
+          echo "image-tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          
+          echo "🎯 Environment: ${ENVIRONMENT}"
+          echo "🚀 Should Deploy: ${SHOULD_DEPLOY}"
+          echo "🏷️  Image Tag: ${IMAGE_TAG}"
 
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-24.04
+    needs: setup
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
+      
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: https://ghcr.io
+          registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GH_TOKEN }}
-
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/ssgg-be-v2
+          tags: |
+            # Semantic version tag
+            type=raw,value=${{ needs.setup.outputs.image-tag }}
+            # Latest tag for main branch only
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            # Environment-specific latest (for tracking)
+            type=raw,value=${{ needs.setup.outputs.environment }}-latest,enable=${{ needs.setup.outputs.should-deploy == 'true' }}
+      
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/dockerfile
           push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/ssgg-be-v2:${{ needs.setup.outputs.environment }}-${{ github.sha }}
-            ghcr.io/${{ github.repository_owner }}/ssgg-be-v2:${{ needs.setup.outputs.environment }}-latest
-
-  deploy:
-    needs: 
-      - setup
-      - build
-    runs-on: ubuntu-latest
-    environment: ${{ needs.setup.outputs.environment }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ needs.setup.outputs.version }}
+            GIT_COMMIT=${{ github.sha }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Image digest
+        run: |
+          echo "📦 Image built and pushed successfully"
+          echo "Tags: ${{ steps.meta.outputs.tags }}"
+    
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-24.04
+    needs: [setup, build]
+    if: needs.setup.outputs.environment == 'staging' && needs.setup.outputs.should-deploy == 'true'
+    environment:
+      name: staging
+      url: https://api.stg.sportingscout.org
     
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: stage
-
-      # - name: Check if Traefik is already deployed
-      #   id: check-traefik
-      #   uses: appleboy/ssh-action@v1.0.3
-      #   with:
-      #     host: ${{ secrets.SSH_HOST }}
-      #     username: ${{ secrets.SSH_USER }}
-      #     key: ${{ secrets.SSH_PRIVATE_KEY }}
-      #     script: |
-      #       if docker stack ls | grep -q "^traefik"; then
-      #         echo "TRAEFIK_EXISTS=true" >> $GITHUB_OUTPUT
-      #         echo "✅ Traefik stack already deployed"
-      #       else
-      #         echo "TRAEFIK_EXISTS=false" >> $GITHUB_OUTPUT
-      #         echo "⚠️  Traefik stack not found"
-      #       fi
-
-      # - name: Prepare Traefik env variables
-      #   if: steps.check-traefik.outputs.TRAEFIK_EXISTS != 'true'
-      #   run: |
-      #     cat > .env << EOF
-      #     # Traefik auth
-      #     TRAEFIK_AUTH=${{ secrets.TRAEFIK_AUTH }}
-      #     EOF
-
-      # - name: Docker Stack Deploy Traefik
-      #   if: steps.check-traefik.outputs.TRAEFIK_EXISTS != 'true'
-      #   uses: cssnr/stack-deploy-action@v1
-      #   with:
-      #     name: traefik
-      #     file: docker-stack-traefik.yml
-      #     mode: swarm
-      #     host: ${{ secrets.SSH_HOST }}
-      #     user: ${{ secrets.SSH_USER }}
-      #     ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
-      #     env_file: ./.env
-      #     summary: true
-
-      # - name: cleanup Traefik env file
-      #   if: steps.check-traefik.outputs.TRAEFIK_EXISTS != 'true'
-      #   run: rm -f .env
-
-      # - name: Skip Traefik deployment
-      #   if: steps.check-traefik.outputs.TRAEFIK_EXISTS == 'true'
-      #   run: |
-      #     echo "=========================================="
-      #     echo "⏭️  Skipping Traefik deployment"
-      #     echo "Traefik stack is already running"
-      #     echo "=========================================="
-
-      # - name: Ensure internal networks exist
-      #   uses: appleboy/ssh-action@v1.0.3
-      #   with:
-      #     host: ${{ secrets.SSH_HOST }}
-      #     username: ${{ secrets.SSH_USER }}
-      #     key: ${{ secrets.SSH_PRIVATE_KEY }}
-      #     script: |
-      #       echo "📡 Ensuring networks exist..."
-      #       # Create traefik-public network if it doesn't exist
-      #       if ! docker network ls --filter name=^traefik-public$ | grep -q "traefik-public"; then
-      #         echo "Creating traefik-public network..."
-      #         docker network create --driver overlay --attachable traefik-public
-      #         echo "✅ Created traefik-public network"
-      #       else
-      #         echo "✅ traefik-public network already exists"
-      #       fi
-      #       # Create stg-internal network if it doesn't exist
-      #       if ! docker network ls --filter name=^stg-internal$ | grep -q "stg-internal"; then
-      #         echo "Creating stg-internal network..."
-      #         docker network create --driver overlay --attachable stg-internal
-      #         echo "✅ Created stg-internal network"
-      #       else
-      #         echo "✅ stg-internal network already exists"
-      #       fi
-      #       # Create prd-internal network if it doesn't exist
-      #       if ! docker network ls --filter name=^prd-internal$ | grep -q "prd-internal"; then
-      #         echo "Creating prd-internal network..."
-      #         docker network create --driver overlay --attachable prd-internal
-      #         echo "✅ Created prd-internal network"
-      #       else
-      #         echo "✅ prd-internal network already exists"
-      #       fi
-
-      - name: Ensure Loki Docker plugin is installed and enabled
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -e
-            if ! docker plugin inspect loki > /dev/null 2>&1; then
-              ARCH=$(uname -m)
-              if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-                PLUGIN_IMAGE="grafana/loki-docker-driver:3.6.0-arm64"
-              else
-                PLUGIN_IMAGE="grafana/loki-docker-driver:3.6.0-amd64"
-              fi
-              echo "Installing Loki Docker plugin: $PLUGIN_IMAGE"
-              docker plugin install "$PLUGIN_IMAGE" --alias loki --grant-all-permissions
-            else
-              echo "✅ Loki plugin already installed"
-            fi
-            docker plugin enable loki || true
-            echo "✅ Loki plugin is enabled"
-
+      
       - name: Create environment file
         run: |
           cat > .env << EOF
-          # Application environment
-          environment=${{ needs.setup.outputs.environment }}
-          # DB settings
-          db_host=${{ secrets.DB_HOST }}
-          db_port=${{ secrets.DB_PORT }}
-          db_database=${{ secrets.DB_NAME }}
-          db_username=${{ secrets.DB_USER }}
+          environment=${{ vars.ENVIRONMENT }}
+          db_host=${{ vars.DB_HOST }}
+          db_port=${{ vars.DB_PORT }}
+          db_database=${{ vars.DB_DATABASE }}
+          db_user=${{ vars.DB_USER }}
           db_password=${{ secrets.DB_PASSWORD }}
-
-
-          # Database connection pool settings
-          db_max_connections=${{ secrets.DB_MAX_CONNECTIONS }}
-          db_min_connections=${{ secrets.DB_MIN_CONNECTIONS }}
-
-          # Redis
-          rds_host=${{ secrets.REDIS_HOST }}
-          rds_port=${{ secrets.REDIS_PORT }}
-          rds_database=${{ secrets.REDIS_DATABASE }}
-
-          # JWT settings
-          secret_key=${{ secrets.JWT_SECRET }}
-          algorithm=${{ secrets.JWT_ALGORITHM }}
-          access_token_expires_minutes=${{ vars.JWT_EXPIRES_IN }}
-
-
-          # Security settings
-          cors_origins="*"
+          db_max_connections=${{ vars.DB_MAX_CONNECTIONS }}
+          rds_host=${{ vars.RDS_HOST }}
+          rds_port=${{ vars.RDS_PORT }}
+          rds_database=${{ vars.RDS_DATABASE }}
+          secret_key=${{ secrets.SECRET_KEY }}
+          algorithm=${{ vars.ALGORITHM }}
+          access_token_expires_minutes=${{ vars.ACCESS_TOKEN_EXPIRES_MINUTES }}
+          cors_origins=${{ vars.CORS_ORIGINS }}
           rate_limit_per_minute=${{ vars.RATE_LIMIT_PER_MINUTE }}
-
-
-          # Logging settings
           log_level=${{ vars.LOG_LEVEL }}
-
-          # # OpenTelemetry settings
-          # otel_exporter_otlp_endpoint=${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
-          # otel_service_name=${{ vars.OTEL_SERVICE_NAME }}
-          # otel_log_correlation=${{ vars.OTEL_LOG_CORRELATION }}
-
-          # Email settings
-          smtp_server=${{ secrets.SMTP_SERVER }}
-          smtp_port=${{ secrets.SMTP_PORT }}
-          smtp_username=${{ secrets.SMTP_USERNAME }}
-          smtp_password=${{ secrets.SMTP_PASSWORD }}
-          from_email=${{ secrets.SMTP_USERNAME }}
-
-
-          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
-          MYSQL_DATABASE=${{ secrets.DB_NAME }}
-          MYSQL_USER=${{ secrets.DB_USER }}
-          MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }}        
-
-          # Docker Compose settings
+          otel_exporter_otlp_endpoint=${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
+          otel_service_name=${{ vars.OTEL_SERVICE_NAME }}
+          otel_log_correlation=${{ vars.OTEL_LOG_CORRELATION }}
           GIT_COMMIT_HASH=${{ github.sha }}
+          IMAGE_TAG=${{ needs.setup.outputs.image-tag }}
           EOF
-
-      - name: Docker Stack Deploy
+      
+      - name: Deploy to Staging Swarm
         uses: cssnr/stack-deploy-action@v1
         with:
-          name: ssgg-be-v2-${{ needs.setup.outputs.environment }}
-          file: docker/docker-stack.${{ needs.setup.outputs.environment }}.yml
-          mode: swarm
-          host: ${{ secrets.SSH_HOST }}
-          user: ${{ secrets.SSH_USER }}
-          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
-          registry_host: "ghcr.io"
-          registry_user: ${{ github.repository_owner }}
-          registry_pass: ${{ secrets.GH_TOKEN }}
-          env_file: ./.env
-          registry_auth: true
-          summary: true
-
-      - name: Cleanup env file
-        if: always()
-        run: rm -f .env
-
-      # - name: Prepare Monitoring env variables
-      #   run: |
-      #     cat > .env.monitoring << EOF
-      #     # Monitoring auth
-      #     MONITORING_AUTH=${{ secrets.MONITORING_AUTH }}
-      #     GRAFANA_ADMIN_USER=${{ secrets.GRAFANA_ADMIN_USER }}
-      #     GRAFANA_PASSWORD=${{ secrets.GRAFANA_PASSWORD }}
-      #     CONFIG_VERSION=${{ github.sha }}
-      #     EOF
-
-      # - name: Docker Stack Deploy Monitoring
-      #   uses: cssnr/stack-deploy-action@v1
-      #   with:
-      #     name: ssgg-monitoring
-      #     file: docker/monitoring-stack.yml
-      #     mode: swarm
-      #     host: ${{ secrets.SSH_HOST }}
-      #     user: ${{ secrets.SSH_USER }}
-      #     ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
-      #     env_file: ./.env.monitoring
-      #     summary: true
-
-      # - name: Cleanup Monitoring env file
-      #   if: always()
-      #   run: rm -f .env.monitoring
-
-  health-check:
-    needs: 
-      - setup
-      - deploy
-    runs-on: ubuntu-latest
-    environment: ${{ needs.setup.outputs.environment }}
-
-    steps:
-      - name: Health Check
+          stack-name: ssgg-be-v2-staging
+          stack-file: docker/docker-stack.staging.yml
+          docker-host: ${{ secrets.STAGING_SSH_HOST }}
+          ssh-user: ${{ secrets.STAGING_SSH_USER }}
+          ssh-key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+          registry: ghcr.io
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+          env-file: .env
+      
+      - name: Health check
         run: |
-          echo "Waiting for the application to start..."
-          sleep 60
+          sleep 15
+          curl -f https://api.stg.sportingscout.org/health || exit 1
+          echo "✅ Staging deployment successful"
 
-          HEALTH_URL="https://${{ secrets.DOMAIN }}/health"
-
-          echo "Testing: $HEALTH_URL"
-          for i in {1..5}; do
-            if curl -f -m 10 "$HEALTH_URL" 2>/dev/null; then
-              echo "✅ ${{ needs.setup.outputs.environment }} deployment successful!"
-              exit 0
-            fi
-            sleep 15
-          done
-
-          echo "❌ ${{ needs.setup.outputs.environment }} health check failed"
-          exit 1
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-24.04
+    needs: [setup, build]
+    if: needs.setup.outputs.environment == 'production' && needs.setup.outputs.should-deploy == 'true'
+    environment:
+      name: production
+      url: https://api.sportingscout.org
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Create git tag
+        if: github.ref == 'refs/heads/main'
+        run: |
+          VERSION=v${{ needs.setup.outputs.version }}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a ${VERSION} -m "Release ${VERSION}"
+          git push origin ${VERSION}
+      
+      - name: Create environment file
+        run: |
+          cat > .env << EOF
+          environment=${{ vars.ENVIRONMENT }}
+          db_host=${{ vars.DB_HOST }}
+          db_port=${{ vars.DB_PORT }}
+          db_database=${{ vars.DB_DATABASE }}
+          db_user=${{ vars.DB_USER }}
+          db_password=${{ secrets.DB_PASSWORD }}
+          db_max_connections=${{ vars.DB_MAX_CONNECTIONS }}
+          rds_host=${{ vars.RDS_HOST }}
+          rds_port=${{ vars.RDS_PORT }}
+          rds_database=${{ vars.RDS_DATABASE }}
+          secret_key=${{ secrets.SECRET_KEY }}
+          algorithm=${{ vars.ALGORITHM }}
+          access_token_expires_minutes=${{ vars.ACCESS_TOKEN_EXPIRES_MINUTES }}
+          cors_origins=${{ vars.CORS_ORIGINS }}
+          rate_limit_per_minute=${{ vars.RATE_LIMIT_PER_MINUTE }}
+          log_level=${{ vars.LOG_LEVEL }}
+          otel_exporter_otlp_endpoint=${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
+          otel_service_name=${{ vars.OTEL_SERVICE_NAME }}
+          otel_log_correlation=${{ vars.OTEL_LOG_CORRELATION }}
+          GIT_COMMIT_HASH=${{ github.sha }}
+          IMAGE_TAG=${{ needs.setup.outputs.image-tag }}
+          EOF
+      
+      - name: Deploy to Production Swarm
+        uses: cssnr/stack-deploy-action@v1
+        with:
+          stack-name: ssgg-be-v2-production
+          stack-file: docker/docker-stack.production.yml
+          docker-host: ${{ secrets.PRODUCTION_SSH_HOST }}
+          ssh-user: ${{ secrets.PRODUCTION_SSH_USER }}
+          ssh-key: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
+          registry: ghcr.io
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+          env-file: .env
+      
+      - name: Health check
+        run: |
+          sleep 20
+          curl -f https://api.sportingscout.org/health || exit 1
+          echo "✅ Production deployment successful"
+      
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.setup.outputs.version }}
+          name: Release v${{ needs.setup.outputs.version }}
+          body: |
+            ## Release v${{ needs.setup.outputs.version }}
+            
+            **Deployed:** ${{ github.event.head_commit.timestamp }}
+            **Commit:** ${{ github.sha }}
+            
+            ### Changes
+            ${{ github.event.head_commit.message }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
