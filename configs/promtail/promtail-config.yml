@@ -71,59 +71,106 @@ scrape_configs:
         regex: '(ssgg-be-v2-production|ssgg-be-v2-staging|ssgg-monitoring)'
         action: keep
 
-    # Parse logs based on application
+    # Parse logs from StandardFormatter (plain text Python logs)
     pipeline_stages:
-      # Try to parse as JSON first (for structured logs from FastAPI)
-      - json:
-          expressions:
-            timestamp: timestamp
-            level: level
-            severity: severity
-            message: message
-            logger: logger
-            module: module
-            function: function
-            line: line
-            request_id: request_id
-            user_id: user_id
-            endpoint: endpoint
-            method: method
-            url: url
-            status_code: status_code
-            duration_ms: duration_ms
-            client_ip: client_ip
-            env: env
-            app: app
-            job: job
-            version: version
-            pid: pid
-            thread: thread
+      # Parse standard Python log format: "2026-03-18 10:30:45 - logger_name - LEVEL - message [extras]"
+      - regex:
+          expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) - (?P<logger>\S+) - (?P<level>\w+) - (?P<message>.*?)(?:\s+\[(?P<extras>.*?)\])?$'
       
-      # Extract labels from parsed JSON (only low-cardinality fields)
-      - labels:
-          level:
-          app:
-          job:
-          env:
-          url:
-          method:
-          status_code:
+      # Parse the extras section if present (e.g., "request_id=abc, method=GET, url=/api/users")
+      - regex:
+          source: extras
+          expression: 'request_id=(?P<request_id>[a-f0-9-]+)'
       
-      # Set timestamp from log if available (ISO 8601 format)
+      - regex:
+          source: extras
+          expression: 'method=(?P<method>\w+)'
+      
+      - regex:
+          source: extras
+          expression: 'url=(?P<url>[^\s,]+)'
+      
+      - regex:
+          source: extras
+          expression: 'status=(?P<status_code>\d+)'
+      
+      - regex:
+          source: extras
+          expression: 'time=(?P<duration_s>[\d.]+)s'
+      
+      - regex:
+          source: extras
+          expression: 'ip=(?P<client_ip>[^\s,]+)'
+      
+      # Parse timestamp from log line
       - timestamp:
           source: timestamp
-          format: RFC3339
-          fallback_formats:
-            - RFC3339Nano
-            - '2006-01-02T15:04:05.999999999Z07:00'
+          format: '2006-01-02 15:04:05'
       
-      # If JSON parsing fails, try to extract log level from plain text
-      - regex:
-          expression: '^(?P<level>(DEBUG|INFO|WARNING|ERROR|CRITICAL)):'
-      
+      # Extract ONLY low-cardinality fields as labels
+      # High-cardinality fields (request_id, url, client_ip) remain as indexed fields
       - labels:
           level:
+          logger:
       
-      # Add output template (use message if parsed, otherwise use full line)
-      - output:
-          source: message
+      # Add static labels for this application
+      - static_labels:
+          app: ssgg-api
+          job: ssgg-api
+
+    # # Parse logs based on application
+    # pipeline_stages:
+    #   # Try to parse as JSON first (for structured logs from FastAPI)
+    #   - json:
+    #       expressions:
+    #         timestamp: timestamp
+    #         level: level
+    #         severity: severity
+    #         message: message
+    #         logger: logger
+    #         module: module
+    #         function: function
+    #         line: line
+    #         request_id: request_id
+    #         user_id: user_id
+    #         endpoint: endpoint
+    #         method: method
+    #         url: url
+    #         status_code: status_code
+    #         duration_ms: duration_ms
+    #         client_ip: client_ip
+    #         env: env
+    #         app: app
+    #         job: job
+    #         version: version
+    #         pid: pid
+    #         thread: thread
+      
+    #   # Extract labels from parsed JSON (only low-cardinality fields)
+    #   - labels:
+    #       level:
+    #       app:
+    #       job:
+    #       env:
+    #       url:
+    #       method:
+    #       status_code:
+      
+    #   # Set timestamp from log if available (ISO 8601 format)
+    #   - timestamp:
+    #       source: timestamp
+    #       format: RFC3339
+    #       fallback_formats:
+    #         - RFC3339Nano
+    #         - '2006-01-02T15:04:05.999999999Z07:00'
+      
+    #   # If JSON parsing fails, try to extract log level from plain text
+    #   - regex:
+    #       expression: '^(?P<level>(DEBUG|INFO|WARNING|ERROR|CRITICAL)):'
+      
+    #   - labels:
+    #       level:
+      
+    #   # Add output template (use message if parsed, otherwise use full line)
+    #   - output:
+    #       source: message
