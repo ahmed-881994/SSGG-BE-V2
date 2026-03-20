@@ -70,7 +70,7 @@ Configure `db_host` and `rds_host` accordingly:
 - Build image
 
 	```bash
-	docker build -t ssgg-be:v2 -f dockerfile .
+	docker build -t ssgg-be:v2 -f docker/dockerfile .
 	```
 
 - Run locally
@@ -84,49 +84,97 @@ Configure `db_host` and `rds_host` accordingly:
 
 ## 4) Docker Swarm + Traefik (Production / Staging)
 
-> [!NOTE]
-> The following steps are performed automatically by the `build_and_deploy` workflow:
-> - Traefik reverse proxy deployment (if not already deployed)
-> - Monitoring stack deployment (if not already deployed)
-> - Application stack deployment (staging or production based on branch)
-
 Files:
-- [../docker-stack-traefik.yml](../docker-stack-traefik.yml) (Traefik reverse proxy)
-- [../docker-stack.staging.yml](../docker-stack.staging.yml)
-- [../docker-stack.production.yml](../docker-stack.production.yml)
-- Certificates storage under [../letsencrypt/](../letsencrypt/)
+- [../docker/traefik-stack.yml](../docker/traefik-stack.yml) (Traefik reverse proxy)
+- [../docker/docker-stack.staging.yml](../docker/docker-stack.staging.yml)
+- [../docker/docker-stack.production.yml](../docker/docker-stack.production.yml)
+- [../docker/monitoring-stack.yml](../docker/monitoring-stack.yml)
 
-Build:
+### CI/CD Workflow
+
+Automated builds and deployments are handled via GitHub Actions:
+
+#### Main Application Workflow ([build_and_deploy.yml](../.github/workflows/build_and_deploy.yml))
+
+**Deployment triggers:**
+- **Staging**: Automatically deploys when pushing to:
+  - `release/**` branches (e.g., `release/v2.1.0`) → tagged as `v2.1.0-rc`
+  - `hotfix/**` branches (e.g., `hotfix/critical-fix`) → tagged as `v2.1.0-hotfix`
+- **Production**: Automatically deploys when creating tags:
+  - `v*` tags (e.g., `v2.1.0`) → production deployment
+- **Build Only** (no deployment):
+  - `main` branch pushes
+  - `feature/**` branches
+  - Pull requests to `main`
+
+**Workflow steps:**
+1. **Setup**: Determines environment and version from branch/tag
+2. **Build**: Builds Docker image and pushes to GitHub Container Registry (ghcr.io)
+3. **Deploy**: Deploys to target environment using Docker Swarm
+4. **Health Check**: Verifies deployment success
+5. **Release** (production only): Creates GitHub release
+
+**Image tags:**
+- Staging: `ghcr.io/ahmed-881994/ssgg-be-v2:v{VERSION}-rc`
+- Production: `ghcr.io/ahmed-881994/ssgg-be-v2:v{VERSION}`
+- Latest: `ghcr.io/ahmed-881994/ssgg-be-v2:latest` (main branch)
+
+**Deployment URLs:**
+- Staging: https://api.stg.sportingscout.org
+- Production: https://api.sportingscout.org
+
+#### Infrastructure Workflows
+
+These are **manual workflows** (workflow_dispatch) for infrastructure setup:
+
+1. **Traefik Deployment** ([deploy_traefik.yml](../.github/workflows/deploy_traefik.yml))
+   - Must be deployed first (reverse proxy)
+   - Handles TLS termination and routing
+   - Health check: https://traefik.sportingscout.org/ping
+
+2. **Monitoring Deployment** ([deploy_monitoring.yml](../.github/workflows/deploy_monitoring.yml))
+   - Deploys Prometheus, Grafana, Loki, Tempo, Promtail
+   - Independent of application deployments
+   - Health checks for all monitoring services
+
+### Manual Deployment
+
+If needed, you can deploy manually:
+
 ```bash
-docker build -t ssgg-be:v2 -f dockerfile .
-docker tag ssgg-be:v2 your-docker-repo/ssgg-be:v2
-docker push your-docker-repo/ssgg-be:v2
-```
-
-Deploy:
-
-```bash
-# initialize swarm (first manager)
+# Initialize swarm (first time only)
 docker swarm init
 
-# staging
-docker stack deploy -c docker-stack.staging.yml ssgg
+# 1. Deploy Traefik (if not already deployed)
+docker stack deploy -c docker/traefik-stack.yml traefik
 
-# production
-docker stack deploy -c docker-stack.production.yml ssgg
+# 2. Deploy Monitoring (if not already deployed)
+docker stack deploy -c docker/monitoring-stack.yml ssgg-monitoring
+
+# 3. Build and push application image
+docker build -t ghcr.io/ahmed-881994/ssgg-be-v2:v2.0.0 -f docker/dockerfile .
+docker push ghcr.io/ahmed-881994/ssgg-be-v2:v2.0.0
+
+# 4. Deploy application stack
+# Set IMAGE_TAG and other env vars first
+export IMAGE_TAG=v2.0.0
+docker stack deploy -c docker/docker-stack.staging.yml ssgg-be-v2-staging
+# or
+docker stack deploy -c docker/docker-stack.production.yml ssgg-be-v2-production
 ```
 
-Traefik:
-- Routes traffic to the FastAPI service
-- Terminates TLS using ACME (see `letsencrypt/acme.json`)
+### Prerequisites
 
-Prerequisites/Notes:
-- Ensure the Traefik stack is deployed first (e.g., `docker stack deploy -c docker-stack-traefik.yml traefik`).
-- Provide required environment variables/secrets referenced by the stacks on the Swarm managers.
-- Create any named volumes on target nodes if the stacks expect them.
-
-CI/CD:
-- Automated builds/deployments are handled via GitHub Actions in [.github/workflows/](../.github/workflows) (e.g., staging and production pipelines). These workflows build the image and run `docker stack deploy` against your Swarm.
+- Docker Swarm initialized on target node(s)
+- GitHub secrets configured:
+  - `GH_TOKEN` - GitHub token with package write permissions
+  - `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY` - SSH credentials for Swarm manager
+  - Database, Redis, JWT, SMTP secrets (see [../app/config/settings.py](../app/config/settings.py))
+  - `TRAEFIK_AUTH`, `MONITORING_AUTH`, `GRAFANA_PASSWORD` - Infrastructure auth credentials
+- DNS records pointing to your Swarm node:
+  - `api.sportingscout.org` (production)
+  - `api.stg.sportingscout.org` (staging)
+  - `prometheus.sportingscout.org`, `grafana.sportingscout.org`, etc. (monitoring)
 
 ## 5) Database and Schema
 
@@ -154,16 +202,74 @@ CI/CD:
 
 ## 6.1) Monitoring Stack (Prometheus & Grafana)
 
-> [!NOTE]
-> The monitoring stack is automatically deployed by the `build_and_deploy` workflow, similar to the Traefik stack. Manual deployment is only needed for initial setup or custom configurations.
-
-The project includes a comprehensive observability stack using Prometheus and Grafana to monitor both staging and production environments.
+The project includes a comprehensive observability stack using Prometheus, Grafana, Loki, and Tempo to monitor both staging and production environments.
 
 ### Architecture
 
 - **Prometheus**: Collects metrics from API instances, system resources, and services
 - **Grafana**: Visualizes metrics through dashboards
-- **Node Exporter**: Collects system-level metrics (CPU, memory, disk, network)
+- **Loki**: Collects and indexes logs
+- **Tempo**: Distributed tracing backend
+- **Promtail**: Log collection agent that ships logs to Loki
+
+### Deployment
+
+The monitoring stack is deployed independently via a **manual workflow** in GitHub Actions.
+
+**Prerequisites**:
+1. Ensure Traefik is deployed first (handles routing and TLS)
+2. Configure monitoring secrets in GitHub:
+   ```bash
+   MONITORING_AUTH=<basic auth credentials>
+   GRAFANA_ADMIN_USER=admin
+   GRAFANA_PASSWORD=<secure password>
+   ```
+
+3. Ensure DNS records point to your server:
+   - `prometheus.sportingscout.org`
+   - `grafana.sportingscout.org`
+   - `loki.sportingscout.org`
+   - `tempo.sportingscout.org`
+
+**Deployment via GitHub Actions**:
+
+1. Go to: **Actions → Deploy Monitoring → Run workflow**
+2. The workflow will:
+   - Deploy the monitoring stack to Docker Swarm
+   - Verify health of all services (Prometheus, Grafana, Loki, Tempo)
+
+**Manual deployment** (alternative):
+```bash
+# Prepare environment file
+cat > .env << EOF
+MONITORING_AUTH=<basic auth>
+GRAFANA_ADMIN_USER=admin
+GRAFANA_PASSWORD=<password>
+CONFIG_VERSION=$(git rev-parse HEAD)
+EOF
+
+# Deploy stack
+docker stack deploy -c docker/monitoring-stack.yml ssgg-monitoring
+
+# Verify deployment
+docker stack ps ssgg-monitoring
+```
+
+**Verify deployment**:
+```bash
+# Check services
+docker stack ps ssgg-monitoring
+
+# View logs
+docker service logs ssgg-monitoring_prometheus -f
+docker service logs ssgg-monitoring_grafana -f
+
+# Health checks
+curl -u admin:password https://prometheus.sportingscout.org/-/ready
+curl https://grafana.sportingscout.org/api/health
+curl https://loki.sportingscout.org/ready
+curl https://tempo.sportingscout.org/ready
+```
 
 ### Metrics Exposed
 
@@ -186,54 +292,12 @@ The FastAPI application exposes metrics at `/metrics` endpoint, including:
 
 All metrics are labeled with `environment="staging"` or `environment="production"` for easy filtering.
 
-### Deployment
-
-**Automated via CI/CD**:
-
-The monitoring stack is automatically deployed by the GitHub Actions workflows (`build_and_deploy.yml` and `STG_build_and_deploy.yml`) when:
-- The stack doesn't already exist on the target server
-- The application stack deployment is triggered
-
-The workflow checks if the monitoring stack is already deployed and only deploys it if needed, preventing duplicate deployments.
-
-**Prerequisites**:
-1. Add monitoring credentials to your environment (if not already configured):
-   ```bash
-   # Generate basic auth for Prometheus (using htpasswd)
-   htpasswd -nb admin your-password
-   # Add to .env:
-   MONITORING_AUTH=admin:$$apr1$$...
-   GRAFANA_PASSWORD=your-grafana-password
-   GRAFANA_ADMIN_USER=admin
-   ```
-
-2. Ensure DNS records point to your server:
-   - `prometheus.sportingscout.org`
-   - `grafana.sportingscout.org`
-
-**Manual deployment** (if needed for initial setup or custom configuration):
-```bash
-# Deploy after staging/production stacks are running
-docker stack deploy -c docker-stack-monitoring.yml ssgg-monitoring
-```
-
-**Verify deployment**:
-```bash
-# Check services
-docker stack ps ssgg-monitoring
-
-# View logs
-docker service logs ssgg-monitoring_prometheus -f
-docker service logs ssgg-monitoring_grafana -f
-
-# Check Prometheus targets
-curl -u admin:password https://prometheus.sportingscout.org/targets
-```
-
 ### Access
 
 - **Prometheus**: https://prometheus.sportingscout.org (requires basic auth)
 - **Grafana**: https://grafana.sportingscout.org (login: admin / `$GRAFANA_PASSWORD`)
+- **Loki**: https://loki.sportingscout.org (accessed via Grafana)
+- **Tempo**: https://tempo.sportingscout.org (accessed via Grafana)
 
 ### Grafana Dashboard Setup
 
@@ -247,13 +311,38 @@ Import recommended community dashboards:
    - System metrics: CPU, memory, disk, network
    - Per-node monitoring
 
-3. **Docker Swarm** (Dashboard ID: 9792)
-   - Swarm cluster health and service status
+**For Docker/Container monitoring**:
+
+Due to datasource variable issues with many community dashboards, we recommend:
+
+**Option A: Create custom dashboards**
+- Build your own dashboards using the PromQL queries in the "Sample Queries" section below
+- This ensures compatibility with your Prometheus setup
+
+**Option B: Search for tested dashboards**
+- Look for dashboards that explicitly support Prometheus (not using datasource variables)
+- Test with a small dashboard first before importing complex ones
+- Check dashboard reviews/comments for datasource issues
+
+**Troubleshooting datasource errors:**
+
+If you encounter `Datasource ${DS_PROMETHEUS} was not found`:
+1. Download the dashboard JSON instead of importing by ID
+2. Edit the JSON file and replace all instances of `"datasource": "${DS_PROMETHEUS}"` with `"datasource": "Prometheus"`
+3. Import the modified JSON in Grafana
+
+Example fix:
+```bash
+# Download dashboard JSON, replace datasource variable, then import
+curl -o dashboard.json https://grafana.com/api/dashboards/<ID>/revisions/latest/download
+sed -i 's/"datasource": "${DS_PROMETHEUS}"/"datasource": "Prometheus"/g' dashboard.json
+# Then import dashboard.json via Grafana UI
+```
 
 Import steps:
 1. Go to Grafana → Dashboards → Import
-2. Enter dashboard ID
-3. Select "Prometheus" as data source
+2. Enter dashboard ID or upload JSON file
+3. Select "Prometheus" as the data source
 4. Click Import
 
 ### Sample Queries
@@ -317,13 +406,13 @@ groups:
 
 ### Maintenance
 
-**Data retention**: Prometheus retains 30 days of metrics (configurable in `docker-stack-monitoring.yml`)
+**Data retention**: Prometheus retains 30 days of metrics (configurable in [../docker/monitoring-stack.yml](../docker/monitoring-stack.yml))
 
 **Reload configuration**:
 ```bash
-# Prometheus will auto-reload when prometheus.yml changes
-# Or manually reload:
-curl -X POST https://prometheus.sportingscout.org/-/reload
+# Update config files in configs/ directory
+# Redeploy stack to apply changes
+docker stack deploy -c docker/monitoring-stack.yml ssgg-monitoring
 ```
 
 **Backup Grafana dashboards**:
@@ -332,7 +421,7 @@ curl -X POST https://prometheus.sportingscout.org/-/reload
 docker run --rm -v ssgg-monitoring_grafana-data:/data -v $(pwd):/backup alpine tar czf /backup/grafana-backup.tar.gz /data
 ```
 
-See [../grafana/provisioning/dashboards/README.md](../grafana/provisioning/dashboards/README.md) for detailed dashboard configuration.
+See [../configs/grafana/provisioning/dashboards/README.md](../configs/grafana/provisioning/dashboards/README.md) for detailed dashboard configuration.
 
 ## 7) Post-Deploy Verification
 

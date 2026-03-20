@@ -5,15 +5,9 @@ This is V2 of the repo [SSGG-BE](https://github.com/ahmed-881994/SSGG-BE)
 
 ## Technology Stack
 
-[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3120/) [![FastAPI](https://img.shields.io/badge/FastAPI-000000?style=flat&logo=fastapi)](https://fastapi.tiangolo.com/) [![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-000000?style=flat&logo=sqlalchemy)](https://www.sqlalchemy.org/) [![MySQL](https://img.shields.io/badge/MySQL-000000?style=flat&logo=mysql)](https://www.mysql.com/) [![Redis](https://img.shields.io/badge/Redis-000000?style=flat&logo=redis)](https://redis.io/) [![Docker](https://img.shields.io/badge/Docker-000000?style=flat&logo=docker)](https://www.docker.com/) [![Traefik](https://img.shields.io/badge/Traefik-000000?style=flat&logo=traefik)](https://traefik.io/)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3120/) [![FastAPI](https://img.shields.io/badge/FastAPI-000000?style=flat&logo=fastapi)](https://fastapi.tiangolo.com/) [![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-000000?style=flat&logo=sqlalchemy)](https://www.sqlalchemy.org/) [![MySQL](https://img.shields.io/badge/MySQL-000000?style=flat&logo=mysql)](https://www.mysql.com/) [![Redis](https://img.shields.io/badge/Redis-000000?style=flat&logo=redis)](https://redis.io/) [![Docker](https://img.shields.io/badge/Docker-000000?style=flat&logo=docker)](https://www.docker.com/) [![Traefik](https://img.shields.io/badge/Traefik-000000?style=flat&logo=traefikproxy)](https://traefik.io/)
 
 For detailed information on the technology stack used in this project, please refer to the [Technology Stack Documentation](docs/TECHNOLOGY_STACK.md).
-
-## Deployment Status
-
-Production: [![Build and deploy - Production](https://github.com/ahmed-881994/SSGG-BE-V2/actions/workflows/build_and_deploy.yml/badge.svg?branch=main)](https://github.com/ahmed-881994/SSGG-BE-V2/actions/workflows/build_and_deploy.yml)
-
-Staging: [![Build and deploy - Staging](https://github.com/ahmed-881994/SSGG-BE-V2/actions/workflows/build_and_deploy.yml/badge.svg?branch=stage)](https://github.com/ahmed-881994/SSGG-BE-V2/actions/workflows/build_and_deploy.yml)
 
 ## Setup (local development)
 
