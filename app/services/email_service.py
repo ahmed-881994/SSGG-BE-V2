@@ -1,6 +1,7 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from typing import Optional
 
 from app.config.logging_config import logger
 from app.config.settings import settings
@@ -18,25 +19,37 @@ class EmailService:
         self.smtp_password = settings.smtp_password
         self.from_email = settings.from_email
 
-    def send_email(self, to_email: str, subject: str, body: str) -> None:
+    def send_email(
+        self, 
+        to_email: str, 
+        subject: str, 
+        body: str, 
+        html_body: Optional[str] = None
+    ) -> None:
         """Send an email using SMTP.
         
         Args:
             to_email: Recipient email address
             subject: Subject of the email
-            body: Body content of the email
+            body: Plain text body content of the email
+            html_body: Optional HTML body content (if provided, creates multipart email)
             
         Raises:
-            Exception: If sending email fails
+            ServiceError: If sending email fails
         """
         try:
             # Create the email message
-            msg = MIMEMultipart()
+            msg = MIMEMultipart('alternative') if html_body else MIMEMultipart()
             msg['From'] = self.from_email
             msg['To'] = to_email
             msg['Subject'] = subject
             
+            # Attach plain text version
             msg.attach(MIMEText(body, 'plain'))
+            
+            # Attach HTML version if provided (email clients will prefer HTML)
+            if html_body:
+                msg.attach(MIMEText(html_body, 'html'))
             
             # Connect to the SMTP server and send the email
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:

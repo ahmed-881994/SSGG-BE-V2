@@ -7,6 +7,7 @@ from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
 from app.models.user_model import User
 from app.repositories.user_repository import UserRepository
+from app.services.email_templates import email_templates
 from app.services.email_service import email_service
 from app.util.password import (generate_random_password, generate_salt,
                                get_password_hash)
@@ -39,7 +40,7 @@ class UserService:
         except EntityDoesNotExistError:
             raise
         except Exception as e:
-            logger.error(f"Error retrieving user {id}: {str(e)}")
+            logger.error(f"Error retrieving user {id}: {str(e)}", exc_info=True)
             raise ServiceError(
                 message=f"Failed to retrieve user: {str(e)}",
                 name="User Retrieval Error"
@@ -64,7 +65,7 @@ class UserService:
         except EntityDoesNotExistError:
             raise
         except Exception as e:
-            logger.error(f"Error retrieving user {user_id}: {str(e)}")
+            logger.error(f"Error retrieving user {user_id}: {str(e)}", exc_info=True)
             raise ServiceError(
                 message=f"Failed to retrieve user: {str(e)}",
                 name="User Retrieval Error"
@@ -89,7 +90,7 @@ class UserService:
         except EntityDoesNotExistError:
             raise
         except Exception as e:
-            logger.error(f"Error searching users: {str(e)}")
+            logger.error(f"Error searching users: {str(e)}", exc_info=True)
             raise ServiceError(
                 message=f"Failed to search users: {str(e)}",
                 name="User Search Error"
@@ -116,7 +117,7 @@ class UserService:
         except EntityDoesNotExistError:
             raise
         except Exception as e:
-            logger.error(f"Error searching users: {str(e)}")
+            logger.error(f"Error searching users: {str(e)}", exc_info=True)
             raise ServiceError(
                 message=f"Failed to search users: {str(e)}",
                 name="User Search Error"
@@ -142,7 +143,7 @@ class UserService:
         except EntityDoesNotExistError:
             raise
         except Exception as e:
-            logger.error(f"Error updating user {id}: {str(e)}")
+            logger.error(f"Error updating user {user_id}: {str(e)}", exc_info=True)
             raise ServiceError(
                 message=f"Failed to update user: {str(e)}",
                 name="User Update Error"
@@ -152,7 +153,7 @@ class UserService:
         """Delete a user from the database.
         
         Args:
-            id: Database ID of user to delete
+            user_id: ID of user to delete
             
         Returns:
             bool: True if deleted successfully
@@ -166,7 +167,7 @@ class UserService:
         except EntityDoesNotExistError:
             raise
         except Exception as e:
-            logger.error(f"Error deleting user {user_id}: {str(e)}")
+            logger.error(f"Error deleting user {user_id}: {str(e)}", exc_info=True)
             raise ServiceError(
                 message=f"Failed to delete user: {str(e)}",
                 name="User Deletion Error"
@@ -185,21 +186,42 @@ class UserService:
             ServiceError: If user creation fails.
         """
         try:
+            logger.info(f"Creating user")
+            # Generate password
+            new_password = generate_random_password()
+            logger.info(f"Generated random password for new user")
             # Generate salt and hash password
             salt = generate_salt()
-            hashed_password, _ = get_password_hash(user_data['password'], salt)
+            hashed_password, _ = get_password_hash(new_password, salt)
+            logger.info(f"Password hashed successfully for new user")
             # Store hashed password and salt in user_data
             user_data['password_hash'] = hashed_password
             user_data['salt'] = salt
             user_data.pop('password', None)  # Remove plain password safely
             user = self.user_repository.create_user(**user_data)
+            logger.info(f"User {user.user_id} created successfully")
+            
+            email = email_templates.welcome_email(
+                user_name=user.user_name,
+                user_id=user.user_id,
+                temporary_password=new_password
+            )
+            
+            email_service.send_email(
+                to_email=user.email,
+                subject=email.subject,
+                body=email.text_body,
+                html_body=email.html_body
+            )
+            logger.info(f"Welcome email sent to user {user.user_id}")
             return user
         except EntityAlreadyExistsError:
+            logger.warning(f"Attempted to create user with existing username or user ID: {user_data.get('user_name')} / {user_data.get('user_id')}")
             raise
         except Exception as e:
-            logger.error(f"Error creating user: {str(e)}")
+            logger.error(f"Error creating user: {str(e)}", exc_info=True)
             raise ServiceError(
-                message=f"Failed to create user: {str(e)}",
+                message=f"Failed to create user",
                 name="User Creation Error"
             )
 
@@ -219,10 +241,12 @@ class UserService:
             ServiceError: If update fails
         """
         try:
+            logger.info(f"Updating password for user {user_id}")
             user = self.user_repository.get_user_auth(user_id)
             # Verify old password
             old_password_hash, _ = get_password_hash(old_password, user.salt)
             if not old_password_hash == user.password_hash:
+                logger.warning(f"Old password verification failed for user {user_id}")
                 raise ServiceError(
                     message="Old password is incorrect.",
                     name="User Password Update Error"
@@ -235,11 +259,12 @@ class UserService:
                 password_hash=hashed_password,
                 salt=salt
             )
+            logger.info(f"Password for user {user_id} updated successfully")
             return True
         except EntityDoesNotExistError:
             raise
         except Exception as e:
-            logger.error(f"Error updating password for user {user_id}: {str(e)}")
+            logger.error(f"Error updating password for user {user_id}: {str(e)}", exc_info=True)
             raise ServiceError(
                 message=f"Failed to update user password: {str(e)}",
                 name="User Password Update Error"
@@ -259,6 +284,7 @@ class UserService:
             ServiceError: If reset fails
         """
         try:
+            logger.info(f"Resetting password for user {user_id}")
             user = self.user_repository.get_user_auth(user_id)
             # Generate new password
             new_password = generate_random_password()
@@ -270,19 +296,26 @@ class UserService:
                 password_reset=True,
                 salt=salt
             )
+            logger.info(f"Password for user {user_id} reset successfully")
             # Send email with new password
-            subject = "Your Password Has Been Reset"
-            body = (f"Hello {user.user_name},\n\n"
-                    f"Your password has been reset. Your new password is: {new_password}\n\n"
-                    "Please log in and change it as soon as possible.\n\n"
-                    "Best regards,\n"
-                    "The DTC Team")
-            email_service.send_email(to_email=f"{user.user_name}@sportingscout.org", subject=subject, body=body)
+            email = email_templates.password_reset_email(
+                user_name=user.user_name,
+                new_password=new_password
+            )
+            
+            email_service.send_email(
+                to_email=user.email,
+                subject=email.subject,
+                body=email.text_body,
+                html_body=email.html_body
+            )
+            logger.info(f"Password reset email sent to user {user_id}")
             return True
         except EntityDoesNotExistError:
+            logger.warning(f"Attempted to reset password for non-existent user {user_id}")
             raise
         except Exception as e:
-            logger.error(f"Error resetting password for user {user_id}: {str(e)}")
+            logger.error(f"Error resetting password for user {user_id}: {str(e)}", exc_info=True)
             raise ServiceError(
                 message=f"Failed to reset user password: {str(e)}",
                 name="User Password Reset Error"
@@ -291,12 +324,14 @@ class UserService:
     def get_user_permissions_by_id(self, id:int)-> List[str]:
         
         try:
+            logger.info(f"Retrieving permissions for user {id}")
             user = self.get_user_by_id(id)
             
             if user.role is None:
+                logger.warning(f"User {id} has no role assigned, returning empty permissions list")
                 return []
             user_permissions = [permission.name for permission in user.role.permissions]
-            
+            logger.info(f"Successfully retrieved permissions for user {id}")
             return user_permissions
             # if user_permissions:
             #     return user_permissions
@@ -304,9 +339,10 @@ class UserService:
             #     return []
             
         except EntityDoesNotExistError:
+            logger.warning(f"Attempted to retrieve permissions for non-existent user {id}")
             raise
         except Exception as e:
-            logger.error(f"Error retrieving permissions for user {id}: {str(e)}")
+            logger.error(f"Error retrieving permissions for user {id}: {str(e)}", exc_info=True)
             raise ServiceError(
                 message=f"Failed to retrieve user permissions: {str(e)}",
                 name="User Permissions Retrieval Error"

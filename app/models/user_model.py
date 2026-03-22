@@ -12,6 +12,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_name: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
     user_id: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
+    email: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
     role_id: Mapped[int] = mapped_column(Integer, ForeignKey("roles.role_id"), nullable=False)
     is_active: Mapped[bool] = mapped_column(default=True)
     password_reset: Mapped[bool] = mapped_column(default=False)
@@ -53,6 +54,7 @@ class User(Base):
             "id": self.id,
             "user_name": self.user_name,
             "user_id": self.user_id,
+            "email": self.email,
             "role_id": self.role_id,
             "role": self.role,
             "password_hash": self.password_hash,
@@ -69,6 +71,7 @@ class User(Base):
         clean_user.id = user_obj.id
         clean_user.user_name = user_obj.user_name
         clean_user.user_id = user_obj.user_id
+        clean_user.email = user_obj.email
         clean_user.role_id = user_obj.role_id
         clean_user.role = user_obj.role  # Retain role relationship if needed
         clean_user.is_active = user_obj.is_active

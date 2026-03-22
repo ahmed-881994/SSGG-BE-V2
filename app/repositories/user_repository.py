@@ -158,9 +158,9 @@ class UserRepository(BaseRepository[User]):
             )
 
     def delete_user(self, user_id: str) -> bool:
-        """Delete a user by ID."""
+        """Delete a user by user ID."""
         try:
-            user = self.get_by_id(user_id)
+            user = self.db.query(User).filter(User.user_id == user_id).first()
             if not user:
                 raise EntityDoesNotExistError(
                     message=f"User with ID {user_id} not found",
@@ -174,20 +174,19 @@ class UserRepository(BaseRepository[User]):
                 name="Database Error"
             )
 
-    def create_user(self, user_name: str, user_id: str, password_hash: str,
+    def create_user(self, user_name: str, user_id: str, email: str, password_hash: str,
                     role_id: int, 
-                    salt: str, is_active: bool = True,
-                    password_reset: bool = False) -> User:
+                    salt: str, is_active: bool = True) -> User:
         """Create a new user in the database.
 
         Args:
             user_name: Unique username for login
             user_id: Optional external user identifier
+            email: User's email address
             password_hash: Hashed password
             user_type: Type of user (1=Super user, 2=General Leader, etc.)
             salt: Password salt
             is_active: Whether user account is active
-            password_reset: Whether user needs to reset password
 
         Returns:
             User: Created user instance
@@ -211,18 +210,19 @@ class UserRepository(BaseRepository[User]):
             existing_user = query.filter(or_(*filters)).count()
             if existing_user > 0:
                 raise EntityAlreadyExistsError(
-                    message="User with this username already exists.",
+                    message="User with this username or user ID already exists.",
                     name="User Creation Error"
                 )
 
             user = User()
             user.user_name = user_name
             user.user_id = user_id
+            user.email = email
             user.password_hash = password_hash
             user.role_id = role_id
             user.salt = salt
             user.is_active = is_active
-            user.password_reset = password_reset
+            user.password_reset = True
 
             super().create(user)
 

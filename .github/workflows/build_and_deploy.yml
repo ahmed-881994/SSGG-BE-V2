@@ -9,9 +9,9 @@ on:
       - 'feature/**'  # Build only for CI checks
     tags:
       - 'v*'          # Production deployment on tag creation
-  pull_request:
-    branches:
-      - main
+  # pull_request:
+  #   branches:
+  #     - main
   workflow_dispatch:  # Manual trigger
     inputs:
       environment:

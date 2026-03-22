@@ -1,0 +1,26 @@
+Welcome to {{ organization_name }}!
+
+Dear {{ user_name }},
+
+We're excited to have you join our platform! Your account has been successfully created.
+
+ACCOUNT DETAILS
+---------------
+Username: {{ user_name }}
+UserID: {{ user_id }}
+Temporary Password: {{ temporary_password }}
+
+GETTING STARTED
+---------------
+1. Log in to your account at: {{ login_url }}
+2. Complete your profile to get the most out of our platform
+3. Explore the available features and tools
+
+If you have any questions, please reach out to our support team.
+
+Best regards,
+The DTC Team
+
+---
+This is an automated message. Please do not reply directly to this email.
+If you need help, contact us at dtc@sportingscout.org
