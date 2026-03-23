@@ -57,3 +57,5 @@ For detailed information on the technology stack used in this project, please re
 - Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Repository Maintenance: [docs/REPOSITORY_MAINTENANCE.md](docs/REPOSITORY_MAINTENANCE.md)
 - Deployment: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- Monitoring and Logging: [docs/MONITORING_LOGGING.md](docs/MONITORING_LOGGING.md)`
+- API Reference: [Swagger](api.stg.sportingscout.prg/docs) (staging) or [Redoc](api.stg.sportingscout.prg/redoc) (staging)
