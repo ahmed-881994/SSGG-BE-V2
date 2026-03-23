@@ -52,7 +52,8 @@ echo "${NEW_VERSION}" > VERSION
 # Commit and tag
 git add VERSION
 git commit -m "chore: bump version to ${NEW_VERSION}"
+git push origin $(git branch --show-current)
 
 echo "✅ Version bumped to ${NEW_VERSION}"
 echo ""
-echo "Next step: git push origin $(git branch --show-current)"
+# echo "Next step: git push origin $(git branch --show-current)"

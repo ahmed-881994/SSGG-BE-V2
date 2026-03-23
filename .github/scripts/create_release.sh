@@ -1,8 +1,21 @@
 #!/bin/bash
 set -e
 
-# Usage: ./create_release.sh
-# Reads version from VERSION file and creates release branch
+# Usage: ./create_release.sh <type>
+# Types: major, minor, patch
+# This script bumps the version and creates a release branch with the new version from the VERSION file.
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 <type>"
+    echo "Types: major, minor, patch"
+    echo "Example: $0 patch"
+    exit 1
+fi
+
+TYPE=$1
+
+# Run the version bump script first to update the VERSION file
+./bump_version.sh $TYPE
 
 # Check if VERSION file exists
 if [ ! -f "VERSION" ]; then
