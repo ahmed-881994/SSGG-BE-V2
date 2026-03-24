@@ -53,7 +53,7 @@ class TokenService:
             
         except Exception as e:
             logger.error(f"Token creation failed: {str(e)}", exc_info=True)
-            raise InvalidTokenError(message="Token creation error", name=None)
+            raise InvalidTokenError(message="Token creation error", name='TokenService')
     
     def create_refresh_token(self, data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
         """
@@ -83,7 +83,7 @@ class TokenService:
             
         except Exception as e:
             logger.error(f"Refresh token creation failed: {str(e)}", exc_info=True)
-            raise InvalidTokenError(message="Token creation error", name=None)
+            raise InvalidTokenError(message="Token creation error", name='TokenService')
 
     def verify_token(self, token: str, token_type: str = "access") -> Dict[str, Any]:
         """
@@ -105,7 +105,7 @@ class TokenService:
             # Check if token is blacklisted
             if token_blacklist.is_blacklisted(token):
                 logger.warning("Token verification failed: Token is blacklisted")
-                raise InvalidTokenError(message="Token has been revoked", name=None)
+                raise InvalidTokenError(message="Token has been revoked", name='TokenService')
             
             # Decode the JWT token
             payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
@@ -113,29 +113,29 @@ class TokenService:
             # Validate token type
             if payload.get("type") != token_type:
                 logger.warning(f"Token verification failed: Invalid token type. Expected {token_type}")
-                raise InvalidTokenError(message=f"Invalid token type. Expected {token_type}", name=None)
+                raise InvalidTokenError(message=f"Invalid token type. Expected {token_type}", name='TokenService')
             
             # # Check expiration
             exp = payload.get("exp")
             if exp and datetime.now(timezone.utc).timestamp() > exp:
                 logger.warning("Token verification failed: Token has expired")
-                raise InvalidTokenError(message="Token has expired", name=None)
+                raise InvalidTokenError(message="Token has expired", name='TokenService')
             logger.debug(f"Token verification successful")
             return payload
 
         except jwt.ExpiredSignatureError:
-            logger.warning("Token verification failed: Token has expired")
+            logger.error("Token verification failed: Token has expired", exc_info=True)
             raise InvalidTokenError(message="Token has expired", name='TokenService')
         except jwt.PyJWTError as e:
-            logger.warning(f"Token verification failed Invalid JWT format - {str(e)}")
+            logger.error(f"Token verification failed Invalid JWT format - ", exc_info=True)
             raise InvalidTokenError(message="Invalid token format", name='TokenService')
         except InvalidTokenError:
             # Re-raise custom exceptions without additional logging
             raise
         except Exception as e:
             # verification_time = round((time.time() - start_time) * 1000, 2)
-            logger.error(f"Unexpected error during token verification: {str(e)}", exc_info=True)
-            raise InvalidTokenError(message="Token verification error", name=None)
+            logger.error(f"Unexpected error during token verification - ", exc_info=True)
+            raise InvalidTokenError(message="Token verification error", name='TokenService')
     
     def blacklist_token(self, token: str) -> bool:
         """
