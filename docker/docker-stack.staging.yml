@@ -75,7 +75,7 @@ services:
       - "traefik.http.services.api-staging.loadbalancer.server.port=8000"
       - "traefik.docker.network=traefik-public"
       mode: replicated
-      replicas: 1
+      replicas: 2
       restart_policy:
         condition: on-failure
         delay: 5s
