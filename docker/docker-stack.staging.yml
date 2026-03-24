@@ -91,10 +91,10 @@ services:
       - stg-internal
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
-      interval: 60s
-      timeout: 10s
-      retries: 3
-      start_period: 30s                 # Let the app boot before first check
+      interval: 300s
+      timeout: 30s
+      retries: 5
+      start_period: 60s                 # Let the app boot before first check
     logging: *default-logging
 
   #------ redis ------
