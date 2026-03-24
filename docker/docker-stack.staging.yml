@@ -77,13 +77,13 @@ services:
       mode: replicated
       replicas: 3
       restart_policy:
-        condition: any
-        delay: 5s
+        condition: on-failure
+        delay: 10s
         max_attempts: 3
       update_config:
         order: start-first
         parallelism: 1           # only update 1 task at a time
-        delay: 5s                # wait before moving to next
+        delay: 10s                # wait before moving to next
         failure_action: rollback # revert if update fails
     stop_grace_period: 5s              # Kill old container quickly after swap
     networks:
