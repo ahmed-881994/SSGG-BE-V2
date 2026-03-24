@@ -66,9 +66,14 @@ scrape_configs:
         target_label: 'environment'
         replacement: 'monitoring'
       
+      - source_labels: ['stack']
+        regex: 'traefik'
+        target_label: 'environment'
+        replacement: 'gateway'
+      
       # Only scrape containers from our stacks
       - source_labels: ['stack']
-        regex: '(ssgg-be-v2-production|ssgg-be-v2-staging|ssgg-monitoring)'
+        regex: '(ssgg-be-v2-production|ssgg-be-v2-staging|ssgg-monitoring|traefik)'
         action: keep
 
     # Parse logs from StandardFormatter (plain text Python logs)
@@ -112,6 +117,13 @@ scrape_configs:
       - labels:
           level:
           logger:
+          request_id:
+          method:
+          status_code:
+          url:
+          environment:
+          stack:
+          service:
       
       # Add static labels for this application
       - static_labels:
