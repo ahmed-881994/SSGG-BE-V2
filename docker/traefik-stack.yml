@@ -1,5 +1,13 @@
 version: "3.9"
 
+x-logging: &default-logging
+  driver: loki
+  options:
+    loki-url: "http://loki:3100/loki/api/v1/push"
+    loki-batch-size: "400"
+    loki-retries: "2"
+    loki-external-labels: "stack=traefik"
+
 services:
   traefik:
     image: traefik:v3.1
@@ -64,6 +72,7 @@ services:
           - node.role == manager
       restart_policy:
         condition: any
+    logging: *default-logging
 
 volumes:
   traefik-public-certificates:

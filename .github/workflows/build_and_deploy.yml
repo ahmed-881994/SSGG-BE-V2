@@ -232,9 +232,23 @@ jobs:
           registry_auth: true
           summary: true
       
-      - name: Health check
+      # - name: Health check
+      #   run: |
+      #     sleep 15
+      #     curl -f https://api.stg.sportingscout.org/health || exit 1
+      #     echo "✅ Staging deployment successful"
+  health-check-staging:
+    name: Health Check
+    runs-on: ubuntu-24.04
+    needs: [setup, deploy-staging]
+    if: needs.setup.outputs.environment == 'staging' && needs.setup.outputs.should-deploy == 'true' && needs.deploy-staging.result == 'success'
+    
+    steps:
+      - name: Wait for service to stabilize
+        run: sleep 15
+      
+      - name: Check API health endpoint
         run: |
-          sleep 15
           curl -f https://api.stg.sportingscout.org/health || exit 1
           echo "✅ Staging deployment successful"
 
@@ -330,27 +344,41 @@ jobs:
           registry_auth: true
           summary: true
       
-      - name: Health check
+      # - name: Health check
+      #   run: |
+      #     sleep 20
+      #     curl -f https://api.sportingscout.org/health || exit 1
+      #     echo "✅ Production deployment successful"
+      
+      # - name: Create GitHub Release
+      #   if: github.ref == 'refs/heads/main'
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     tag_name: v${{ needs.setup.outputs.version }}
+      #     name: Release v${{ needs.setup.outputs.version }}
+      #     body: |
+      #       ## Release v${{ needs.setup.outputs.version }}
+            
+      #       **Deployed:** ${{ github.event.head_commit.timestamp }}
+      #       **Commit:** ${{ github.sha }}
+            
+      #       ### Changes
+      #       ${{ github.event.head_commit.message }}
+      #     draft: false
+      #     prerelease: false
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+  health-check-production:
+    name: Health Check
+    runs-on: ubuntu-24.04
+    needs: [setup, deploy-production]
+    if: needs.setup.outputs.environment == 'production' && needs.setup.outputs.should-deploy == 'true' && needs.deploy-production.result == 'success'
+    
+    steps:
+      - name: Wait for service to stabilize
+        run: sleep 15
+      
+      - name: Check API health endpoint
         run: |
-          sleep 20
           curl -f https://api.sportingscout.org/health || exit 1
           echo "✅ Production deployment successful"
-      
-      - name: Create GitHub Release
-        if: github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ needs.setup.outputs.version }}
-          name: Release v${{ needs.setup.outputs.version }}
-          body: |
-            ## Release v${{ needs.setup.outputs.version }}
-            
-            **Deployed:** ${{ github.event.head_commit.timestamp }}
-            **Commit:** ${{ github.sha }}
-            
-            ### Changes
-            ${{ github.event.head_commit.message }}
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}

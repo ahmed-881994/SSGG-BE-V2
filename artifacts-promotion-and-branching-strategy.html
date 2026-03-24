@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artifacts Promotion & Branching Strategy</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0a0e17;
+    --bg-secondary: #111827;
+    --bg-card: #1a2332;
+    --bg-code: #0d1520;
+    --border: #1e2d3d;
+    --border-light: #2a3a4a;
+    --text-primary: #f0f4f8;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --accent-green: #10b981;
+    --accent-yellow: #f59e0b;
+    --accent-orange: #f97316;
+    --accent-red: #ef4444;
+    --accent-purple: #8b5cf6;
+    --gradient-blue: linear-gradient(135deg, #3b82f6, #06b6d4);
+    --gradient-green: linear-gradient(135deg, #10b981, #06b6d4);
+    --gradient-red: linear-gradient(135deg, #ef4444, #f97316);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; -webkit-font-smoothing: antialiased; }
+
+  .slide {
+    display: none; width: 100vw; height: 100vh;
+    padding: 0; flex-direction: column; justify-content: flex-start;
+    position: relative; overflow: hidden;
+  }
+  /* CSS-based slide navigation (works without JS – e.g. OneDrive viewer) */
+  .slide:target { display: flex; animation: fadeIn 0.35s ease; }
+  #s1 { display: flex; }
+  body:has(.slide:target) #s1 { display: none; }
+  body:has(#s1:target) #s1 { display: flex; }
+  .slide.center { justify-content: center; align-items: center; text-align: center; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .slide-content {
+    padding: 44px 72px 50px;
+    flex: 1; display: flex; flex-direction: column;
+    max-width: 1400px; width: 100%; margin: 0 auto;
+  }
+
+  .slide::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; background: var(--gradient-blue);
+  }
+
+  h1 {
+    font-size: 3.2em; font-weight: 800; letter-spacing: -0.02em;
+    background: var(--gradient-blue); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    line-height: 1.15; margin-bottom: 16px;
+  }
+  h2 {
+    font-size: 1.9em; font-weight: 700; color: var(--text-primary);
+    margin-bottom: 28px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 14px;
+    border-bottom: 1px solid var(--border); padding-bottom: 18px;
+  }
+  h3 {
+    font-size: 0.85em; font-weight: 700; color: var(--accent-cyan);
+    margin-bottom: 12px; margin-top: 16px;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  .subtitle { font-size: 1.35em; color: var(--text-secondary); margin-top: 12px; font-weight: 300; }
+  .tag-line { font-size: 0.9em; color: var(--text-muted); margin-top: 48px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; }
+
+  p, li { font-size: 1.1em; line-height: 1.75; color: var(--text-secondary); }
+
+  ul { list-style: none; padding-left: 0; }
+  ul li { padding: 6px 0 6px 26px; position: relative; }
+  ul li::before {
+    content: ''; position: absolute; left: 0; top: 15px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent-blue);
+  }
+  ul.check li::before { content: "\2713"; background: none; color: var(--accent-green); font-size: 1em; top: 6px; width: auto; height: auto; font-weight: 700; }
+
+  .label {
+    font-weight: 700; font-size: 0.72em; text-transform: uppercase;
+    letter-spacing: 1.5px; margin-bottom: 5px; margin-top: 18px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .label-problem { color: var(--accent-red); }
+  .label-problem::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-red); display: inline-block; }
+  .label-evidence { color: var(--accent-yellow); }
+  .label-evidence::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-yellow); display: inline-block; }
+  .label-impact { color: var(--accent-orange); }
+  .label-impact::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-orange); display: inline-block; }
+
+  .code-block {
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.9em;
+    color: var(--text-secondary); margin: 8px 0; line-height: 1.7;
+    overflow-x: auto; position: relative;
+    white-space: pre;
+  }
+  .code-block .hl { color: var(--accent-red); font-weight: 600; }
+  .code-block .cm { color: var(--text-muted); }
+  .code-block .str { color: var(--accent-cyan); }
+
+  .source { font-size: 0.78em; color: var(--text-muted); margin-top: 3px; font-style: italic; }
+
+  table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 10px 0; font-size: 0.95em; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+  th { background: var(--bg-card); color: var(--accent-cyan); padding: 12px 18px; text-align: left; font-weight: 600; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 12px 18px; border-top: 1px solid var(--border); color: var(--text-secondary); background: var(--bg-secondary); }
+
+  .two-col { display: flex; gap: 36px; flex: 1; }
+  .two-col > div { flex: 1; }
+
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px 22px; margin: 8px 0;
+  }
+  .card-red { border-left: 3px solid var(--accent-red); }
+  .card-green { border-left: 3px solid var(--accent-green); }
+  .card-yellow { border-left: 3px solid var(--accent-yellow); }
+  .card-blue { border-left: 3px solid var(--accent-blue); }
+  .card-purple { border-left: 3px solid var(--accent-purple); }
+
+  .steps { counter-reset: step; padding-left: 0; }
+  .steps li { padding: 8px 0 8px 46px; counter-increment: step; position: relative; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 7px;
+    background: var(--accent-blue); color: var(--bg-primary);
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.78em;
+  }
+
+  .badge { display: inline-block; padding: 3px 11px; border-radius: 20px; font-size: 0.8em; font-weight: 600; }
+  .b-green { background: rgba(16,185,129,0.1); color: var(--accent-green); border: 1px solid rgba(16,185,129,0.25); }
+  .b-yellow { background: rgba(245,158,11,0.1); color: var(--accent-yellow); border: 1px solid rgba(245,158,11,0.25); }
+  .b-blue { background: rgba(59,130,246,0.1); color: var(--accent-blue); border: 1px solid rgba(59,130,246,0.25); }
+  .b-red { background: rgba(239,68,68,0.1); color: var(--accent-red); border: 1px solid rgba(239,68,68,0.25); }
+  .b-purple { background: rgba(139,92,246,0.1); color: var(--accent-purple); border: 1px solid rgba(139,92,246,0.25); }
+
+  .phase-title { color: var(--text-primary); font-weight: 600; font-size: 1em; margin-bottom: 8px; }
+  .dash-table td:nth-child(2), .dash-table td:nth-child(3), .dash-table td:nth-child(4) { text-align: center; }
+
+  .progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--gradient-blue); z-index: 100; transition: width 0.3s ease; }
+
+  .slide-footer {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 12px 40px; display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid var(--border); background: rgba(10,14,23,0.85);
+    backdrop-filter: blur(10px); font-size: 0.78em; color: var(--text-muted);
+  }
+  .slide-footer .counter { font-weight: 600; color: var(--text-secondary); }
+
+  .section-slide { background: var(--bg-secondary); }
+  .section-num { font-size: 5em; font-weight: 800; color: rgba(59,130,246,0.15); line-height: 1; }
+  .section-title { font-size: 2.5em; font-weight: 700; color: var(--text-primary); margin-top: -10px; }
+  .section-sub { font-size: 1.1em; color: var(--text-muted); margin-top: 8px; }
+
+  strong { color: var(--text-primary); font-weight: 600; }
+  code { font-family: 'JetBrains Mono', monospace; background: var(--bg-code); padding: 2px 7px; border-radius: 4px; font-size: 0.88em; color: var(--accent-cyan); }
+
+  /* SVG diagrams */
+  .svg-wrap { width: 100%; flex: 1; display: flex; align-items: center; justify-content: center; }
+  .svg-wrap svg { width: 100%; height: auto; }
+  .svg-caption { text-align: center; font-size: 0.88em; color: var(--text-muted); margin-top: 10px; }
+
+  .highlight-box {
+    background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(249,115,22,0.05));
+    border: 2px solid rgba(239,68,68,0.3); border-radius: 14px;
+    padding: 24px 48px; text-align: center; display: inline-block;
+  }
+  .highlight-box p { color: var(--accent-red); font-size: 1.4em; font-weight: 700; letter-spacing: 0.5px; }
+
+  /* Slide navigation buttons (CSS-only) */
+  .slide-nav {
+    position: absolute; bottom: 58px; right: 36px;
+    display: flex; gap: 8px; z-index: 50;
+  }
+  .nav-btn {
+    display: inline-flex; align-items: center;
+    padding: 7px 18px; border-radius: 6px;
+    background: rgba(59,130,246,0.12); color: var(--text-secondary);
+    text-decoration: none; font-size: 0.8em; font-weight: 500;
+    border: 1px solid rgba(59,130,246,0.25);
+    transition: background 0.2s, color 0.2s;
+  }
+  .nav-btn:hover { background: rgba(59,130,246,0.28); color: var(--text-primary); }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress"></div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 1: Title
+═══════════════════════════════════════════════════ -->
+<div class="slide active center" id="s1">
+  <div class="slide-content" style="justify-content:center; align-items:center; text-align:center;">
+    <h1>Artifacts Promotion & Branching Strategy</h1>
+    <p class="subtitle">From Branch-per-Environment to Release-Based GitOps</p>
+    <p class="tag-line">IBM ACE Integration Services &nbsp;·&nbsp; 2026</p>
+  </div>
+  <div class="slide-nav"><a href="#s2" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 2: Agenda
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s2">
+  <div class="slide-content">
+    <h2>Agenda</h2>
+    <div style="max-width:620px; margin-top:10px;">
+      <ul class="steps" style="font-size:1.2em;">
+        <li>Current State</li>
+        <li>Challenges &amp; Evidence</li>
+        <li>Proposed Solution</li>
+        <li>Implementation Approach</li>
+        <li>Next Steps</li>
+      </ul>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s1" class="nav-btn">← Prev</a><a href="#s3" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 3: Current State , architecture SVG
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s3">
+  <div class="slide-content" style="padding-bottom:58px;">
+    <h2>Current State: Branch = Environment Selector</h2>
+    <div class="svg-wrap">
+      <svg viewBox="0 0 920 290" xmlns="http://www.w3.org/2000/svg" style="max-height:420px;">
+        <defs>
+          <marker id="arrblu" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+            <polygon points="0 0, 9 3.5, 0 7" fill="#3b82f6"/>
+          </marker>
+        </defs>
+        <!-- Module outer box -->
+        <rect x="90" y="10" width="70" height="268" rx="8" fill="rgba(30,58,95,0.15)" stroke="#1e3a5f" stroke-width="2"/>
+        <text transform="rotate(-90,42,144)" x="42" y="230" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="Inter,sans-serif" font-weight="600">Establishing Visa Module</text>
+        <!-- Service boxes -->
+        <rect x="172" y="22" width="200" height="44" rx="6" fill="#1e3a5f"/>
+        <text x="272" y="49" text-anchor="middle" fill="white" font-size="13" font-family="Inter,sans-serif">Shared Lib</text>
+        <rect x="172" y="78" width="200" height="44" rx="6" fill="#1e3a5f"/>
+        <text x="272" y="105" text-anchor="middle" fill="white" font-size="12" font-family="Inter,sans-serif">estv-calcavailablevisas</text>
+        <rect x="172" y="134" width="200" height="44" rx="6" fill="#1e3a5f"/>
+        <text x="272" y="161" text-anchor="middle" fill="white" font-size="12" font-family="Inter,sans-serif">estv-establishinggets</text>
+        <rect x="172" y="190" width="200" height="44" rx="6" fill="#1e3a5f"/>
+        <text x="272" y="217" text-anchor="middle" fill="white" font-size="12" font-family="Inter,sans-serif">estv-establishingutilities</text>
+        <rect x="172" y="244" width="200" height="30" rx="6" fill="rgba(30,58,95,0.35)" stroke="#1e3a5f" stroke-dasharray="5,3"/>
+        <text x="272" y="264" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">... 100+ services</text>
+        <!-- Connector brackets -->
+        <path d="M372,100 L395,100 L395,162 L415,162" stroke="#4b6cb7" stroke-width="1.5" fill="none"/>
+        <path d="M395,100 L415,80" stroke="#4b6cb7" stroke-width="1.5" fill="none"/>
+        <path d="M395,162 L415,242" stroke="#4b6cb7" stroke-width="1.5" fill="none"/>
+        <!-- Branch boxes -->
+        <rect x="415" y="54" width="148" height="52" rx="6" fill="#2d3748"/>
+        <text x="489" y="78" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="Inter,sans-serif" font-weight="600">Staging</text>
+        <text x="489" y="96" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">Branch</text>
+        <rect x="415" y="136" width="148" height="52" rx="6" fill="#2d3748"/>
+        <text x="489" y="160" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="Inter,sans-serif" font-weight="600">Preprod</text>
+        <text x="489" y="178" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">Branch</text>
+        <rect x="415" y="218" width="148" height="52" rx="6" fill="#2d3748"/>
+        <text x="489" y="242" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="Inter,sans-serif" font-weight="600">Main</text>
+        <text x="489" y="260" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">Branch</text>
+        <!-- Arrows: branch → env -->
+        <line x1="563" y1="80" x2="664" y2="80" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrblu)"/>
+        <text x="613" y="73" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">Artifacts</text>
+        <line x1="563" y1="162" x2="664" y2="162" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrblu)"/>
+        <text x="613" y="155" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">Artifacts</text>
+        <line x1="563" y1="244" x2="664" y2="244" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrblu)"/>
+        <text x="613" y="237" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">Artifacts</text>
+        <!-- Env boxes -->
+        <rect x="664" y="54" width="148" height="52" rx="6" fill="#1e3a5f"/>
+        <text x="738" y="78" text-anchor="middle" fill="white" font-size="13" font-family="Inter,sans-serif" font-weight="600">Staging</text>
+        <text x="738" y="96" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">Environment</text>
+        <rect x="664" y="136" width="148" height="52" rx="6" fill="#1e3a5f"/>
+        <text x="738" y="160" text-anchor="middle" fill="white" font-size="13" font-family="Inter,sans-serif" font-weight="600">Preprod</text>
+        <text x="738" y="178" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">Environment</text>
+        <rect x="664" y="218" width="148" height="52" rx="6" fill="#1e3a5f"/>
+        <text x="738" y="242" text-anchor="middle" fill="white" font-size="13" font-family="Inter,sans-serif" font-weight="600">Prod</text>
+        <text x="738" y="260" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">Environment</text>
+    
+      </svg>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s2" class="nav-btn">← Prev</a><a href="#s5" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 5: Challenge 1 , Branch Drift Architecture SVG
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s5">
+  <div class="slide-content" style="padding-bottom:58px;">
+    <h2>Challenge 1: Branch Drift , Library Coupling</h2>
+    <div class="label label-evidence" style="margin-bottom:8px;">Root Cause , clones libraries using <code style="color:var(--accent-red);">-b $CI_COMMIT_BRANCH</code> , staging gets staging libs, prod gets main libs</div>
+    <div class="svg-wrap" style="margin-top:4px;">
+      <svg viewBox="0 0 900 215" xmlns="http://www.w3.org/2000/svg" style="max-height:360px;">
+        <defs>
+          <marker id="a5b" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#4b6cb7"/>
+          </marker>
+          <marker id="a5g" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#3b82f6"/>
+          </marker>
+        </defs>
+
+        <!-- Column headers -->
+        <text x="46" y="10" text-anchor="middle" fill="#f97316" font-size="10" font-family="Inter,sans-serif" font-weight="700">COMMON LIB</text>
+        <text x="142" y="10" text-anchor="middle" fill="#06b6d4" font-size="10" font-family="Inter,sans-serif" font-weight="700">SHARED LIB</text>
+        <text x="385" y="10" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif" font-weight="700">BUILD TIME</text>
+        <text x="608" y="10" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif" font-weight="700">ENVIRONMENTS</text>
+
+        <!-- Common Lib tall box (orange) -->
+        <rect x="2" y="14" width="88" height="196" rx="7" fill="rgba(180,83,9,0.2)" stroke="#b45309" stroke-width="2"/>
+        <!-- Common Lib branch boxes -->
+        <rect x="7" y="22" width="77" height="28" rx="4" fill="#2d3748"/>
+        <text x="45" y="40" text-anchor="middle" fill="#3b82f6" font-size="11" font-family="Inter,sans-serif" font-weight="600">staging</text>
+        <rect x="7" y="97" width="77" height="28" rx="4" fill="#2d3748"/>
+        <text x="45" y="115" text-anchor="middle" fill="#f59e0b" font-size="11" font-family="Inter,sans-serif" font-weight="600">preprod</text>
+        <rect x="7" y="172" width="77" height="28" rx="4" fill="#2d3748"/>
+        <text x="45" y="190" text-anchor="middle" fill="#10b981" font-size="11" font-family="Inter,sans-serif" font-weight="600">main</text>
+        <!-- Diverge markers common-lib -->
+        <text x="46" y="87" text-anchor="middle" fill="#ef4444" font-size="16" font-family="Inter,sans-serif" font-weight="700">≠</text>
+        <text x="46" y="165" text-anchor="middle" fill="#ef4444" font-size="16" font-family="Inter,sans-serif" font-weight="700">≠</text>
+
+        <!-- Shared Lib tall box (teal) -->
+        <rect x="98" y="14" width="88" height="196" rx="7" fill="rgba(6,182,212,0.1)" stroke="#0891b2" stroke-width="2"/>
+        <!-- Shared Lib branch boxes -->
+        <rect x="103" y="22" width="77" height="28" rx="4" fill="#2d3748"/>
+        <text x="141" y="40" text-anchor="middle" fill="#3b82f6" font-size="11" font-family="Inter,sans-serif" font-weight="600">staging</text>
+        <rect x="103" y="97" width="77" height="28" rx="4" fill="#2d3748"/>
+        <text x="141" y="115" text-anchor="middle" fill="#f59e0b" font-size="11" font-family="Inter,sans-serif" font-weight="600">preprod</text>
+        <rect x="103" y="172" width="77" height="28" rx="4" fill="#2d3748"/>
+        <text x="141" y="190" text-anchor="middle" fill="#10b981" font-size="11" font-family="Inter,sans-serif" font-weight="600">main</text>
+        <!-- Diverge markers shared-lib -->
+        <text x="142" y="87" text-anchor="middle" fill="#ef4444" font-size="16" font-family="Inter,sans-serif" font-weight="700">≠</text>
+        <text x="142" y="165" text-anchor="middle" fill="#ef4444" font-size="16" font-family="Inter,sans-serif" font-weight="700">≠</text>
+
+        <!-- Arrows: lib branches → service builds (row 1: staging) -->
+        <line x1="186" y1="36" x2="312" y2="60" stroke="#b45309" stroke-width="1.5" marker-end="url(#a5b)"/>
+        <!-- Arrows: lib branches → service builds (row 2: preprod) -->
+        <line x1="186" y1="111" x2="312" y2="111" stroke="#b45309" stroke-width="1.5" marker-end="url(#a5b)"/>
+        <!-- Arrows: lib branches → service builds (row 3: main) -->
+        <line x1="186" y1="186" x2="312" y2="162" stroke="#b45309" stroke-width="1.5" marker-end="url(#a5b)"/>
+
+        <!-- Service build boxes (3 rows) -->
+        <rect x="312" y="30" width="158" height="56" rx="6" fill="rgba(30,58,95,0.7)" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="391" y="54" text-anchor="middle" fill="white" font-size="11" font-family="Inter,sans-serif" font-weight="600">staging build</text>
+        <text x="391" y="70" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">estv-calcavailablevisas</text>
+
+        <rect x="312" y="83" width="158" height="56" rx="6" fill="rgba(30,58,95,0.7)" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="391" y="107" text-anchor="middle" fill="white" font-size="11" font-family="Inter,sans-serif" font-weight="600">preprod build</text>
+        <text x="391" y="123" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">estv-calcavailablevisas</text>
+
+        <rect x="312" y="136" width="158" height="56" rx="6" fill="rgba(30,58,95,0.7)" stroke="#10b981" stroke-width="1.5"/>
+        <text x="391" y="160" text-anchor="middle" fill="white" font-size="11" font-family="Inter,sans-serif" font-weight="600">main build</text>
+        <text x="391" y="176" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">estv-calcavailablevisas</text>
+
+        <!-- Different artifacts label -->
+        <text x="500" y="96" text-anchor="middle" fill="#64748b" font-size="9" font-family="Inter,sans-serif">3 different</text>
+        <text x="500" y="108" text-anchor="middle" fill="#ef4444" font-size="10" font-family="Inter,sans-serif" font-weight="700">artifacts!</text>
+
+        <!-- Arrows: builds → envs -->
+        <line x1="470" y1="58" x2="540" y2="58" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#a5g)"/>
+        <line x1="470" y1="111" x2="540" y2="111" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#a5g)"/>
+        <line x1="470" y1="164" x2="540" y2="164" stroke="#10b981" stroke-width="1.5" marker-end="url(#a5g)"/>
+
+        <!-- Env boxes -->
+        <rect x="540" y="30" width="138" height="56" rx="6" fill="#1e3a5f"/>
+        <text x="609" y="54" text-anchor="middle" fill="#4fc3f7" font-size="12" font-family="Inter,sans-serif" font-weight="700">Staging</text>
+        <text x="609" y="70" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">Environment</text>
+
+        <rect x="540" y="83" width="138" height="56" rx="6" fill="#1e3a5f"/>
+        <text x="609" y="107" text-anchor="middle" fill="#fbbf24" font-size="12" font-family="Inter,sans-serif" font-weight="700">Preprod</text>
+        <text x="609" y="123" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">Environment</text>
+
+        <rect x="540" y="136" width="138" height="56" rx="6" fill="#1e3a5f"/>
+        <text x="609" y="160" text-anchor="middle" fill="#34d399" font-size="12" font-family="Inter,sans-serif" font-weight="700">Prod</text>
+        <text x="609" y="176" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">Environment</text>
+
+        <!-- Warning callout -->
+        <rect x="696" y="76" width="200" height="60" rx="7" fill="rgba(239,68,68,0.1)" stroke="rgba(239,68,68,0.4)" stroke-width="1.5"/>
+        <text x="796" y="100" text-anchor="middle" fill="#ef4444" font-size="12" font-family="Inter,sans-serif" font-weight="700">3 different lib versions</text>
+        <text x="796" y="118" text-anchor="middle" fill="#ef4444" font-size="11" font-family="Inter,sans-serif">baked per environment</text>
+      </svg>
+    </div>
+    <p style="font-size:0.92em; color:var(--accent-orange); margin-top:4px;"><strong>"Works in staging, does not work in preprod or prod"</strong> , same release, but each environment consumed a different branch of every library at build time</p>
+  </div>
+  <div class="slide-nav"><a href="#s3" class="nav-btn">← Prev</a><a href="#s6" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 6: Challenge 2 , Config Baked into Image
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s6">
+  <div class="slide-content">
+    <h2>Challenge 2: Env Config Branch-Coupled &amp; Baked into Image</h2>
+    <div class="two-col" style="margin-top:8px; gap:32px;">
+      <div>
+        <div class="label label-problem">Problem</div>
+        <p style="font-size:0.97em; margin-bottom:12px;">Some environment config is branch-coupled and baked into the Docker image at build time , a different image is produced per branch, so the same artifact cannot be promoted.</p>
+        <div class="label label-evidence">Evidence , build.properties (estv-calcavailablevisas)</div>
+        <div class="code-block" style="font-size:0.84em; margin-top:6px; line-height:1.8;">
+applicationName=<span class="hl">CalculateAvailableVisas</span>
+shared-lib=<span style="color:#06b6d4;">Framework,EstablishingVisasManagementLib</span>
+common-lib=<span style="color:#06b6d4;">MQPolicyProject,BackendAdaptersLib,HRSDLib</span>
+additional=<span style="color:#f59e0b;">com.qiwa.esb.calculateavailablevisas.\
+  GW_Rest_CalculateAvailableVisasFlow<span class="hl">#additionalInstances=10</span>,\
+  CalculateAvailableVisasFlow<span class="hl">#additionalInstances=10</span></span></div>
+        <p class="source">Source: build.properties , branch-specific assembly config per service</p>
+      </div>
+      <div>
+        <div class="label label-impact" style="margin-top:16px;">Impact</div>
+        <ul style="font-size:0.92em; margin-top:6px;">
+          <li><strong>Cannot promote the same image</strong> across environments , must rebuild per branch</li>
+          <li>staging branch → image A &nbsp;|&nbsp; preprod → image B &nbsp;|&nbsp; main → image C</li>
+          <li>3 branches = 3 different artifacts for identical business logic</li>
+          <li>Additional instances (<code>#additionalInstances</code>) differ per branch → runtime behaviour changes</li>
+        </ul>
+        <div class="card card-red" style="margin-top:12px; padding:12px 16px;">
+          <p style="font-size:0.9em;"><strong>"Tested on staging" does not mean prod will behave the same</strong> , different image, different config, different library versions.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s5" class="nav-btn">← Prev</a><a href="#s7" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 7: Challenge 3 , No Semantic Versioning
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s7">
+  <div class="slide-content">
+    <h2>Challenge 3: No Semantic Versioning</h2>
+    <div class="two-col" style="margin-top:10px; gap:36px;">
+      <div>
+        <h3>Current Image Tag</h3>
+        <div class="code-block" style="font-size:0.92em; line-height:1.9;">
+<span class="cm"># What gets tagged today</span> <br>
+IMAGETAG=<span class="hl">prod-$CI_PIPELINE_ID</span>-$(date +%d%b%Y%H%M%S)
+<br>
+<span class="cm"># Real example</span> <br>
+<span style="color:#ef4444; font-weight:600;">prod-12345-15Jan202410304</span>
+
+
+      </div>
+      <div>
+        <div class="label label-problem" style="margin-top:0;">Impact</div>
+
+        <div class="card card-red" style="margin-top:20px;">
+          <p style="font-size:1em;">No way to answer: <em>"What exact version of service X is running in production?"</em></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+  <div class="slide-nav"><a href="#s6" class="nav-btn">← Prev</a><a href="#s8" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 8: Challenge 4 , Branch Explosion
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s8">
+  <div class="slide-content">
+    <h2>Challenge 4: Deployment Branch Explosion , 5,000+ Stale Branches</h2>
+    <div class="two-col" style="margin-top:10px; gap:36px;">
+      <div>
+        <div class="label label-problem">Problem</div>
+        <p style="font-size:0.97em; margin-bottom:12px;">Deployment branches are <strong>never cleaned up</strong>.</p>
+        <div class="label label-evidence">Evidence , deploy-ace-image job</div>
+        <div class="code-block" style="font-size:0.88em; line-height:1.9; margin-top:8px;">
+<span class="cm"># Creates branch every pipeline, never deleted</span> <br>
+git checkout -b <span class="hl">pipeline-prd-$CI_PIPELINE_ID</span> <br>
+git push origin <span class="hl">pipeline-prd-$CI_PIPELINE_ID</span> <br>
+
+</div>
+        <p class="source">Source: .gitlab-ci-ace-template-deploy-ace-image.yml lines 56, 62, 64–65</p>
+      </div>
+      <div>
+        <div class="label label-impact">Impact</div>
+        <ul style="font-size:1.05em; margin-top:10px;">
+          <li><strong>5,000+</strong> stale branches in the ArgoCD deployments repo</li>
+          <li><code>git clone</code> of deployments repo becomes progressively slower</li>        </ul>
+        <div class="card card-red" style="margin-top:20px;">
+          <p style="font-size:1em;"><strong>100+ services × multiple pipelines</strong> = thousands of branches . GitLab performance risk.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s7" class="nav-btn">← Prev</a><a href="#s8a" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 8a: Challenge 5 , CI Job Duplication
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s8a">
+  <div class="slide-content">
+    <h2>Challenge 5: Unnecessary CI Job Duplication</h2>
+    <div class="two-col" style="margin-top:10px; gap:36px;">
+      <div>
+        <div class="label label-problem">Problem</div>
+        <p style="font-size:0.97em; margin-bottom:12px;">Unnecessary duplicated job definitions cause confusion</p>
+        <div class="label label-evidence">Evidence , two Prepare-workspace jobs</div>
+        <div class="code-block" style="font-size:0.86em; line-height:1.8; margin-top:8px;">
+<span class="cm"># Job 1: from template (actual work)</span> <br>
+<span class="hl">Prepare-workspace:</span>      
+<br>
+<span class="cm"># .gitlab-ci-ace-template-...</span>
+  script:
+    - git clone ... common-lib.git <span class="hl">-b $CI_COMMIT_BRANCH</span><br>
+    - git clone ... common-cicd.git -b $CI_COMMIT_BRANCH
+    - mkdir workspace &amp;&amp; cp -R common-lib/ workspace
+    - ./prepare-workspace.sh
+<br>
+<br>
+<span class="cm"># Job 2: local .gitlab-ci.yml in service repo (just echo)</span>
+<br>
+<span class="hl">Prepare workspace:</span>      
+<br> 
+  script:
+    - <span style="color:#f59e0b;">echo "Prepare-workspace-stage"</span>   <span class="cm"># does nothing</span></div>
+      </div>
+
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s8" class="nav-btn">← Prev</a><a href="#s8b" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 8b: Challenge 6 , Mixed Deployment Mechanisms
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s8b">
+  <div class="slide-content" style="padding-bottom:58px;">
+    <h2>Challenge 6: Inconsistent Deployment Mechanisms</h2>
+    <div class="svg-wrap" style="flex:none; margin: 12px 0 10px;">
+      <svg viewBox="0 0 900 200" xmlns="http://www.w3.org/2000/svg" style="max-height:190px;">
+        <defs>
+          <marker id="a8bm" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+            <polygon points="0 0, 9 3.5, 0 7" fill="#64748b"/>
+          </marker>
+          <marker id="a8br" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+            <polygon points="0 0, 9 3.5, 0 7" fill="#ef4444"/>
+          </marker>
+          <marker id="a8bg" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+            <polygon points="0 0, 9 3.5, 0 7" fill="#10b981"/>
+          </marker>
+        </defs>
+        <!-- CI Job box -->
+        <rect x="8" y="74" width="120" height="54" rx="8" fill="rgba(30,58,95,0.7)" stroke="#3b82f6" stroke-width="2"/>
+        <text x="68" y="97" text-anchor="middle" fill="white" font-size="13" font-family="Inter,sans-serif" font-weight="700">deploy-</text>
+        <text x="68" y="116" text-anchor="middle" fill="#94a3b8" font-size="12" font-family="Inter,sans-serif">ace-image job</text>
+
+        <!-- Upper path: oc apply + oc create configmap → Staging -->
+        <line x1="128" y1="88" x2="260" y2="56" stroke="#ef4444" stroke-width="2.5" marker-end="url(#a8br)"/>
+        <text x="194" y="58" text-anchor="middle" fill="#ef4444" font-size="11" font-family="Inter,sans-serif" font-weight="700">oc apply</text>
+        <text x="194" y="71" text-anchor="middle" fill="#ef4444" font-size="10" font-family="Inter,sans-serif">oc create configmap</text>
+        <text x="194" y="82" text-anchor="middle" fill="#ef4444" font-size="10" font-family="Inter,sans-serif">| oc apply --server-side</text>
+        <rect x="260" y="14" width="180" height="76" rx="8" fill="rgba(239,68,68,0.1)" stroke="#ef4444" stroke-width="2"/>
+        <text x="350" y="42" text-anchor="middle" fill="#ef4444" font-size="15" font-family="Inter,sans-serif" font-weight="700">STAGING</text>
+        <text x="350" y="60" text-anchor="middle" fill="#ef4444" font-size="11" font-family="Inter,sans-serif">Imperative</text>
+        <text x="350" y="76" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">deploy + configmap in same job</text>
+        <text x="350" y="88" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">state can drift undetected</text>
+
+        <!-- Lower path: git push → ArgoCD → Preprod/Prod -->
+        <line x1="128" y1="114" x2="260" y2="144" stroke="#10b981" stroke-width="2.5" marker-end="url(#a8bg)"/>
+        <text x="194" y="140" text-anchor="middle" fill="#10b981" font-size="12" font-family="Inter,sans-serif" font-weight="700">git push</text>
+        <text x="194" y="153" text-anchor="middle" fill="#10b981" font-size="10" font-family="Inter,sans-serif">(ArgoCD repo)</text>
+        <text x="194" y="165" text-anchor="middle" fill="#f59e0b" font-size="10" font-family="Inter,sans-serif">+ oc apply configmap</text>
+        <rect x="260" y="112" width="180" height="68" rx="8" fill="rgba(16,185,129,0.1)" stroke="#10b981" stroke-width="2"/>
+        <text x="350" y="140" text-anchor="middle" fill="#34d399" font-size="13" font-family="Inter,sans-serif" font-weight="700">ArgoCD</text>
+        <text x="350" y="158" text-anchor="middle" fill="#34d399" font-size="11" font-family="Inter,sans-serif">detects &amp; syncs</text>
+        <text x="350" y="172" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">declarative, auditable</text>
+        <!-- ArgoCD → Preprod/Prod -->
+        <line x1="440" y1="146" x2="530" y2="146" stroke="#10b981" stroke-width="2" marker-end="url(#a8bg)"/>
+        <rect x="530" y="112" width="160" height="68" rx="8" fill="rgba(16,185,129,0.1)" stroke="#10b981" stroke-width="2"/>
+        <text x="610" y="140" text-anchor="middle" fill="#34d399" font-size="13" font-family="Inter,sans-serif" font-weight="700">Preprod / Prod</text>
+        <text x="610" y="158" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">GitOps model</text>
+
+        <!-- Warning box -->
+        <rect x="530" y="22" width="360" height="68" rx="8" fill="rgba(239,68,68,0.07)" stroke="rgba(239,68,68,0.4)" stroke-dasharray="6,3" stroke-width="2"/>
+        <text x="710" y="50" text-anchor="middle" fill="#ef4444" font-size="14" font-family="Inter,sans-serif" font-weight="700">Two different deployment models</text>
+      </svg>
+    </div>
+    <div class="two-col" style="gap:28px; margin-top:4px;">
+      <div class="card card-red" style="padding:14px 18px;">
+        <p style="font-size:0.88em;"><strong>Staging path (imperative):</strong><br>
+        <code>oc apply -f ACE_Deployment.yaml</code><br>
+        <code>oc create configmap $MODULE-pp-props-cm --from-file=workspace/properties/ -o yaml --dry-run=client | oc apply --server-side=true --force-conflicts -f -</code><br>
+        CI runner holds cluster credentials. No GitOps trail. State can drift undetected.</p>
+      </div>
+      <div class="card card-yellow" style="padding:14px 18px;">
+        <p style="font-size:0.93em;"><strong>Consequence:</strong> Staging uses a fundamentally different deployment mechanism than preprod and prod </p>
+        <p style="font-size:0.85em; margin-top:8px; color:#94a3b8;"><strong>Preprod also uses oc apply for configmap:</strong><br>
+        <code>oc create configmap $MODULE-pp-props-cm --from-file=workspace/properties/ -o yaml --dry-run=client | oc apply --server-side=true --force-conflicts -f -</code></p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s8a" class="nav-btn">← Prev</a><a href="#s8c" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 8c: Challenge 7 , ACE_Deployment.yaml Duplication
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s8c">
+  <div class="slide-content">
+    <h2>Challenge 7: ACE_Deployment.yaml , 300+ Copies in ArgoCD Repo</h2>
+    <div class="two-col" style="margin-top:10px; gap:32px;">
+      <div>
+        <div class="label label-problem">Problem</div>
+        <p style="font-size:0.97em; margin-bottom:10px;">The ArgoCD deployments repo contains a <strong>full ACE_Deployment.yaml per service</strong> , 300+ files that are <strong>90% identical</strong>. <br> Service repos hold a <em>custom</em> ACE_Deployment.yaml only when overrides are needed (e.g. extra replicas, HPA).</p>
+
+      </div>
+      <div>
+        <div class="svg-wrap" style="flex:none; margin-top:16px;">
+          <svg viewBox="0 0 400 230" xmlns="http://www.w3.org/2000/svg" style="max-height:220px;">
+            <defs>
+              <marker id="a8cq" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#ef4444"/>
+              </marker>
+            </defs>
+            <!-- CI pipeline -->
+            <rect x="8" y="80" width="110" height="52" rx="7" fill="rgba(30,58,95,0.6)" stroke="#3b82f6" stroke-width="2"/>
+            <text x="63" y="102" text-anchor="middle" fill="white" font-size="12" font-family="Inter,sans-serif" font-weight="600">CI pipeline</text>
+            <text x="63" y="120" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">sed + cp</text>
+            <!-- ArgoCD repo box -->
+            <rect x="160" y="10" width="225" height="210" rx="8" fill="rgba(239,68,68,0.05)" stroke="rgba(239,68,68,0.4)" stroke-width="2"/>
+            <text x="272" y="30" text-anchor="middle" fill="#ef4444" font-size="12" font-family="Inter,sans-serif" font-weight="700">ArgoCD deployments repo</text>
+            <!-- Fan-out arrows -->
+            <line x1="118" y1="90" x2="160" y2="52" stroke="#ef4444" stroke-width="1.5" marker-end="url(#a8cq)"/>
+            <line x1="118" y1="100" x2="160" y2="100" stroke="#ef4444" stroke-width="1.5" marker-end="url(#a8cq)"/>
+            <line x1="118" y1="118" x2="160" y2="148" stroke="#ef4444" stroke-width="1.5" marker-end="url(#a8cq)"/>
+            <line x1="118" y1="122" x2="160" y2="196" stroke="#ef4444" stroke-width="1.5" marker-end="url(#a8cq)"/>
+            <!-- Service folders in ArgoCD repo -->
+            <rect x="170" y="38" width="200" height="30" rx="5" fill="#2d3748" stroke="rgba(239,68,68,0.3)"/>
+            <text x="270" y="57" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">estv-calcavailablevisas/ (full YAML)</text>
+            <rect x="170" y="82" width="200" height="30" rx="5" fill="#2d3748" stroke="rgba(239,68,68,0.3)"/>
+            <text x="270" y="101" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">estv-establishinggets/ (full YAML)</text>
+            <rect x="170" y="130" width="200" height="30" rx="5" fill="#2d3748" stroke="rgba(239,68,68,0.3)"/>
+            <text x="270" y="149" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">cm-service-B/ (full YAML)</text>
+            <rect x="170" y="178" width="200" height="30" rx="5" fill="rgba(239,68,68,0.07)" stroke="rgba(239,68,68,0.3)" stroke-dasharray="4,2"/>
+            <text x="270" y="197" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">... 300+ services</text>
+          </svg>
+        </div>
+        <div class="label label-impact">Impact</div>
+        <ul style="font-size:0.9em; margin-top:6px;">
+          <li>Template change (resources, probes, annotations) = update <strong style="color:var(--accent-red);">300+ YAML files</strong> in ArgoCD repo</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s8b" class="nav-btn">← Prev</a><a href="#s8d" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 8d: Challenge 7 , ConfigMap Duplication
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s8d">
+  <div class="slide-content" style="padding-bottom:52px;">
+    <h2>Challenge 8: ConfigMap Properties Duplicated Across Every Service</h2>
+    <div class="svg-wrap" style="flex:none; margin: 12px 0 8px;">
+      <svg viewBox="0 0 880 185" xmlns="http://www.w3.org/2000/svg" style="max-height:185px;">
+        <defs>
+          <marker id="a8da" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+          </marker>
+          <marker id="a8db" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
+          </marker>
+        </defs>
+
+        <!-- "Same content for all services" label -->
+        <text x="82" y="16" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif" font-style="italic">same content for all services</text>
+
+        <!-- common-lib/properties source -->
+        <rect x="5" y="24" width="154" height="48" rx="6" fill="rgba(180,83,9,0.15)" stroke="#b45309" stroke-width="2"/>
+        <text x="82" y="46" text-anchor="middle" fill="#f97316" font-size="12" font-family="Inter,sans-serif" font-weight="700">common-lib/properties/</text>
+        <text x="82" y="62" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">shared across ALL services</text>
+
+        <!-- shared-lib/properties source -->
+        <rect x="5" y="90" width="154" height="48" rx="6" fill="rgba(6,182,212,0.1)" stroke="#0891b2" stroke-width="2"/>
+        <text x="82" y="112" text-anchor="middle" fill="#06b6d4" font-size="12" font-family="Inter,sans-serif" font-weight="700">shared-lib/properties/</text>
+        <text x="82" y="128" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">shared across module services</text>
+
+        <!-- Arrows to CI box -->
+        <line x1="159" y1="48" x2="218" y2="78" stroke="#64748b" stroke-width="1.5" marker-end="url(#a8da)"/>
+        <line x1="159" y1="114" x2="218" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#a8da)"/>
+
+        <!-- CI pipeline per-service box -->
+        <rect x="218" y="60" width="118" height="68" rx="6" fill="rgba(30,58,95,0.7)" stroke="#3b82f6" stroke-width="2"/>
+        <text x="277" y="85" text-anchor="middle" fill="white" font-size="12" font-family="Inter,sans-serif" font-weight="700">CI pipeline</text>
+        <text x="277" y="101" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">copies both</text>
+        <text x="277" y="117" text-anchor="middle" fill="#ef4444" font-size="11" font-family="Inter,sans-serif" font-weight="600">per service</text>
+
+        <!-- Fan-out arrows CI → CMs -->
+        <line x1="336" y1="80" x2="376" y2="22" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#a8db)"/>
+        <line x1="336" y1="88" x2="376" y2="54" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#a8db)"/>
+        <line x1="336" y1="94" x2="376" y2="86" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#a8db)"/>
+        <line x1="336" y1="100" x2="376" y2="118" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#a8db)"/>
+        <line x1="336" y1="106" x2="376" y2="150" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#a8db)"/>
+
+        <!-- Service ConfigMap boxes (identical) -->
+        <rect x="376" y="8"   width="188" height="27" rx="5" fill="#1e2a3a" stroke="rgba(245,158,11,0.5)" stroke-width="1.5"/>
+        <text x="470" y="26" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">svc-1-configmap  ≡ identical</text>
+        <rect x="376" y="41"  width="188" height="27" rx="5" fill="#1e2a3a" stroke="rgba(245,158,11,0.5)" stroke-width="1.5"/>
+        <text x="470" y="59" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">svc-2-configmap  ≡ identical</text>
+        <rect x="376" y="74"  width="188" height="27" rx="5" fill="#1e2a3a" stroke="rgba(245,158,11,0.5)" stroke-width="1.5"/>
+        <text x="470" y="92" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">svc-3-configmap  ≡ identical</text>
+        <rect x="376" y="107" width="188" height="27" rx="5" fill="#1e2a3a" stroke="rgba(245,158,11,0.5)" stroke-width="1.5"/>
+        <text x="470" y="125" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">svc-4-configmap  ≡ identical</text>
+        <rect x="376" y="140" width="188" height="27" rx="5" fill="rgba(245,158,11,0.05)" stroke="rgba(245,158,11,0.3)" stroke-dasharray="5,3" stroke-width="1.5"/>
+        <text x="470" y="158" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">...</text>
+
+        <!-- "Could be instead" section -->
+        <rect x="588" y="4" width="286" height="177" rx="8" fill="rgba(16,185,129,0.04)" stroke="rgba(16,185,129,0.4)" stroke-dasharray="7,3" stroke-width="1.5"/>
+        <text x="731" y="26" text-anchor="middle" fill="#10b981" font-size="12" font-family="Inter,sans-serif" font-weight="700">Could be instead</text>
+
+        <rect x="600" y="36" width="262" height="52" rx="6" fill="rgba(180,83,9,0.12)" stroke="#b45309" stroke-width="1.5"/>
+        <text x="731" y="58" text-anchor="middle" fill="#f97316" font-size="12" font-family="Inter,sans-serif" font-weight="600">1× common-configmap</text>
+        <text x="731" y="76" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">shared by all services, all modules</text>
+
+        <rect x="600" y="100" width="262" height="52" rx="6" fill="rgba(6,182,212,0.1)" stroke="#0891b2" stroke-width="1.5"/>
+        <text x="731" y="122" text-anchor="middle" fill="#06b6d4" font-size="12" font-family="Inter,sans-serif" font-weight="600">1× shared-configmap per module</text>
+        <text x="731" y="140" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">shared by all services in that module</text>
+
+      </svg>
+    </div>
+    <div class="two-col" style="gap:28px; margin-top:4px;">
+      <div class="card card-red" style="padding:14px 18px;">
+        <p style="font-size:0.9em;"><strong>Today:</strong> CI pipeline merges <code>common-lib/properties/</code> + <code>shared-lib/properties/</code> into a dedicated ConfigMap for <em>each service</em> — even though all services in the same module share identical properties.</p>
+      </div>
+      <div class="card card-yellow" style="padding:14px 18px;">
+        <p style="font-size:0.9em;"><strong>Impact:</strong> hundreds of identical ConfigMaps files in the deployment repo.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s8c" class="nav-btn">← Prev</a><a href="#s9" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 9: Root Cause Summary
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s9">
+  <div class="slide-content">
+    <h2>Challenges , Root Cause</h2>
+    <table style="max-width:940px; margin-top:4px; font-size:0.92em;">
+      <tr><th>#</th><th>Challenge</th><th>Root Cause</th></tr>
+      <tr><td>1</td><td>Branch drift , library coupling</td><td><code>-b $CI_COMMIT_BRANCH</code> on every git clone</td></tr>
+      <tr><td>2</td><td>Env config branch-coupled, baked into image</td><td>branch-specific build.properties + Dockerfile COPY</td></tr>
+      <tr><td>3</td><td>No semantic versioning</td><td>No release process , pipeline ID tags only</td></tr>
+      <tr><td>4</td><td>5,000+ stale deployment branches</td><td>Cleanup code commented out since day one</td></tr>
+      <tr><td>5</td><td>CI job duplication (echo stub + real job)</td><td>Local stub never removed when template adopted</td></tr>
+      <tr><td>6</td><td>Staging uses imperative deploy, prod uses ArgoCD</td><td>No unified deployment model across environments</td></tr>
+      <tr><td>7</td><td>300+ full ACE_Deployment.yaml in ArgoCD repo</td><td>No Kustomize base; full YAML copied per service</td></tr>
+      <tr><td>8</td><td>Identical ConfigMaps per module</td><td>CI copies lib properties per service, not per module</td></tr>
+    </table>
+    <div style="text-align:center; margin-top:28px;">
+      <div class="highlight-box">
+        <p>ROOT CAUSE: BRANCH = ENVIRONMENT</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s8d" class="nav-btn">← Prev</a><a href="#s10" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 10: Section Divider
+═══════════════════════════════════════════════════ -->
+<div class="slide center section-slide" id="s10">
+  <div class="slide-content" style="justify-content:center; align-items:center;">
+    <p class="section-num">03</p>
+    <p class="section-title">Proposed Solution</p>
+    <p class="section-sub">Branching · Versioning · Config · Promotion · GitOps · Governance</p>
+  </div>
+  <div class="slide-nav"><a href="#s9" class="nav-btn">← Prev</a><a href="#s11" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 11: Solution Overview
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s11">
+  <div class="slide-content">
+    <h2>Proposed Solution Overview</h2>
+    <table style="max-width:940px; font-size:0.95em; margin-top:6px;">
+      <tr><th style="width:30px;">#</th><th>From (Current)</th><th style="width:44px; text-align:center;"></th><th>To (Proposed)</th></tr>
+      <tr><td>1</td><td>Branch = Environment (<code>-b $CI_COMMIT_BRANCH</code>)</td><td style="text-align:center; color:var(--text-muted); font-size:1.3em;">→</td><td><strong>main + release branches; libs pinned by semver tag</strong></td></tr>
+      <tr><td>2</td><td>Config baked into image per branch</td><td style="text-align:center; color:var(--text-muted); font-size:1.3em;">→</td><td><strong>Config in deployment repo per env, decoupled from image</strong></td></tr>
+      <tr><td>3</td><td>Pipeline ID tag , no versioning</td><td style="text-align:center; color:var(--text-muted); font-size:1.3em;">→</td><td><strong>Semantic tags v1.2.0 , rollback = <code>git checkout v1.1.0</code></strong></td></tr>
+      <tr><td>4+5</td><td>5K stale branches; duplicate CI stubs</td><td style="text-align:center; color:var(--text-muted); font-size:1.3em;">→</td><td><strong>Auto-cleanup branches; remove echo stubs</strong></td></tr>
+      <tr><td>6</td><td>Staging: imperative <code>oc apply</code>; prod: ArgoCD</td><td style="text-align:center; color:var(--text-muted); font-size:1.3em;">→</td><td><strong>Unified ArgoCD GitOps for ALL environments</strong></td></tr>
+      <tr><td>7</td><td>300+ full ACE_Deployment.yaml in ArgoCD repo</td><td style="text-align:center; color:var(--text-muted); font-size:1.3em;">→</td><td><strong>Template base in <code>common-cicd</code>; service provides patch only</strong></td></tr>
+      <tr><td>8</td><td>identical ConfigMaps per module (per service)</td><td style="text-align:center; color:var(--text-muted); font-size:1.3em;">→</td><td><strong>shared ConfigMap</strong></td></tr>
+    </table>
+  </div>
+  <div class="slide-nav"><a href="#s10" class="nav-btn">← Prev</a><a href="#s12" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 12: Proposed Branching , git flow SVG
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s12">
+  <div class="slide-content" style="padding-bottom:58px;">
+    <h2>Proposed Branching Strategy</h2>
+    <div class="svg-wrap">
+      <svg viewBox="0 0 900 230" xmlns="http://www.w3.org/2000/svg" style="max-height:215px;">
+        <defs>
+          <marker id="am" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+            <polygon points="0 0, 9 3.5, 0 7" fill="#64748b"/>
+          </marker>
+          <marker id="amg" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+            <polygon points="0 0, 9 3.5, 0 7" fill="#10b981"/>
+          </marker>
+          <marker id="amp" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+            <polygon points="0 0, 9 3.5, 0 7" fill="#8b5cf6"/>
+          </marker>
+        </defs>
+        <!-- MAIN branch line -->
+        <line x1="30" y1="115" x2="870" y2="115" stroke="#3b82f6" stroke-width="3" marker-end="url(#am)"/>
+        <text x="6" y="119" fill="#3b82f6" font-size="12" font-family="Inter,sans-serif" font-weight="700">main</text>
+
+        <!-- Main commits -->
+        <circle cx="55" cy="115" r="9" fill="#3b82f6" stroke="#0a0e17" stroke-width="2.5"/>
+        <circle cx="180" cy="115" r="9" fill="#3b82f6" stroke="#0a0e17" stroke-width="2.5"/>
+        <circle cx="390" cy="115" r="9" fill="#3b82f6" stroke="#0a0e17" stroke-width="2.5"/>
+        <circle cx="560" cy="115" r="9" fill="#3b82f6" stroke="#0a0e17" stroke-width="2.5"/>
+        <circle cx="740" cy="115" r="9" fill="#3b82f6" stroke="#0a0e17" stroke-width="2.5"/>
+        <circle cx="840" cy="115" r="9" fill="#3b82f6" stroke="#0a0e17" stroke-width="2.5"/>
+
+        <!-- FEATURE branch A: splits at 180, rejoins at 390 -->
+        <path d="M180,115 C195,55 240,42 285,42 S365,55 390,115" stroke="#10b981" stroke-width="2.5" fill="none"/>
+        <circle cx="255" cy="42" r="8" fill="#10b981" stroke="#0a0e17" stroke-width="2"/>
+        <circle cx="320" cy="42" r="8" fill="#10b981" stroke="#0a0e17" stroke-width="2"/>
+        <text x="287" y="24" text-anchor="middle" fill="#10b981" font-size="11" font-family="Inter,sans-serif" font-weight="600">feature/A</text>
+
+        <!-- FEATURE branch B: splits at 560, rejoins at 740 -->
+        <path d="M560,115 C575,55 615,42 650,42 S715,55 740,115" stroke="#10b981" stroke-width="2.5" fill="none"/>
+        <circle cx="618" cy="42" r="8" fill="#10b981" stroke="#0a0e17" stroke-width="2"/>
+        <circle cx="678" cy="42" r="8" fill="#10b981" stroke="#0a0e17" stroke-width="2"/>
+        <text x="648" y="24" text-anchor="middle" fill="#10b981" font-size="11" font-family="Inter,sans-serif" font-weight="600">feature/B</text>
+
+        <!-- RELEASE/1.0: splits at 390, goes below -->
+        <path d="M390,115 C405,170 440,185 480,185 L540,185" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
+        <circle cx="465" cy="185" r="8" fill="#f59e0b" stroke="#0a0e17" stroke-width="2"/>
+        <circle cx="510" cy="185" r="8" fill="#f59e0b" stroke="#0a0e17" stroke-width="2"/>
+        <text x="390" y="210" fill="#f59e0b" font-size="11" font-family="Inter,sans-serif">release/1.0</text>
+        <!-- Tag v1.0.0 -->
+        <rect x="538" y="173" width="66" height="24" rx="5" fill="#8b5cf6"/>
+        <text x="571" y="189" text-anchor="middle" fill="white" font-size="12" font-family="Inter,sans-serif" font-weight="700">v1.0.0</text>
+        <!-- Merge-back dashed arrow -->
+        <path d="M560,172 Q570,140 560,115" stroke="#8b5cf6" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#amp)"/>
+        <text x="600" y="148" fill="#8b5cf6" font-size="10" font-family="Inter,sans-serif" font-style="italic">merge-back</text>
+
+        <!-- RELEASE/2.0: splits at 740, in-progress -->
+        <path d="M740,115 C755,170 790,185 820,185" stroke="#f59e0b" stroke-width="2.5" fill="none" stroke-dasharray="6,3"/>
+        <circle cx="810" cy="185" r="8" fill="rgba(245,158,11,0.4)" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,2"/>
+        <text x="780" y="210" fill="#f59e0b" font-size="11" font-family="Inter,sans-serif">release/2.0</text>
+        <text x="826" y="185" fill="#64748b" font-size="10" font-family="Inter,sans-serif">  next</text>
+      </svg>
+    </div>
+    <ul style="font-size:0.97em; margin-top:14px; display:flex; flex-direction:column; gap:8px; list-style:none; padding:0;">
+      <li style="display:flex; align-items:center; gap:10px;"><span style="color:#10b981; font-size:1.1em;">→</span> <span><strong>Feature branches</strong> merged into <code>main</code></span></li>
+      <li style="display:flex; align-items:center; gap:10px;"><span style="color:#f59e0b; font-size:1.1em;">→</span> <span><strong>Owner cuts release branch</strong> from <code>main</code></span></li>
+      <li style="display:flex; align-items:center; gap:10px;"><span style="color:#8b5cf6; font-size:1.1em;">→</span> <span><strong>Tag</strong> after Preprod approval</span></li>
+      <li style="display:flex; align-items:center; gap:10px;"><span style="color:#64748b; font-size:1.1em;">→</span> <span><strong>Merge-back</strong> to <code>main</code> <em>(if required)</em></span></li>
+    </ul>
+  </div>
+  <div class="slide-nav"><a href="#s11" class="nav-btn">← Prev</a><a href="#s13" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 13: Release Flow , pipeline SVG
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s13">
+  <div class="slide-content" style="padding-bottom:58px;">
+    <h2>Release Management Flow</h2>
+    <div class="svg-wrap" style="flex:none; margin: 18px 0 12px;">
+      <svg viewBox="0 0 900 110" xmlns="http://www.w3.org/2000/svg" style="max-height:165px;">
+        <defs>
+          <marker id="ap" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+            <polygon points="0 0, 9 3.5, 0 7" fill="#64748b"/>
+          </marker>
+        </defs>
+        <!-- feature/* -->
+        <rect x="8" y="30" width="110" height="50" rx="8" fill="rgba(16,185,129,0.1)" stroke="#10b981" stroke-width="1.5"/>
+        <text x="63" y="57" text-anchor="middle" fill="#10b981" font-size="13" font-family="Inter,sans-serif" font-weight="600">feature/*</text>
+        <text x="63" y="72" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">dev branch</text>
+        <!-- → main -->
+        <line x1="118" y1="55" x2="158" y2="55" stroke="#64748b" stroke-width="2" marker-end="url(#ap)"/>
+        <text x="138" y="48" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">MR</text>
+        <!-- main -->
+        <rect x="158" y="30" width="100" height="50" rx="8" fill="rgba(59,130,246,0.1)" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="208" y="57" text-anchor="middle" fill="#3b82f6" font-size="13" font-family="Inter,sans-serif" font-weight="600">main</text>
+        <text x="208" y="72" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">single truth</text>
+        <!-- → release -->
+        <line x1="258" y1="55" x2="298" y2="55" stroke="#64748b" stroke-width="2" marker-end="url(#ap)"/>
+        <text x="278" y="48" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">cut</text>
+        <!-- release/1.2 -->
+        <rect x="298" y="25" width="120" height="60" rx="8" fill="rgba(245,158,11,0.1)" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="358" y="52" text-anchor="middle" fill="#f59e0b" font-size="13" font-family="Inter,sans-serif" font-weight="600">release/</text>
+        <text x="358" y="68" text-anchor="middle" fill="#f59e0b" font-size="13" font-family="Inter,sans-serif" font-weight="600">1.2.0</text>
+        <!-- → staging -->
+        <line x1="418" y1="55" x2="458" y2="55" stroke="#64748b" stroke-width="2" marker-end="url(#ap)"/>
+        <text x="438" y="48" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">auto</text>
+        <!-- staging -->
+        <rect x="458" y="30" width="100" height="50" rx="8" fill="rgba(59,130,246,0.15)" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="508" y="57" text-anchor="middle" fill="#4fc3f7" font-size="13" font-family="Inter,sans-serif" font-weight="600">staging</text>
+        <text x="508" y="72" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">QA + PO test</text>
+        <!-- → preprod -->
+        <line x1="558" y1="55" x2="598" y2="55" stroke="#64748b" stroke-width="2" marker-end="url(#ap)"/>
+        <text x="578" y="48" text-anchor="middle" fill="#10b981" font-size="10" font-family="Inter,sans-serif" font-weight="600">QA ✓</text>
+        <!-- preprod -->
+        <rect x="598" y="30" width="100" height="50" rx="8" fill="rgba(245,158,11,0.15)" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="648" y="57" text-anchor="middle" fill="#fbbf24" font-size="13" font-family="Inter,sans-serif" font-weight="600">preprod</text>
+        <text x="648" y="72" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">QA test</text>
+        <!-- → tag → prod -->
+        <line x1="698" y1="55" x2="738" y2="55" stroke="#64748b" stroke-width="2" marker-end="url(#ap)"/>
+        <text x="718" y="43" text-anchor="middle" fill="#8b5cf6" font-size="10" font-family="Inter,sans-serif" font-weight="700">TAG</text>
+        <text x="718" y="55" text-anchor="middle" fill="#8b5cf6" font-size="10" font-family="Inter,sans-serif">v1.2.0</text>
+        <text x="718" y="67" text-anchor="middle" fill="#64748b" font-size="9" font-family="Inter,sans-serif">+approve</text>
+        <!-- prod -->
+        <rect x="738" y="30" width="100" height="50" rx="8" fill="rgba(16,185,129,0.15)" stroke="#10b981" stroke-width="1.5"/>
+        <text x="788" y="57" text-anchor="middle" fill="#34d399" font-size="13" font-family="Inter,sans-serif" font-weight="600">prod</text>
+        <text x="788" y="72" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">QA+PO</text>
+        <!-- merge-back label -->
+        <path d="M838,80 Q840,100 208,100 Q175,100 175,80" stroke="#8b5cf6" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#ap)"/>
+        <text x="510" y="110" text-anchor="middle" fill="#8b5cf6" font-size="10" font-family="Inter,sans-serif" font-style="italic">merge-back to main after go-live</text>
+      </svg>
+    </div>
+    <div style="display:flex; gap:20px; margin-top:8px;">
+      <div class="card card-green" style="flex:1; padding:14px 18px;">
+        <p style="font-size:0.92em;">Devs <strong>continue shipping features into main</strong></p>
+      </div>
+      <div class="card card-yellow" style="flex:1; padding:14px 18px;">
+        <p style="font-size:0.92em;"><strong>Release what is approved/confirmed with business</strong> into the release branch</p>
+      </div>
+      <div class="card card-red" style="flex:1; padding:14px 18px;">
+        <p style="font-size:0.92em;"><strong>Fixes go into the release branch</strong> — rebuild and test again before promoting</p>
+      </div>
+      <div class="card card-purple" style="flex:1; padding:14px 18px;">
+        <p style="font-size:0.92em;"><strong>Tag = Live Production</strong></p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s12" class="nav-btn">← Prev</a><a href="#s14" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 14: Versioning & Tagging
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s14">
+  <div class="slide-content">
+    <h2>Semantic Versioning &amp; Tagging , Libraries</h2>
+    <div class="two-col" style="margin-top:6px;">
+      <div>
+        <h3>From , Cloning Libraries by Branch</h3>
+        <div class="code-block" style="font-size:0.9em; line-height:1.9;">
+<span class="cm"># prepare-workspace.yml — today</span> <br>
+git clone ... common-lib.git <span class="hl">-b $CI_COMMIT_BRANCH</span> <br>
+git clone ... shared-lib.git <span class="hl">-b $CI_COMMIT_BRANCH</span> <br>
+
+<span class="cm">→ staging build uses  staging branch</span> <br>
+<span class="cm">→ preprod build uses  preprod branch</span> <br>
+<span class="cm">→ prod build uses     main branch</span> <br>
+<span class="cm">→ 3 envs, 3 different library realities</span></div>
+        <div class="card card-red" style="margin-top:10px;">
+          <p style="font-size:0.9em;">The same release is built with different library code depending on the environment</p>
+        </div>
+      </div>
+      <div>
+        <h3>To , Using Versioned Libraries</h3>
+        <div class="code-block" style="font-size:0.9em; line-height:1.9;">
+<span class="cm"># build.properties — pinned per release</span> <br>
+common-lib-version=<span style="color:#06b6d4;">v2.1.0</span> <br>
+shared-lib-version=<span style="color:#06b6d4;">v1.5.0</span> <br>
+
+<span class="cm"># prepare-workspace.yml — proposed</span> <br>
+git clone ... common-lib.git <span style="color:#10b981; font-weight:600;">-b $(common-lib-version)</span> <br>
+git clone ... shared-lib.git <span style="color:#10b981; font-weight:600;">-b $(shared-lib-version)</span>
+<br>
+<span class="cm">→ staging, preprod &amp; prod use exact same versions</span></div>
+        <div class="card card-green" style="margin-top:10px;">
+          <p style="font-size:0.9em;">Library versions are an explicit, reviewable decision in every MR</p>
+        </div>
+      </div>
+    </div>
+    <div class="card card-blue" style="margin-top:16px;">
+      <p style="font-size:1em;"><strong>Result:</strong> For each release, the same library versions (<code>common-lib=v2.1.0</code>, <code>shared-lib=v1.5.0</code>) are used consistently across all environments — staging, preprod and prod build from identical library code.</p>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s13" class="nav-btn">← Prev</a><a href="#s15" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 15: De-couple Config
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s15">
+  <div class="slide-content" style="padding-bottom:52px;">
+    <h2>De-couple Configuration from Code</h2>
+    <p style="font-size:0.93em; color:var(--accent-cyan); margin: 4px 0 10px; font-weight:600;">One BAR file for all environments — service-specific overrides via ACE Configuration CRD</p>
+    <div class="two-col" style="margin-top:4px; gap:32px;">
+      <div>
+        <h3>From , Per-service build.properties</h3>
+        <div class="code-block" style="font-size:0.88em; line-height:1.9;">
+<span class="cm"># build.properties — baked into image per branch</span>
+additional=<span class="hl">com.qiwa.esb.calculateavailablevisas</span><span class="hl">.GW_Rest_CalculateAvailableVisasFlow</span>
+  <span class="hl">#additionalInstances=10</span>
+
+<span class="cm"># Rebuild required per environment</span>
+<span class="cm"># Cannot promote the same image</span></div>
+        <div class="card card-red" style="margin-top:10px;">
+          <p style="font-size:0.88em;">additionalInstances is baked into the image — changing it means a full rebuild and re-test cycle</p>
+        </div>
+      </div>
+      <div>
+        <h3>To , ACE Configuration CRD (workdiroverride)</h3>
+        <div class="code-block" style="font-size:0.84em; line-height:1.7; margin-bottom:6px;"><span class="cm"># 1. Configuration CRD — applied per service per env</span>
+apiVersion: appconnect.ibm.com/v1beta1
+kind: <span style="color:#06b6d4;">Configuration</span>
+metadata:
+  name: <span style="color:#06b6d4;">serviceworkdiroverride</span>
+  namespace: ace
+spec:
+  type: <span style="color:#10b981;">workdiroverride</span>
+  data: <span style="color:#f59e0b;">&lt;Base64-encoded overrides&gt;</span>
+  description: <span style="color:#94a3b8;">"Workdir overrides for additionalInstances"</span></div>
+        <div class="code-block" style="font-size:0.84em; line-height:1.7;"><span class="cm"># 2. IntegrationServer references the Configuration</span>
+apiVersion: appconnect.ibm.com/v1beta1
+kind: <span style="color:#06b6d4;">IntegrationServer</span>
+metadata:
+  name: sample-integration-server
+  namespace: ace
+spec:
+  configurations:
+    - <span style="color:#06b6d4;">serviceworkdiroverride</span></div>
+        <div class="card card-green" style="margin-top:10px;">
+          <p style="font-size:0.88em;">Same image promoted through all environments — override applied at runtime</p>
+        </div>
+      </div>
+    </div>
+    <div class="card card-blue" style="margin-top:12px; padding:12px 18px;">
+      <p style="font-size:0.88em;"><strong>Note:</strong> Configuration types include <code>serverconf</code>, <code>policyproject</code>, <code>setdbparms</code>, <code>keystore</code>, <code>truststore</code>, <code>odbc</code>, <code>generic</code>, and <code>agentx</code></p>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s14" class="nav-btn">← Prev</a><a href="#s16" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 16: Promotion Flow , SVG gates
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s16">
+  <div class="slide-content" style="padding-bottom:58px;">
+    <h2>Promotion Gates &amp; Approval Flow</h2>
+    <div class="svg-wrap" style="flex:none; margin: 20px 0 10px;">
+      <svg viewBox="0 0 900 160" xmlns="http://www.w3.org/2000/svg" style="max-height:220px;">
+        <defs>
+          <marker id="ag" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+            <polygon points="0 0, 9 3.5, 0 7" fill="#64748b"/>
+          </marker>
+        </defs>
+        <!-- Release branch box -->
+        <rect x="8" y="40" width="130" height="80" rx="10" fill="rgba(245,158,11,0.08)" stroke="#f59e0b" stroke-width="2"/>
+        <text x="73" y="75" text-anchor="middle" fill="#f59e0b" font-size="14" font-family="Inter,sans-serif" font-weight="700">release/</text>
+        <text x="73" y="93" text-anchor="middle" fill="#f59e0b" font-size="14" font-family="Inter,sans-serif" font-weight="700">1.2.0</text>
+        <text x="73" y="110" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">code change</text>
+        <!-- Arrow 1 -->
+        <line x1="138" y1="80" x2="185" y2="80" stroke="#64748b" stroke-width="2" marker-end="url(#ag)"/>
+        <text x="161" y="73" text-anchor="middle" fill="#3b82f6" font-size="11" font-family="Inter,sans-serif" font-weight="600">auto</text>
+        <!-- STAGING -->
+        <rect x="185" y="30" width="140" height="100" rx="10" fill="rgba(59,130,246,0.1)" stroke="#3b82f6" stroke-width="2"/>
+        <text x="255" y="62" text-anchor="middle" fill="#3b82f6" font-size="15" font-family="Inter,sans-serif" font-weight="700">STAGING</text>
+        <text x="255" y="82" text-anchor="middle" fill="#4fc3f7" font-size="11" font-family="Inter,sans-serif">deploy</text>
+        <text x="255" y="98" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">QA tests</text>
+        <text x="255" y="115" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">(functional)</text>
+        <!-- Gate 1 -->
+        <rect x="325" y="60" width="60" height="40" rx="6" fill="rgba(16,185,129,0.1)" stroke="#10b981" stroke-width="1.5"/>
+        <text x="355" y="79" text-anchor="middle" fill="#10b981" font-size="12" font-family="Inter,sans-serif" font-weight="700">QA ✓</text>
+        <text x="355" y="94" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">approval</text>
+        <line x1="385" y1="80" x2="425" y2="80" stroke="#64748b" stroke-width="2" marker-end="url(#ag)"/>
+        <!-- PREPROD -->
+        <rect x="425" y="30" width="140" height="100" rx="10" fill="rgba(245,158,11,0.1)" stroke="#f59e0b" stroke-width="2"/>
+        <text x="495" y="62" text-anchor="middle" fill="#fbbf24" font-size="15" font-family="Inter,sans-serif" font-weight="700">PREPROD</text>
+        <text x="495" y="82" text-anchor="middle" fill="#fbbf24" font-size="11" font-family="Inter,sans-serif">approval</text>
+        <text x="495" y="98" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">QA</text>
+        <text x="495" y="115" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">(regression)</text>
+        <!-- Gate 2 + TAG -->
+        <rect x="565" y="55" width="60" height="50" rx="6" fill="rgba(139,92,246,0.12)" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="595" y="75" text-anchor="middle" fill="#8b5cf6" font-size="11" font-family="Inter,sans-serif" font-weight="700">v1.2.0</text>
+        <text x="595" y="89" text-anchor="middle" fill="#8b5cf6" font-size="11" font-family="Inter,sans-serif">TAG</text>
+        <text x="595" y="103" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">QA approval</text>
+        <line x1="625" y1="80" x2="665" y2="80" stroke="#64748b" stroke-width="2" marker-end="url(#ag)"/>
+        <!-- PROD -->
+        <rect x="665" y="30" width="140" height="100" rx="10" fill="rgba(16,185,129,0.1)" stroke="#10b981" stroke-width="2"/>
+        <text x="735" y="62" text-anchor="middle" fill="#34d399" font-size="15" font-family="Inter,sans-serif" font-weight="700">PROD</text>
+        <text x="735" y="82" text-anchor="middle" fill="#34d399" font-size="11" font-family="Inter,sans-serif">MR approval</text>
+        <text x="735" y="98" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">QA + PO</text>
+        <text x="735" y="115" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">(sign-off)</text>
+        <!-- NEW COMMIT warning -->
+        <text x="452" y="152" text-anchor="middle" fill="#ef4444" font-size="11" font-family="Inter,sans-serif" font-weight="600">New commit to release → must re-test from staging</text>
+      </svg>
+    </div>
+    <ul style="font-size:1em; margin-top:4px;">
+      <li>CI <strong>auto-creates promotion MR</strong> , humans only approve, not create</li>
+      <li>Adding feature after cut: must be on <strong>main first</strong>, cherry-picks, QA re-tests</li>
+    </ul>
+  </div>
+  <div class="slide-nav"><a href="#s15" class="nav-btn">← Prev</a><a href="#s17" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 17: Bugfix & Hotfix , git flow SVG
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s17">
+  <div class="slide-content" style="padding-bottom:58px;">
+    <h2>Bugfix &amp; Hotfix Flows</h2>
+    <div class="two-col" style="gap:30px; margin-top:8px;">
+      <!-- BUGFIX -->
+      <div>
+        <h3>Bugfix , During Release Testing</h3>
+        <div class="svg-wrap" style="flex:none;">
+          <svg viewBox="0 0 440 145" xmlns="http://www.w3.org/2000/svg" style="max-height:140px;">
+            <defs>
+              <marker id="abf" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+              </marker>
+            </defs>
+            <!-- release branch -->
+            <line x1="55" y1="50" x2="420" y2="50" stroke="#f59e0b" stroke-width="3" marker-end="url(#abf)"/>
+            <text x="8" y="53" fill="#f59e0b" font-size="11" font-family="Inter,sans-serif" font-weight="700">release</text>
+            <circle cx="60" cy="50" r="8" fill="#f59e0b" stroke="#0a0e17" stroke-width="2"/>
+            <circle cx="160" cy="50" r="8" fill="#f59e0b" stroke="#0a0e17" stroke-width="2"/>
+            <circle cx="340" cy="50" r="8" fill="#f59e0b" stroke="#0a0e17" stroke-width="2"/>
+            <circle cx="400" cy="50" r="8" fill="#f59e0b" stroke="#0a0e17" stroke-width="2"/>
+            <!-- bugfix branch splits from 160, merges at 340 -->
+            <path d="M160,50 C172,100 200,112 240,112 L290,112 C320,112 335,90 340,50" stroke="#ef4444" stroke-width="2.5" fill="none"/>
+            <circle cx="220" cy="112" r="7" fill="#ef4444" stroke="#0a0e17" stroke-width="2"/>
+            <circle cx="275" cy="112" r="7" fill="#ef4444" stroke="#0a0e17" stroke-width="2"/>
+            <text x="248" y="133" text-anchor="middle" fill="#ef4444" font-size="11" font-family="Inter,sans-serif">bugfix/JIRA-123</text>
+            <!-- labels -->
+            <text x="340" y="38" text-anchor="middle" fill="#10b981" font-size="11" font-family="Inter,sans-serif">MR merged</text>
+          </svg>
+        </div>
+        <p style="font-size:0.9em; margin-top:4px;">Fix on <strong style="color:#f59e0b;">release branch</strong>, not main.<br>Flows to main via <strong>merge-back</strong> at go-live.</p>
+      </div>
+      <!-- HOTFIX -->
+      <div>
+        <h3>Hotfix , Production Emergency</h3>
+        <div class="svg-wrap" style="flex:none;">
+          <svg viewBox="0 0 440 145" xmlns="http://www.w3.org/2000/svg" style="max-height:140px;">
+            <defs>
+              <marker id="ahf" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+              </marker>
+              <marker id="ahfr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#ef4444"/>
+              </marker>
+            </defs>
+            <!-- main line -->
+            <line x1="55" y1="40" x2="430" y2="40" stroke="#3b82f6" stroke-width="2.5" marker-end="url(#ahf)"/>
+            <text x="6" y="43" fill="#3b82f6" font-size="11" font-family="Inter,sans-serif" font-weight="700">main</text>
+            <circle cx="55" cy="40" r="7" fill="#3b82f6" stroke="#0a0e17" stroke-width="2"/>
+            <!-- v1.1.0 tag on main -->
+            <circle cx="130" cy="40" r="7" fill="#3b82f6" stroke="#0a0e17" stroke-width="2"/>
+            <rect x="110" y="10" width="52" height="20" rx="4" fill="#8b5cf6"/>
+            <text x="136" y="24" text-anchor="middle" fill="white" font-size="11" font-family="Inter,sans-serif" font-weight="700">v1.1.0</text>
+            <!-- hotfix branch from tag -->
+            <path d="M130,40 C140,90 170,105 210,105 L260,105 C290,105 300,80 310,40" stroke="#ef4444" stroke-width="2.5" fill="none"/>
+            <circle cx="205" cy="105" r="7" fill="#ef4444" stroke="#0a0e17" stroke-width="2"/>
+            <circle cx="258" cy="105" r="7" fill="#ef4444" stroke="#0a0e17" stroke-width="2"/>
+            <text x="215" y="125" text-anchor="middle" fill="#ef4444" font-size="11" font-family="Inter,sans-serif">hotfix/</text>
+            <!-- v1.1.1 tag -->
+            <circle cx="310" cy="40" r="7" fill="#3b82f6" stroke="#0a0e17" stroke-width="2"/>
+            <rect x="290" y="10" width="52" height="20" rx="4" fill="#8b5cf6"/>
+            <text x="316" y="24" text-anchor="middle" fill="white" font-size="11" font-family="Inter,sans-serif" font-weight="700">v1.1.1</text>
+            <!-- must also merge to release arrow -->
+            <line x1="258" y1="105" x2="380" y2="105" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ahfr)"/>
+            <rect x="350" y="90" width="75" height="30" rx="5" fill="rgba(239,68,68,0.1)" stroke="rgba(239,68,68,0.4)"/>
+            <text x="388" y="108" text-anchor="middle" fill="#ef4444" font-size="10" font-family="Inter,sans-serif">→ release too!</text>
+          </svg>
+        </div>
+        <p style="font-size:0.9em; margin-top:4px;">Hotfix from <strong style="color:#8b5cf6;">prod tag</strong>. New patch tag created.<br><strong style="color:#ef4444;">MUST</strong> merge to main + active release branch.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s16" class="nav-btn">← Prev</a><a href="#s18" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 18: Backport Rules
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s18">
+  <div class="slide-content">
+    <h2>Backport Rules</h2>
+    <table style="margin-top:6px;">
+      <tr><th>Bug Found In</th><th>Fix Where First</th><th>Then Backport To</th></tr>
+      <tr>
+        <td>Staging / Preprod (during release)</td>
+        <td><strong style="color:#f59e0b;">release branch</strong></td>
+        <td>main <span style="color:var(--text-muted);">(via merge-back at go-live)</span></td>
+      </tr>
+      <tr>
+        <td>Main (also affects active release)</td>
+        <td><strong style="color:#3b82f6;">main</strong></td>
+        <td>release branch <span style="color:var(--text-muted);">(cherry-pick)</span></td>
+      </tr>
+      <tr>
+        <td>Production</td>
+        <td><strong style="color:#ef4444;">hotfix from prod tag</strong></td>
+        <td>main + active release <span style="color:var(--text-muted);">(both, enforced)</span></td>
+      </tr>
+    </table>
+  </div>
+  <div class="slide-nav"><a href="#s17" class="nav-btn">← Prev</a><a href="#s19" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 19: GitOps Structure
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s19">
+  <div class="slide-content" style="padding-bottom:52px;">
+    <h2>GitOps &amp; ArgoCD Structure</h2>
+    <div class="two-col" style="margin-top:6px; gap:32px;">
+      <div>
+        <h3>Current</h3>
+        <div class="code-block" style="font-size:0.85em; line-height:1.8;">
+deployments/
+├── <span class="hl">pipeline-prd-12345</span>/  ← stale
+├── <span class="hl">pipeline-prd-12346</span>/  ← stale
+├── <span class="hl">pipeline-prd-12347</span>/  ← stale
+<span class="hl">5,000+ stale branches</span>
+
+<span class="cm"># Every service has a full copy</span>
+service-a/<span class="hl">ACE_Deployment.yaml</span>  <span class="cm">← 300+ files, 90% identical</span>
+
+<span class="cm"># ArgoCD apps created manually, one by one</span>
+<span class="cm"># New service = manual ArgoCD app creation</span></div>
+        <ul style="font-size:0.88em; margin-top:8px; display:flex; flex-direction:column; gap:4px;">
+          <li>Full YAML duplicated per service — no shared template</li>
+          <li>CI deploy via cli (<code>oc apply</code>)</li>
+          <li>Adding a service requires manual ArgoCD wiring</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Proposed , ApplicationSet or AppofApps</h3>
+        <div class="code-block" style="font-size:0.85em; line-height:1.8;">
+deployments/
+├── <span style="color:#8b5cf6;">ApplicationSet.yaml</span>  <span class="cm">← auto-creates all ArgoCD apps</span>
+└── services/
+    └── company-mgmt/
+        └── service-a/
+            ├── <span style="color:#3b82f6;">staging</span>/   <span class="cm">image: v1.3.0</span>
+            ├── <span style="color:#f59e0b;">preprod</span>/  <span class="cm">image: v1.2.0</span>
+            └── <span style="color:#10b981;">prod</span>/     <span class="cm">image: v1.2.0</span>
+
+<span class="cm"># Versioned template in common-cicd (Helm/Kustomize TBD)</span>
+common-cicd/ace-template:<span style="color:#10b981;">v1.0.0</span>  <span class="cm">← IntegrationServer base</span></div>
+        <ul style="font-size:0.88em; margin-top:8px; display:flex; flex-direction:column; gap:4px;">
+          <li><strong>New service</strong> = ApplicationSet auto-creates ArgoCD app</li>
+          <li><strong>Promotion</strong> = MR to update image tag</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card card-blue" style="margin-top:12px; padding:12px 18px;">
+      <p style="font-size:0.88em;"><strong>Key decision in progress:</strong> Versioned template tool — <strong>Helm</strong> (values-based, wider ecosystem) vs <strong>Kustomize</strong> (pure YAML patches, no templating layer, native to ACE CRDs). Either solves the 300+ duplication problem. <em>ApplicationSet approach works with both.</em></p>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s18" class="nav-btn">← Prev</a><a href="#s19b" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 19b: Solution , Consolidation & Standardisation
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s19b">
+  <div class="slide-content" style="padding-bottom:48px;">
+    <h2>Solution: Consolidation &amp; Standardisation</h2>
+    <div style="display:flex; gap:20px; margin-top:10px; flex:1;">
+
+      <!-- Unified GitOps + ApplicationSet -->
+      <div style="flex:1;">
+        <div class="card card-blue" style="height:100%;">
+          <p class="phase-title" style="color:var(--accent-blue);">Unified GitOps , ApplicationSet</p>
+          <div class="code-block" style="font-size:0.8em; margin:10px 0;">
+<span class="cm"># One ApplicationSet auto-manages all services</span>
+kind: ApplicationSet
+spec:
+  generators:
+    - git:
+        directories:
+          - path: <span style="color:#06b6d4;">services/*/*</span>
+  template:
+    spec:
+      source:
+        targetRevision: <span style="color:#10b981;">HEAD</span></div>
+          <ul style="font-size:0.86em;">
+            <li>New service folder → ArgoCD app auto-created</li>
+            <li>No manual app wiring per service</li>
+            <li>Staging = same model as preprod &amp; prod</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Versioned ACE Template -->
+      <div style="flex:1;">
+        <div class="card card-green" style="height:100%;">
+          <p class="phase-title" style="color:var(--accent-green);">Versioned ACE Template <span style="font-size:0.8em; color:#64748b;">(Helm / Kustomize TBD)</span></p>
+          <div class="code-block" style="font-size:0.8em; margin:10px 0;">
+<span class="cm"># common-cicd — one versioned template</span>
+ace-template:<span style="color:#10b981;">v1.0.0</span>
+  → IntegrationServer base
+  → resources, probes, annotations
+
+<span class="cm"># Each service — only what differs</span>
+service-a/values.yaml:
+  name: <span style="color:#06b6d4;">service-a</span>
+  image: <span style="color:#06b6d4;">...registry.../ace/...:v1.2.0</span>
+  replicas: <span style="color:#f59e0b;">2</span></div>
+          <ul style="font-size:0.86em;">
+            <li>300+ full YAMLs → <strong>1 versioned template</strong></li>
+            <li>Service onboarding = minimal values file</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Shared ConfigMap -->
+      <div style="flex:1;">
+        <div class="card card-yellow" style="height:100%;">
+          <p class="phase-title" style="color:var(--accent-yellow);">Shared ConfigMap</p>
+          <div class="code-block" style="font-size:0.8em; margin:10px 0;">
+<span class="cm"># 1 common-lib-cm — all services</span>
+<span class="cm"># 1 shared-cm per module</span>
+configmaps/
+├── common-lib-cm.yaml
+├── shared-lib-cm.yaml
+
+<span class="cm"># Services reference, not own</span>
+configurations:
+  - <span style="color:#06b6d4;">common-lib-cm</span>
+  - <span style="color:#06b6d4;">shared-lib-cm</span>
+  </div>
+          <ul style="font-size:0.86em;">
+            <li>2 CMs</strong></li>
+            <li>No pipeline re-run for config changes</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s19" class="nav-btn">← Prev</a><a href="#s20" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 20: Governance
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s20">
+  <div class="slide-content">
+    <h2>Governance &amp; Guardrails</h2>
+    <div class="two-col" style="margin-top:6px;">
+      <div>
+        <h3>Branch Protection Rules</h3>
+        <table style="font-size:0.95em;">
+          <tr><th>Branch</th><th>Direct Push</th></tr>
+          <tr><td>main</td><td><span class="badge b-red">Blocked</span></td></tr>
+          <tr><td>release/*</td><td><span class="badge b-red">Blocked</span></td></tr>
+          <tr><td>feature/*</td><td><span class="badge b-green">Developer</span></td></tr>
+          <tr><td>hotfix/*</td><td><span class="badge b-green">Developer</span></td></tr>
+        </table>
+      </div>
+      <div>
+        <h3>Promotion Approval Matrix</h3>
+        <table style="font-size:0.95em;">
+          <tr><th>Promotion</th><th>Approvers</th><th>Gate</th></tr>
+          <tr><td>→ Preprod</td><td>QA</td><td>1 approvals</td></tr>
+          <tr><td>→ Preprod</td><td>QA + Preprod Owner</td><td>2 approvals</td></tr>
+          <tr><td>→ Prod</td><td>QA + Prod Owner</td><td>2 approvals</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s19b" class="nav-btn">← Prev</a><a href="#s21" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 21: Release Dashboard
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s21">
+  <div class="slide-content">
+    <h2>Release Dashboard</h2>
+    <table class="dash-table" style="max-width:880px; margin-top:6px;">
+      <tr><th>Service</th><th>Staging</th><th>Preprod</th><th>Prod</th><th>Status</th></tr>
+      <tr>
+        <td>estv-calcavailablevisas</td>
+        <td><span class="badge b-blue">v1.3.0</span><br><span style="font-size:0.8em; color:var(--text-muted);">Testing</span></td>
+        <td><span class="badge b-green">v1.2.0</span><br><span style="font-size:0.8em; color:var(--text-muted);">Approved</span></td>
+        <td><span class="badge b-green">v1.1.0</span><br><span style="font-size:0.8em; color:var(--text-muted);">Live</span></td>
+        <td><span class="badge b-yellow">Promoting</span></td>
+      </tr>
+      <tr>
+        <td>estv-establishinggets</td>
+        <td><span class="badge b-green">v2.1.0</span><br><span style="font-size:0.8em; color:var(--text-muted);">Synced</span></td>
+        <td><span class="badge b-green">v2.1.0</span><br><span style="font-size:0.8em; color:var(--text-muted);">Synced</span></td>
+        <td><span class="badge b-green">v2.1.0</span><br><span style="font-size:0.8em; color:var(--text-muted);">Live</span></td>
+        <td><span class="badge b-green">Stable</span></td>
+      </tr>
+      <tr>
+        <td>estv-issueandrefund</td>
+        <td><span class="badge b-red">v3.0.0</span><br><span style="font-size:0.8em; color:var(--text-muted);">QA Failed</span></td>
+        <td><span class="badge b-green">v2.9.0</span><br><span style="font-size:0.8em; color:var(--text-muted);">Approved</span></td>
+        <td><span class="badge b-green">v2.9.0</span><br><span style="font-size:0.8em; color:var(--text-muted);">Live</span></td>
+        <td><span class="badge b-red">Blocked</span></td>
+      </tr>
+    </table>
+    <div style="display:flex; gap:16px; margin-top:16px;">
+      <div class="card card-blue" style="flex:1; padding:12px 16px;">
+        <p style="font-size:0.88em;"><strong>Real-time:</strong> What version is where?</p>
+      </div>
+      <div class="card card-yellow" style="flex:1; padding:12px 16px;">
+        <p style="font-size:0.88em;"><strong>QA status:</strong> Per release, per environment</p>
+      </div>
+      <div class="card card-green" style="flex:1; padding:12px 16px;">
+        <p style="font-size:0.88em;"><strong>Data from:</strong> ArgoCD + GitLab + JIRA</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s20" class="nav-btn">← Prev</a><a href="#s22" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 22: Implementation Phases
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s22">
+  <div class="slide-content" style="padding-bottom:48px;">
+    <h2>Implementation Phases</h2>
+    <div style="display:flex; gap:24px; margin-top:10px; flex:1;">
+
+      <!-- Phase 1 -->
+      <div style="flex:1.4;">
+        <div class="card card-blue" style="height:100%;">
+          <p class="phase-title" style="font-size:1.05em;">Phase 1 , Pilot</p>
+          <p style="font-size:0.82em; color:var(--text-muted); margin-bottom:10px; font-style:italic;">Run on a selected set of services — prove the model before full rollout</p>
+          <ul style="font-size:0.88em; display:flex; flex-direction:column; gap:6px;">
+            <li><strong>Library versioning:</strong> pin <code>common-lib</code> &amp; <code>shared-lib</code> by semver tag in <code>build.properties</code>; stop cloning by <code>$CI_COMMIT_BRANCH</code></li>
+            <li><strong>Branch consolidation:</strong> devs work on <code>main</code> + <code>feature/*</code> branches; owner cuts <code>release/*</code> branch per release cycle</li>
+            <li><strong>CI/CD refactor:</strong> unify GitOps deployment across all environments including staging (remove <code>oc apply</code>, push to ArgoCD repo for all envs)</li>
+            <li><strong>Pilot success metrics:</strong> define before starting: build stability, deployment consistency, lead time .. etc</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Phase 2 -->
+      <div style="flex:1;">
+        <div class="card card-green" style="height:100%;">
+          <p class="phase-title" style="font-size:1.05em;">Phase 2 , Scale Rollout</p>
+          <p style="font-size:0.82em; color:var(--text-muted); margin-bottom:10px; font-style:italic;">Apply lessons from pilot to the next set of services — module by module</p>
+          <ul style="font-size:0.88em; display:flex; flex-direction:column; gap:6px;">
+            <li>Roll out to next module using validated model from Phase 1</li>
+            <li>Migrate ArgoCD apps to ApplicationSet and AppofApps</li>
+            <li>Introduce versioned ACE template , replace 300+ full YAMLs</li>
+            <li>Consolidate duplicated ConfigMaps to shared CMs</li>
+            <li>Continue module by module until all services migrated</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s21" class="nav-btn">← Prev</a><a href="#s23" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 23: Next Steps
+═══════════════════════════════════════════════════ -->
+<div class="slide" id="s23">
+  <div class="slide-content">
+    <h2>Next Steps</h2>
+    <div class="two-col" style="margin-top:6px;">
+      <div>
+        <h3>Decisions Needed Today</h3>
+        <ul class="steps" style="font-size:1.05em;">
+          <li>Approve proposed branching approach</li>
+          <li>Select pilot services / module</li>
+          <li>Define rollout timeline &amp; milestones</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Immediate Actions (Week 1)</h3>
+        <ul class="steps" style="font-size:1.05em;">
+          <li>Dev team consolidates pilot service to main branch</li>
+          <li>Version and tag common-lib, common-cicd, shared-lib</li>
+          <li>Start Phase 1 quick wins in CI templates</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-nav"><a href="#s22" class="nav-btn">← Prev</a><a href="#s24" class="nav-btn">Next →</a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 24: Q&A
+═══════════════════════════════════════════════════ -->
+<div class="slide center" id="s24">
+  <div class="slide-content" style="justify-content:center; align-items:center;">
+    <h1 style="font-size:4.5em;">Q &amp; A</h1>
+    <p class="subtitle" style="margin-top:16px;">Thank you</p>
+    <p class="tag-line">IBM ACE Integration Services &nbsp;·&nbsp; Branching Strategy &amp; Release Management</p>
+  </div>
+  <div class="slide-nav"><a href="#s23" class="nav-btn">← Prev</a></div>
+</div>
+
+<!-- Footer -->
+<div class="slide-footer">
+  <span>Branching Strategy &amp; Release Management</span>
+  <span class="counter"><span id="cur">1</span> / <span id="tot">24</span></span>
+</div>
+
+<script>
+  // Slide order must match the HTML
+  const slideIds = ['s1','s2','s3','s5','s6','s7','s8','s8a','s8b','s8c','s8d',
+                    's9','s10','s11','s12','s13','s14','s15','s16','s17',
+                    's18','s19','s19b','s20','s21','s22','s23','s24'];
+  const tot = slideIds.length;
+  let cur = 0;
+
+  const bar = document.getElementById('progress');
+  document.getElementById('tot').textContent = tot;
+
+  function updateUI() {
+    document.getElementById('cur').textContent = cur + 1;
+    if (bar) bar.style.width = ((cur + 1) / tot * 100) + '%';
+  }
+
+  function show(n) {
+    cur = (n + tot) % tot;
+    location.hash = slideIds[cur];
+    updateUI();
+  }
+
+  // Sync cur from URL hash (handles back/forward and nav-btn clicks)
+  function syncFromHash() {
+    const h = location.hash.slice(1);
+    const idx = slideIds.indexOf(h);
+    if (idx !== -1) { cur = idx; updateUI(); }
+  }
+  window.addEventListener('hashchange', syncFromHash);
+  syncFromHash();
+
+  // Initialise progress bar
+  if (bar) bar.style.width = (1 / tot * 100) + '%';
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'ArrowDown' || e.key === 'PageDown') { e.preventDefault(); show(cur + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') { e.preventDefault(); show(cur - 1); }
+    if (e.key === 'Home') { e.preventDefault(); show(0); }
+    if (e.key === 'End') { e.preventDefault(); show(tot - 1); }
+    if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+      else document.exitFullscreen?.();
+    }
+    if (e.key === 'Escape' && document.fullscreenElement) document.exitFullscreen?.();
+  });
+
+  document.addEventListener('click', (e) => {
+    // Let nav-btn anchor links and footer clicks propagate normally
+    if (e.target.closest('.slide-footer') || e.target.closest('.nav-btn')) return;
+    if (e.clientX > window.innerWidth / 2) show(cur + 1);
+    else show(cur - 1);
+  });
+</script>
+</body>
+</html>

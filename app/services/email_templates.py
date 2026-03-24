@@ -44,7 +44,7 @@ class EmailTemplates:
         user_name: str,
         user_id: str,
         temporary_password: str,
-        organization_name: str = "Sporting Scout",
+        organization_name: str = "Sporting Scouts",
         login_url: str = "https://app.sportingscout.org/login"
     ) -> EmailContent:
         """Generate welcome email content.
@@ -110,7 +110,7 @@ class EmailTemplates:
         self,
         user_name: str,
         new_password: str,
-        organization_name: str = "Sporting Scout"
+        organization_name: str = "Sporting Scouts"
     ) -> EmailContent:
         """Generate password reset email content.
         
@@ -129,6 +129,7 @@ class EmailTemplates:
             "organization_name": organization_name,
             "new_password": new_password,
             "login_url": "https://app.sportingscout.org/login",
+            "current_year": datetime.now().year
         }
         
         text_body = self._render_template("password_reset.txt", context)
