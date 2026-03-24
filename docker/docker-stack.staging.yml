@@ -77,7 +77,7 @@ services:
       mode: replicated
       replicas: 2
       restart_policy:
-        condition: on-failure
+        condition: any
         delay: 5s
         max_attempts: 3
       update_config:
@@ -114,7 +114,7 @@ services:
       - stg-internal
     deploy:
       restart_policy:
-        condition: on-failure
+        condition: any
     logging: *default-logging
 
 volumes:
