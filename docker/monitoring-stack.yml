@@ -183,7 +183,7 @@ configs:
     name: loki_config-${CONFIG_VERSION:-v2}
     file: ../configs/loki/loki-config.yml
   promtail_config:
-    name: promtail_config-${CONFIG_VERSION:-v2}
+    name: promtail_config-${CONFIG_VERSION:-v2.1}
     file: ../configs/promtail/promtail-config.yml
   tempo_config:
     name: tempo_config-${CONFIG_VERSION:-v2}
