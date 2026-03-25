@@ -23,7 +23,7 @@ class TokenBlacklist:
                 self.redis_client.setex(f"blacklist:{token}", ttl, "1")
                 logger.debug(f"Token added to blacklist with TTL: {ttl}")
         except Exception as e:
-            logger.error(f"Failed to add token to blacklist: {e}")
+            logger.error(f"Failed to add token to blacklist", exc_info=True)
     
     def is_blacklisted(self, token: str) -> bool:
         """Check if token is blacklisted"""
@@ -33,17 +33,17 @@ class TokenBlacklist:
             logger.debug(f"Token blacklisted: {exists > 0}")
             return exists > 0
         except Exception as e:
-            logger.error(f"Failed to check token blacklist status: {e}")
+            logger.error(f"Failed to check token blacklist status", exc_info=True)
             # Return False to allow token verification to continue if Redis is down
             return False
 
-    async def remove_from_blacklist(self, token: str):
+    def remove_from_blacklist(self, token: str):
         """Remove token from blacklist"""
         try:
-            result = await self.redis_client.delete(f"blacklist:{token}")
+            result = self.redis_client.delete(f"blacklist:{token}")
             logger.debug(f"Token removed from blacklist: {result}")
         except Exception as e:
-            logger.error(f"Failed to remove token from blacklist: {e}")
+            logger.error(f"Failed to remove token from blacklist", exc_info=True)
 
 # Global blacklist instance
 token_blacklist = TokenBlacklist()
