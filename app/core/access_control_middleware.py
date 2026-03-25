@@ -59,6 +59,7 @@ def _is_internal_request(request: Request) -> bool:
 class AccessControlMiddleware:
 
     async def __call__(self, request: Request, call_next):
+        db = None
         try:
             # Check if the route is public
             path = request.url.path
@@ -149,13 +150,13 @@ class AccessControlMiddleware:
 
             return await call_next(request)
         except Exception as e:
-            logger.error(f"Access control error: {str(e)}", exc_info=True)
+            logger.error(f"Access control error", exc_info=True)
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content={"detail": "Internal server error"}
             )
         finally:
-            if 'db' in locals():
+            if db is not None:
                 db.close()
 
 access_control_middleware = AccessControlMiddleware()
