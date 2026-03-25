@@ -8,7 +8,11 @@ from app.core.database import get_db_session
 from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
-from app.schemas.permission_schema import PermissionCreate, PermissionListResponse, PermissionResponse, PermissionUpdate
+from app.schemas.permission_schema import (PermissionCreate,
+                                           PermissionListResponse,
+                                           PermissionResponse,
+                                           PermissionUpdate)
+from app.services.access_control_service import AccessControlService
 from app.services.permission_service import PermissionService
 
 router = APIRouter(prefix="/permissions", tags=["Permissions"], dependencies=[Depends(get_user_in_token)])
@@ -20,7 +24,9 @@ def create_permission(permission_data: PermissionCreate, db: Session = Depends(g
     """
     try:
         permission_service = PermissionService(db)
-        return permission_service.create_permission(permission_data.model_dump())
+        response = permission_service.create_permission(permission_data.model_dump())
+        AccessControlService(db).invalidate_cache()
+        return response
     except EntityAlreadyExistsError as e:
         logger.error(f"Permission already exists: {e.message}", exc_info=True)
         raise HTTPException(status_code=400, detail="Permission already exists")
@@ -56,7 +62,9 @@ def update_permission(permission_id: int, permission_data: PermissionUpdate, db:
     """
     try:
         permission_service = PermissionService(db)
-        return permission_service.update_permission(permission_id, permission_data.model_dump(exclude_none=True))
+        response = permission_service.update_permission(permission_id, permission_data.model_dump(exclude_none=True))
+        AccessControlService(db).invalidate_cache()
+        return response
     except EntityDoesNotExistError as e:
         logger.error(f"Permission not found: {e.message}", exc_info=True)
         raise HTTPException(status_code=404, detail="Permission not found")
@@ -75,6 +83,7 @@ def delete_permission(permission_id: int, db: Session = Depends(get_db_session))
     try:
         permission_service = PermissionService(db)
         permission_service.delete_permission(permission_id)
+        AccessControlService(db).invalidate_cache()
     except EntityDoesNotExistError as e:
         logger.error(f"Permission not found: {e.message}", exc_info=True)
         raise HTTPException(status_code=404, detail="Permission not found")

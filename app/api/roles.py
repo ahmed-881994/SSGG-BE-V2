@@ -9,8 +9,9 @@ from app.core.dependencies import get_user_in_token
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
 from app.schemas.role_schema import (RoleCreate, RoleNoPermissionsResponse,
-                                      RoleResponse, RoleSearchResponse,
-                                      RoleUpdate, RoleUpdatePermissions)
+                                     RoleResponse, RoleSearchResponse,
+                                     RoleUpdate, RoleUpdatePermissions)
+from app.services.access_control_service import AccessControlService
 from app.services.role_service import RoleService
 
 router = APIRouter(prefix="/roles", tags=["Roles"], dependencies=[Depends(get_user_in_token)])
@@ -23,7 +24,9 @@ def create_role(role: RoleCreate, db: Session = Depends(get_db_session)):
     """
     try:
         role_service = RoleService(db)
-        return role_service.create_role(role_data=role.model_dump())
+        response = role_service.create_role(role_data=role.model_dump())
+        AccessControlService(db).invalidate_cache()
+        return response
     except EntityAlreadyExistsError as e:
         logger.error(f"Role already exists: {e.message}", exc_info=True)
         raise HTTPException(status_code=400, detail=f"Role already exists")
@@ -77,7 +80,9 @@ def update_role(role_id: int, role_update: RoleUpdate, db: Session = Depends(get
     """
     try:
         role_service = RoleService(db)
-        return role_service.update_role(role_id, role_update.model_dump(exclude_none=True))
+        response = role_service.update_role(role_id, role_update.model_dump(exclude_none=True))
+        AccessControlService(db).invalidate_cache()
+        return response
     except EntityDoesNotExistError as e:
         logger.error(f"Role not found: {e.message}", exc_info=True)
         raise HTTPException(status_code=404, detail=f"Role not found")
@@ -96,6 +101,7 @@ def delete_role(role_id: int, db: Session = Depends(get_db_session)):
     try:
         role_service = RoleService(db)
         role_service.delete_role(role_id)
+        AccessControlService(db).invalidate_cache()
     except EntityDoesNotExistError as e:
         logger.error(f"Role not found: {e.message}", exc_info=True)
         raise HTTPException(status_code=404, detail=f"Role not found")
@@ -113,7 +119,9 @@ def update_role_permissions(role_id: int, permissions_ids: RoleUpdatePermissions
     """
     try:
         role_service = RoleService(db)
-        return role_service.update_role_permissions(role_id, permissions_ids.model_dump()["permissions_ids"], current_user.id)
+        response = role_service.update_role_permissions(role_id, permissions_ids.model_dump()["permissions_ids"], current_user.id)
+        AccessControlService(db).invalidate_cache()
+        return response
     except EntityDoesNotExistError as e:
         logger.error(f"Role not found: {e.message}", exc_info=True)
         raise HTTPException(status_code=404, detail=f"{e.message}")
