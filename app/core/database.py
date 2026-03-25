@@ -107,7 +107,7 @@ def get_db_session() -> Generator[Session, None, None]:
         yield db
     except Exception as e:
         # Log error and rollback transaction on exception
-        logger.error(f"Database session error: {e}")
+        logger.error(f"Database session error - ", exc_info=True)
         db.rollback()
         raise
     finally:
@@ -126,7 +126,7 @@ async def get_async_db_session() -> AsyncGenerator[AsyncSession, None]:
     try:
         yield session
     except Exception as e:
-        logger.error(f"Async database session error: {e}")
+        logger.error(f"Async database session error - ", exc_info=True)
         await session.rollback()
         raise
     finally:

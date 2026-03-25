@@ -135,6 +135,30 @@ class AuditMiddleware:
             return f"Error capturing request data: {str(e)}"
 
 
+    # async def capture_response_data(self, response: Response) -> str:
+    #     """Capture response metadata safely without consuming streaming bodies."""
+    #     try:
+    #         payload_to_store = None
+
+    #         body = getattr(response, "body", None)
+    #         if isinstance(body, (bytes, bytearray)):
+    #             raw = bytes(body)
+    #             payload_to_store = raw.decode("utf-8", errors="ignore")
+    #             # if len(body) > MAX_AUDIT_PAYLOAD_BYTES:
+    #             #     payload_to_store += f"... [TRUNCATED {len(body) - MAX_AUDIT_PAYLOAD_BYTES} bytes]"
+    #         else:
+    #             payload_to_store = "[streaming_or_unavailable_response_body]"
+
+    #         data = {
+    #             "payload": payload_to_store,
+    #             "status_code": response.status_code,
+    #             "headers": dict(response.headers),
+    #         }
+    #         return json.dumps(data, default=str, ensure_ascii=False)
+
+    #     except Exception as e:
+    #         logger.warning(f"Failed to capture response data - ", exc_info=True)
+    #         return f"Error capturing response data: {str(e)}"
     async def capture_response_data(self, response: Response) -> str:
         """Capture relevant response data for auditing with sensitive data masking"""
         try:
@@ -165,7 +189,7 @@ class AuditMiddleware:
             return json.dumps(data, default=str, ensure_ascii=False)  # Added ensure_ascii=False for better Unicode handling
 
         except Exception as e:
-            logger.warning(f"Failed to capture response data: {str(e)}")
+            logger.warning(f"Failed to capture response data - ", exc_info=True)
             return f"Error capturing response data: {str(e)}"
 
 
@@ -246,6 +270,7 @@ class AuditMiddleware:
         request_id: str
     ):
         """Save audit record to database"""
+        session = None
         try:
             async with AsyncSessionLocal() as session:
                 audit_record = Audit() 
@@ -265,10 +290,19 @@ class AuditMiddleware:
                 session.add(audit_record)
                 await session.commit()
         except Exception as e:
-            logger.error(f"Failed to save audit record: {str(e)}", exc_info=True)
-            await session.rollback()
-            raise
+            logger.error(f"Failed to save audit record - ", exc_info=True)
+            if session is not None:
+                try:
+                    await session.rollback()
+                except Exception:
+                    logger.error("Failed to rollback session after audit save failure", exc_info=True)
+                    pass
         finally:
-            await session.close()
+            if session is not None:
+                try:
+                    await session.close()
+                except Exception:
+                    logger.error("Failed to close session after audit save", exc_info=True)
+                    pass
             
 auditing_middleware = AuditMiddleware()
