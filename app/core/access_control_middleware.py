@@ -109,18 +109,43 @@ class AccessControlMiddleware:
                 )
             
             # Check if user has required permissions
-            if not access_service.user_has_permission(user_id, required_permissions):
+            token_permissions = getattr(request.state, "user_permissions", None)
+            if isinstance(token_permissions, set) and token_permissions:
+                has_access = access_service.user_has_permission(
+                    user_id=str(user_id),
+                    required_permissions=required_permissions,
+                    user_permissions=token_permissions,
+                )
+            else:
+                has_access = access_service.user_has_permission(
+                    user_id=str(user_id),
+                    required_permissions=required_permissions,
+                    user_permissions=None,
+                )
+
+            if not has_access:
                 logger.warning(
-                    f"Access denied: user={user_id}, route={method}:{path}, "
-                    f"required_permissions={required_permissions}"
+                    f"Access denied: user={user_id}, route={method}:{path}, required_permissions={required_permissions}"
                 )
                 return JSONResponse(
                     status_code=status.HTTP_403_FORBIDDEN,
                     content={
                         "detail": "Insufficient permissions",
-                        "required_permissions": required_permissions
-                    }
+                        "required_permissions": required_permissions,
+                    },
                 )
+            # if not access_service.user_has_permission(user_id, required_permissions):
+            #     logger.warning(
+            #         f"Access denied: user={user_id}, route={method}:{path}, "
+            #         f"required_permissions={required_permissions}"
+            #     )
+            #     return JSONResponse(
+            #         status_code=status.HTTP_403_FORBIDDEN,
+            #         content={
+            #             "detail": "Insufficient permissions",
+            #             "required_permissions": required_permissions
+            #         }
+            #     )
 
             return await call_next(request)
         except Exception as e:
