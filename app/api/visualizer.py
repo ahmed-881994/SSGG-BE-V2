@@ -18,6 +18,7 @@ router = APIRouter(prefix="/visualizer", tags=["Visualizer"], dependencies=[Depe
 
 # Tables to exclude from visualization queries
 EXCLUDED_TABLES = ["users", "roles", "permissions", "role_permissions", "route_patterns", "route_permissions", "public_routes","audit"]
+MAX_VISUALIZER_ROWS = 100
 
 def validate_select_query(query: str) -> None:
     """
@@ -44,6 +45,12 @@ def validate_select_query(query: str) -> None:
         # Match table name with word boundaries
         if re.search(rf'\b{table.lower()}\b', query_lower):
             raise ValueError(f"Access to table '{table}' is not allowed")
+        
+def enforce_row_limit(query: str, limit: int = MAX_VISUALIZER_ROWS) -> str:
+    normalized = query.strip().rstrip(";")
+    if re.search(r"\blimit\s+\d+(\s*,\s*\d+)?\b", normalized, flags=re.IGNORECASE):
+        return normalized
+    return f"{normalized} LIMIT {limit}"
 
 @router.post("", response_model= VisualizerQueryResponse)
 def execute_visualization_query(body: VisualizerQuery, db: Session = Depends(get_db_session)):
@@ -53,8 +60,8 @@ def execute_visualization_query(body: VisualizerQuery, db: Session = Depends(get
     try:
         # Validate query
         validate_select_query(body.query)
-        
-        result = db.execute(text(body.query))
+        safe_query = enforce_row_limit(body.query, MAX_VISUALIZER_ROWS)
+        result = db.execute(text(safe_query))
         columns = list(result.keys())
         rows = [dict(row._mapping) for row in result.fetchall()]
         
