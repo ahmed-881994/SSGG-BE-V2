@@ -95,9 +95,10 @@ class MemberService:
                 result["members"].append(self.format_member_data(member))
             return result
         except EntityDoesNotExistError:
+            logger.info(f"No members found matching criteria - name: {name}, entity_id: {entity_id}")
             raise
         except Exception as e:
-            logger.error(f"Error searching members: {str(e)}")
+            logger.error(f"Error searching members - ", exc_info=True)
             raise ServiceError(
                 message=f"Failed to search members: {str(e)}",
                 name="Member Search Error"

@@ -187,19 +187,19 @@ def setup_logging():
     
     
     # Configure SQLAlchemy loggers
-    for sql_logger_name in ['sqlalchemy.engine.Engine', 'sqlalchemy.engine', 'sqlalchemy']:
-        sql_logger = logging.getLogger(sql_logger_name)
-        sql_logger.handlers.clear()
-        sql_logger.addHandler(console_handler)
-        sql_logger.setLevel(logging.DEBUG if settings.log_level.upper() == "DEBUG" else logging.INFO)
-        # sql_logger.propagate = False
+    # for sql_logger_name in ['sqlalchemy.engine.Engine', 'sqlalchemy.engine', 'sqlalchemy']:
+    #     sql_logger = logging.getLogger(sql_logger_name)
+    #     sql_logger.handlers.clear()
+    #     sql_logger.addHandler(console_handler)
+    #     sql_logger.setLevel(logging.DEBUG if settings.log_level.upper() == "DEBUG" else logging.INFO)
+    #     # sql_logger.propagate = False
     
     # Configure Uvicorn loggers
-    for uvicorn_logger_name in ['uvicorn', 'uvicorn.error', 'uvicorn.access']:
-        uvi_logger = logging.getLogger(uvicorn_logger_name)
-        uvi_logger.handlers.clear()
-        uvi_logger.addHandler(console_handler)
-        uvi_logger.setLevel(logging.DEBUG if settings.log_level.upper() == "DEBUG" else logging.INFO)
+    # for uvicorn_logger_name in ['uvicorn', 'uvicorn.error', 'uvicorn.access']:
+    #     uvi_logger = logging.getLogger(uvicorn_logger_name)
+    #     uvi_logger.handlers.clear()
+    #     uvi_logger.addHandler(console_handler)
+    #     uvi_logger.setLevel(logging.DEBUG if settings.log_level.upper() == "DEBUG" else logging.INFO)
         # uvi_logger.propagate = False
         
     # Configure Fastapi loggers
