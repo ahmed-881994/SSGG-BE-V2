@@ -16,24 +16,6 @@ from app.util.egy_time import get_egypt_time
 
 time_of_deployment = get_egypt_time().isoformat()
 
-# Import Prometheus metrics (lazy import to avoid circular dependency)
-def get_prometheus_metrics():
-    try:
-        from main import (db_active_connections_gauge,
-                          db_connection_pool_gauge, db_health_gauge,
-                          db_response_time_gauge, redis_health_gauge,
-                          redis_response_time_gauge)
-        return {
-            'db_health': db_health_gauge,
-            'db_response_time': db_response_time_gauge,
-            'db_connection_pool': db_connection_pool_gauge,
-            'db_active_connections': db_active_connections_gauge,
-            'redis_health': redis_health_gauge,
-            'redis_response_time': redis_response_time_gauge,
-        }
-    except ImportError:
-        return None
-
 class HealthCheckService:
     
     def check_database(self):
@@ -45,12 +27,6 @@ class HealthCheckService:
             db = next(get_db_session())
             result = db.execute(text(statement)).scalar()
             response_time = round((time() - start_time) * 1000, 2)
-            
-            # Update Prometheus metrics
-            metrics = get_prometheus_metrics()
-            if metrics:
-                metrics['db_health'].set(1)
-                metrics['db_response_time'].set(response_time)
             
             logger.info("Database is healthy.")
             return {
@@ -77,12 +53,6 @@ class HealthCheckService:
         except SQLAlchemyError as e:
             response_time = round((time() - start_time) * 1000, 2)
             
-            # Update Prometheus metrics for unhealthy state
-            metrics = get_prometheus_metrics()
-            if metrics:
-                metrics['db_health'].set(0)
-                metrics['db_response_time'].set(response_time)
-            
             logger.error(f"Database health check failed: {str(e)}")
             return {
                 "service_name": "Database Connectivity",
@@ -107,12 +77,6 @@ class HealthCheckService:
             }
         except Exception as e:
             response_time = round((time() - start_time) * 1000, 2)
-            
-            # Update Prometheus metrics for unhealthy state
-            metrics = get_prometheus_metrics()
-            if metrics:
-                metrics['db_health'].set(0)
-                metrics['db_response_time'].set(response_time)
             
             logger.error(f"Unexpected error in database health check: {str(e)}")
             return {
@@ -167,12 +131,6 @@ class HealthCheckService:
             
             # Calculate utilization percentage
             utilization = (checked_out / pool_size * 100) if pool_size > 0 else 0
-            
-            # Update Prometheus metrics
-            metrics = get_prometheus_metrics()
-            if metrics:
-                metrics['db_connection_pool'].set(pool_size)
-                metrics['db_active_connections'].set(checked_out)
             
             # Determine status based on utilization
             if utilization > 80:
@@ -463,12 +421,6 @@ class HealthCheckService:
             
             response_time = round((time() - start_time) * 1000, 2)
             
-            # Update Prometheus metrics
-            metrics = get_prometheus_metrics()
-            if metrics:
-                metrics['redis_health'].set(1)
-                metrics['redis_response_time'].set(response_time)
-            
             logger.info("Redis is healthy.")
             
             return {
@@ -506,12 +458,6 @@ class HealthCheckService:
         except RedisConnectionError as e:
             response_time = round((time() - start_time) * 1000, 2)
             
-            # Update Prometheus metrics for unhealthy state
-            metrics = get_prometheus_metrics()
-            if metrics:
-                metrics['redis_health'].set(0)
-                metrics['redis_response_time'].set(response_time)
-            
             logger.error(f"Redis connection failed: {str(e)}")
             return {
                 "service_name": "Redis Token Blacklist",
@@ -538,12 +484,6 @@ class HealthCheckService:
             
         except RedisError as e:
             response_time = round((time() - start_time) * 1000, 2)
-            
-            # Update Prometheus metrics for unhealthy state
-            metrics = get_prometheus_metrics()
-            if metrics:
-                metrics['redis_health'].set(0)
-                metrics['redis_response_time'].set(response_time)
             
             logger.error(f"Redis operation failed: {str(e)}")
             return {

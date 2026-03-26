@@ -6,7 +6,6 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
-from prometheus_client import Counter, Gauge
 from pymysql import DataError, IntegrityError
 
 from app.api import (auth, entities, events, health, lookups, members,
@@ -22,16 +21,15 @@ from app.core.exceptions import (AuthenticationFailed, EntityDoesNotExistError,
 from app.core.logging_middleware import logging_middleware
 from app.core.rate_limitting import setup_rate_limiting
 from app.core.user_context_middleware import user_context_middleware
-# from app.core.prometheus_middleware import PrometheusMiddleware, metrics, setting_otlp
 from app.schemas.common_schema import ErrorResponse
 
 
 # Add lifespan to the application
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Application started", extra={"event": "startup"})
+    logger.info("Application started")
     yield
-    logger.info("Application shutdown", extra={"event": "shutdown"})
+    logger.info("Application shutdown")
 
 app = FastAPI(
     title="SSGG",
@@ -45,36 +43,12 @@ app = FastAPI(
     # lifespan=lifespan,
 )
 
-# if settings.otel_exporter_otlp_endpoint:
-#     setting_otlp(
-#         app=app,
-#         app_name=settings.otel_service_name,
-#         endpoint=settings.otel_exporter_otlp_endpoint,
-#         log_correlation=settings.otel_log_correlation,
-#     )
-
-# app.add_middleware(PrometheusMiddleware, app_name=settings.otel_service_name)
-
-# Custom Prometheus metrics for application-specific monitoring
-db_connection_pool_gauge = Gauge('ssgg_db_connection_pool_size', 'Database connection pool size')
-db_active_connections_gauge = Gauge('ssgg_db_active_connections', 'Active database connections')
-db_health_gauge = Gauge('ssgg_db_health_status', 'Database health status (1=healthy, 0=unhealthy)')
-db_response_time_gauge = Gauge('ssgg_db_response_time_ms', 'Database response time in milliseconds')
-redis_health_gauge = Gauge('ssgg_redis_health_status', 'Redis health status (1=healthy, 0=unhealthy)')
-redis_response_time_gauge = Gauge('ssgg_redis_response_time_ms', 'Redis response time in milliseconds')
-redis_operations_counter = Counter('ssgg_redis_operations_total', 'Total Redis operations', ['operation', 'status'])
-
-# app.add_middleware(PrometheusMiddleware, app_name=settings.otel_service_name)
 app.middleware("http")(access_control_middleware)
 app.middleware("http")(user_context_middleware)
 app.middleware("http")(auditing_middleware)
 @app.middleware("http")
 async def add_logging_middleware(request: Request, call_next):
     return await logging_middleware(request, call_next)
-
-
-
-
 
 # Setup rate limiting
 setup_rate_limiting(app)
