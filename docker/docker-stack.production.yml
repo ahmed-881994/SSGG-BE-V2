@@ -46,8 +46,10 @@ services:
       - db_database=${db_database}
       - db_username=${db_username}
       - db_password=${db_password}
-      - db_max_connections=${db_max_connections}
-      - db_min_connections=${db_min_connections}
+      - db_pool_size=${db_pool_size}
+      - db_pool_max_overflow=${db_pool_max_overflow}
+      - db_pool_timeout_seconds=${db_pool_timeout_seconds}
+      - db_pool_recycle_seconds=${db_pool_recycle_seconds}
       - rds_host=${rds_host}
       - rds_port=${rds_port}
       - rds_database=${rds_database}
