@@ -22,12 +22,9 @@ on:
           - staging
           - production
       version:
-        description: 'Version tag (for production manual deploy)'
+        description: 'Version tag (for production manual deploy, e.g. v2.2.0)'
         required: false
-        type: choice
-        options:
-          - staging
-          - production
+        type: string
 
 permissions:
   contents: read
@@ -67,6 +64,16 @@ jobs:
             SHOULD_DEPLOY="true"
             IMAGE_TAG="${TAG_NAME}"
             echo "🏷️  Tag detected: ${TAG_NAME} → Production deployment"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            # Manual dispatch → use provided inputs
+            ENVIRONMENT="${{ inputs.environment }}"
+            SHOULD_DEPLOY="true"
+            if [[ -n "${{ inputs.version }}" ]]; then
+              IMAGE_TAG="${{ inputs.version }}"
+            else
+              IMAGE_TAG="v${{ steps.set-version.outputs.version }}-manual"
+            fi
+            echo "🖱️  Manual dispatch → ${ENVIRONMENT} deployment"
           else
             # Branch push
             BRANCH=${GITHUB_REF#refs/heads/}
