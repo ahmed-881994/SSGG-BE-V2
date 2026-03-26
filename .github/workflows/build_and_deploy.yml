@@ -250,7 +250,7 @@ jobs:
     name: Health Check
     runs-on: ubuntu-24.04
     needs: [setup, deploy-staging]
-    if: needs.setup.outputs.environment == 'staging' && needs.setup.outputs.should-deploy == 'true' && needs.deploy-staging.result == 'success'
+    if: needs.setup.outputs.environment == 'staging' && needs.deploy-staging.result == 'success'
     
     steps:
       - name: Wait for service to stabilize
@@ -274,14 +274,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Create git tag
-        if: github.ref == 'refs/heads/main'
-        run: |
-          VERSION=v${{ needs.setup.outputs.version }}
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a ${VERSION} -m "Release ${VERSION}"
-          git push origin ${VERSION}
+      # - name: Create git tag
+      #   if: github.ref == 'refs/heads/main'
+      #   run: |
+      #     VERSION=v${{ needs.setup.outputs.version }}
+      #     git config user.name "github-actions[bot]"
+      #     git config user.email "github-actions[bot]@users.noreply.github.com"
+      #     git tag -a ${VERSION} -m "Release ${VERSION}"
+      #     git push origin ${VERSION}
       
       - name: Create environment file
         run: |
@@ -295,8 +295,10 @@ jobs:
           db_password=${{ secrets.DB_PASSWORD }}
 
           # Database connection pool settings
-          db_max_connections=${{ secrets.DB_MAX_CONNECTIONS }}
-          db_min_connections=${{ secrets.DB_MIN_CONNECTIONS }}
+          db_pool_size=${{ vars.DB_POOL_SIZE }}
+          db_pool_max_overflow=${{ vars.DB_POOL_MAX_OVERFLOW }}
+          db_pool_timeout_seconds=${{ vars.DB_POOL_TIMEOUT_SECONDS }}
+          db_pool_recycle_seconds=${{ vars.DB_POOL_RECYCLE_SECONDS }}
 
           # Redis
           rds_host=${{ secrets.REDIS_HOST }}
@@ -381,7 +383,7 @@ jobs:
     name: Health Check
     runs-on: ubuntu-24.04
     needs: [setup, deploy-production]
-    if: needs.setup.outputs.environment == 'production' && needs.setup.outputs.should-deploy == 'true' && needs.deploy-production.result == 'success'
+    if: needs.setup.outputs.environment == 'production' && needs.deploy-production.result == 'success'
     
     steps:
       - name: Wait for service to stabilize
