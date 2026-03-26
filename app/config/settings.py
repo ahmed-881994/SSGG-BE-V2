@@ -13,9 +13,15 @@ class Settings(BaseSettings):
     db_password: str
 
 
-    # Database connection pool settings
-    db_max_connections: int = 20
-    db_min_connections: int = 5
+    # Database connection pool settings (old values for reference)
+    # db_max_connections: int = 20
+    # db_min_connections: int = 5
+    
+    # Database pool tuning (new)
+    db_pool_size: int = 8
+    db_pool_max_overflow: int = 4
+    db_pool_timeout_seconds: int = 5
+    db_pool_recycle_seconds: int = 1800
 
     # Redis settings
     rds_host: str

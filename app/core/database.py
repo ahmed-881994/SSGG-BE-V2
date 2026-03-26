@@ -22,15 +22,11 @@ engine = create_engine(
     poolclass=QueuePool,
     
     # Pool configuration - matching existing connection pool settings
-    pool_size=settings.db_max_connections,  # Maximum number of persistent connections
-    max_overflow=0,                         # No overflow connections (strict limit)
-    pool_pre_ping=True,                     # Validate connections before use
-    pool_recycle=3600,                      # Recycle connections every hour
-    
-    # Debug configuration
-    echo=settings.log_level == "DEBUG",     # Log SQL queries in debug mode
-    echo_pool=settings.log_level == "DEBUG", # Log pool events in debug mode
-    
+    pool_size=settings.db_pool_size,  # Maximum number of persistent connections
+    max_overflow=settings.db_pool_max_overflow,  # Maximum number of overflow connections
+    pool_timeout=settings.db_pool_timeout_seconds,  # Timeout for acquiring connections
+    pool_recycle=settings.db_pool_recycle_seconds,  # Recycle connections after this many seconds
+    pool_pre_ping=True,  # Enable pre-ping to check connection health before using it
     # Connection arguments passed to PyMySQL
     connect_args={
         "charset": "utf8mb4",
@@ -47,15 +43,12 @@ engine = create_engine(
 async_engine = create_async_engine(
     ASYNC_DATABASE_URL,
     # Pool configuration
-    pool_size=settings.db_max_connections,
-    max_overflow=0,
+    pool_size=settings.db_pool_size,
+    max_overflow=settings.db_pool_max_overflow,
+    pool_timeout=settings.db_pool_timeout_seconds,
+    pool_recycle=settings.db_pool_recycle_seconds,
     pool_pre_ping=True,
-    pool_recycle=3600,
-    
-    # Debug configuration
-    echo=settings.log_level == "DEBUG",
-    echo_pool=settings.log_level == "DEBUG",
-    
+  
     # Connection arguments passed to aiomysql
     connect_args={
         "charset": "utf8mb4",

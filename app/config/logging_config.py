@@ -1,6 +1,7 @@
 import json
 import logging
 from datetime import datetime, timezone
+import sys
 
 from pythonjsonlogger import jsonlogger
 
@@ -132,6 +133,15 @@ class StandardFormatter(logging.Formatter):
             extras.append(f"version={version}")
         else:
             extras.append(f"version={__version__}")
+            
+        file_name = getattr(record, 'filename', None)
+        if file_name:
+            extras.append(f"file={file_name}")
+            
+        function = getattr(record, 'funcName', None)
+        if function:
+            extras.append(f"function={function}")
+
 
         if extras:
             base_format += f" [{', '.join(extras)}]"
@@ -154,42 +164,51 @@ def setup_logging():
     context_filter = ContextFilter()
     
     # Create console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(settings.log_level.upper())
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.DEBUG if settings.log_level.upper() == "DEBUG" else logging.INFO)
     console_handler.setFormatter(formatter)
     console_handler.addFilter(context_filter)
     
     # Setup root logger
-    root_logger = logging.getLogger()
-    root_logger.setLevel(settings.log_level.upper())
-    root_logger.handlers.clear()
-    root_logger.addHandler(console_handler)
-    # # Add context filter to root logger (affects all loggers)
-    root_logger.addFilter(context_filter)
+    # root_logger = logging.getLogger()
+    # # root_logger.setLevel(settings.log_level.upper())
+    # root_logger.handlers.clear()
+    # root_logger.addHandler(console_handler)
+    # # # Add context filter to root logger (affects all loggers)
+    # root_logger.addFilter(context_filter)
     
     # Setup app logger
     logger = logging.getLogger("ssgg")
-    logger.setLevel(settings.log_level.upper())
+    logger.setLevel(logging.DEBUG if settings.log_level.upper() == "DEBUG" else logging.INFO)
     logger.handlers.clear()
     logger.addHandler(console_handler)
-    logger.propagate = False
+    # logger.propagate = False
     
     
     
     # Configure SQLAlchemy loggers
-    # for sql_logger_name in ['sqlalchemy.engine.Engine', 'sqlalchemy.engine', 'sqlalchemy']:
-    #     sql_logger = logging.getLogger(sql_logger_name)
-    #     sql_logger.handlers.clear()
-    #     sql_logger.addHandler(console_handler)
-    #     sql_logger.propagate = False
-    #     sql_logger.setLevel(logging.WARNING)
+    for sql_logger_name in ['sqlalchemy.engine.Engine', 'sqlalchemy.engine', 'sqlalchemy']:
+        sql_logger = logging.getLogger(sql_logger_name)
+        sql_logger.handlers.clear()
+        sql_logger.addHandler(console_handler)
+        sql_logger.setLevel(logging.DEBUG if settings.log_level.upper() == "DEBUG" else logging.INFO)
+        # sql_logger.propagate = False
     
     # Configure Uvicorn loggers
-    # for uvicorn_logger_name in ['uvicorn', 'uvicorn.error', 'uvicorn.access']:
-    #     uvi_logger = logging.getLogger(uvicorn_logger_name)
-    #     uvi_logger.handlers.clear()
-    #     uvi_logger.addHandler(console_handler)
-    #     uvi_logger.propagate = False
+    for uvicorn_logger_name in ['uvicorn', 'uvicorn.error', 'uvicorn.access']:
+        uvi_logger = logging.getLogger(uvicorn_logger_name)
+        uvi_logger.handlers.clear()
+        uvi_logger.addHandler(console_handler)
+        uvi_logger.setLevel(logging.DEBUG if settings.log_level.upper() == "DEBUG" else logging.INFO)
+        # uvi_logger.propagate = False
+        
+    # Configure Fastapi loggers
+    for fastapi_logger_name in ['fastapi']:
+        fastapi_logger = logging.getLogger(fastapi_logger_name)
+        fastapi_logger.handlers.clear()
+        fastapi_logger.addHandler(console_handler)
+        fastapi_logger.setLevel(logging.DEBUG if settings.log_level.upper() == "DEBUG" else logging.INFO)
+        # uvi_logger.propagate = False
     
     return logger
 
