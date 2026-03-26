@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from pymysql import DataError, IntegrityError
 
 from app.api import (auth, entities, events, health, lookups, members,
-                     permissions, roles, users, visualizer)
+                     permissions, roles, users, visualizer, metrics)
 from app.config.logging_config import logger
 from app.config.settings import settings
 from app.config.version import __version__
@@ -36,9 +36,12 @@ app = FastAPI(
     summary="This is the documentation for the backend APIs for the Sporting Scouts and Girl Guides members management app",
     version=__version__,
     responses={
+        200: {"description": "Successful response"},
+        201: {"description": "Resource created successfully"},
         400: {"description": "Bad request", "model": ErrorResponse},
         401: {"description": "Unauthorized", "model": ErrorResponse},
         500: {"description": "Internal server error", "model": ErrorResponse},
+        503: {"description": "Service unavailable", "model": ErrorResponse},
     },
     # lifespan=lifespan,
 )
@@ -106,11 +109,6 @@ tags_metadata = [
 app.openapi_tags = tags_metadata
 
 
-# @app.get("/metrics", include_in_schema=False)
-# async def app_metrics(request: Request):
-#     return metrics(request)
-
-
 # ------------------------------#
 # API routes
 # ------------------------------#
@@ -124,6 +122,7 @@ app.include_router(health.router)
 app.include_router(roles.router)
 app.include_router(permissions.router)
 app.include_router(visualizer.router)
+app.include_router(metrics.router)
 
 
 # Mount the static directory
