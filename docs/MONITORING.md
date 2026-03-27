@@ -124,9 +124,10 @@ This allows a single monitoring instance to observe both environments while main
 ## Data Collection Flow
 
 ### Metrics Flow (Prometheus)
-1. **API Services** expose `/metrics` endpoint with Prometheus-formatted metrics
-2. **Prometheus** scrapes metrics every 15 seconds via DNS service discovery
-3. **Grafana** queries Prometheus for visualization
+1. **API Services** expose `/metrics` endpoint (protected to internal networks only) with Prometheus-formatted metrics
+2. A **background health loop** runs every 30 seconds inside the application, calls the full health check, and updates health Gauges — completely off the request hot-path
+3. **Prometheus** scrapes `/metrics` every 15 seconds via DNS service discovery
+4. **Grafana** queries Prometheus for visualization
 
 ### Logs Flow (Loki)
 1. **Docker containers** write logs to stdout/stderr
@@ -139,28 +140,56 @@ This allows a single monitoring instance to observe both environments while main
 
 ### Application Metrics (FastAPI)
 
-Auto-instrumented via `prometheus-fastapi-instrumentor`:
+Instrumented via a custom `MetricsMiddleware` (`app/core/metrics_middleware.py`). Labels on all HTTP metrics include `method`, `path`, and `app_name`:
 
-- **HTTP Metrics**:
-  - `http_requests_total`: Total requests by method, endpoint, status
-  - `http_request_duration_seconds`: Request latency histogram
-  - `http_request_size_bytes`: Request payload sizes
-  - `http_response_size_bytes`: Response payload sizes
+- `fastapi_app_info`: Application metadata gauge (app name, version)
+- `fastapi_requests_total`: Total request count by method and path
+- `fastapi_responses_total`: Total response count by method, path, and status code
+- `fastapi_requests_duration_seconds`: Request latency histogram by method and path
+- `fastapi_exceptions_total`: Exception count by path and exception type
+- `fastapi_requests_in_progress`: Current in-flight request count by method and path
 
-### Custom Health Metrics
+### Health Metrics
 
-Exposed by the application health check service:
+Exposed via a background loop (`app/core/health_metrics.py`) that runs every 30 seconds and maps the full health report to Prometheus Gauges. Status values are normalised: `1.0` = healthy, `0.5` = warning, `0.0` = unhealthy.
 
-- **Database**:
-  - `ssgg_db_health_status`: Health status (1=healthy, 0=unhealthy)
-  - `ssgg_db_response_time_ms`: Query response time
-  - `ssgg_db_connection_pool_size`: Pool size configuration
-  - `ssgg_db_active_connections`: Active connections count
+- **Overall**:
+  - `ssgg_health_overall_up`: Overall application health status
+  - `ssgg_health_check_duration_ms`: Duration of the last full health check run
+  - `ssgg_health_services_healthy_total`: Count of services in healthy state
+  - `ssgg_health_services_warning_total`: Count of services in warning state
+  - `ssgg_health_services_unhealthy_total`: Count of services in unhealthy state
+
+- **Database Connectivity**:
+  - `ssgg_health_database_up`: DB connectivity status
+  - `ssgg_health_database_response_time_ms`: Test query response time
+
+- **Connection Pool**:
+  - `ssgg_health_connection_pool_up`: Pool health status
+  - `ssgg_health_connection_pool_size`: Configured maximum pool size
+  - `ssgg_health_connection_pool_active_connections`: Currently checked-out connections
+  - `ssgg_health_connection_pool_available_connections`: Idle connections available
+  - `ssgg_health_connection_pool_overflow_connections`: Open overflow connections
+  - `ssgg_health_connection_pool_utilization_percent`: Pool utilization percentage
+  - `ssgg_health_connection_pool_response_time_ms`: Pool inspection response time
+
+- **Database Schema**:
+  - `ssgg_health_db_schema_up`: Schema health status
+  - `ssgg_health_db_schema_required_tables_total`: Number of required tables
+  - `ssgg_health_db_schema_existing_tables_total`: Number of tables present in the DB
+  - `ssgg_health_db_schema_missing_tables_total`: Number of required tables that are missing
+  - `ssgg_health_db_schema_response_time_ms`: Schema inspection response time
+
+- **Environment Configuration**:
+  - `ssgg_health_environment_up`: Environment config health status
+  - `ssgg_health_environment_response_time_ms`: Config check response time
 
 - **Redis**:
-  - `ssgg_redis_health_status`: Health status (1=healthy, 0=unhealthy)
-  - `ssgg_redis_response_time_ms`: Operation response time
-  - `ssgg_redis_operations_total`: Total operations by type
+  - `ssgg_health_redis_up`: Redis connectivity status
+  - `ssgg_health_redis_response_time_ms`: Redis check response time
+  - `ssgg_health_redis_connected_clients`: Connected Redis clients
+  - `ssgg_health_redis_keyspace_hits_total`: Cumulative keyspace hits (snapshot)
+  - `ssgg_health_redis_keyspace_misses_total`: Cumulative keyspace misses (snapshot)
 
 ### System Metrics (Node Exporter)
 
@@ -219,17 +248,19 @@ The application outputs JSON-formatted logs that are automatically collected by 
 
 ## Environment Labeling
 
-All metrics include an `environment` label for filtering:
-- `environment="staging"`: Staging environment metrics
-- `environment="production"`: Production environment metrics
+HTTP metrics (`fastapi_*`) include the `app_name` label set from the `app_name` setting, allowing filtering per deployment.
 
-Example queries:
+Health Gauges (`ssgg_health_*`) are **instance-scoped** — each API replica exposes its own values. Use the Prometheus `instance` or `job` label to differentiate environments:
+
 ```promql
-# Production API request rate
-rate(http_requests_total{environment="production"}[5m])
+# Production API request rate (by job)
+rate(fastapi_requests_total{job="ssgg-be-v2-api-production"}[5m])
 
 # Staging database health
-ssgg_db_health_status{environment="staging"}
+ssgg_health_database_up{job="ssgg-be-v2-api-staging"}
+
+# Any unhealthy service across all environments
+ssgg_health_overall_up < 1
 ```
 
 ## Grafana Dashboards
@@ -275,53 +306,83 @@ They will be automatically loaded on Grafana startup.
 ### API Performance
 
 ```promql
-# Requests per second (by environment)
-rate(http_requests_total{environment="production"}[5m])
+# Requests per second (production)
+rate(fastapi_requests_total{job="ssgg-be-v2-api-production"}[5m])
 
 # 95th percentile response time
-histogram_quantile(0.95, 
-  rate(http_request_duration_seconds_bucket{environment="production"}[5m])
+histogram_quantile(0.95,
+  rate(fastapi_requests_duration_seconds_bucket{job="ssgg-be-v2-api-production"}[5m])
 )
 
-# Error rate percentage
-rate(http_requests_total{environment="production", status=~"5.."}[5m]) / 
-rate(http_requests_total{environment="production"}[5m]) * 100
+# Error rate percentage (5xx responses)
+rate(fastapi_responses_total{job="ssgg-be-v2-api-production", status_code=~"5.."}[5m]) /
+rate(fastapi_requests_total{job="ssgg-be-v2-api-production"}[5m]) * 100
 
 # Top 10 slowest endpoints
-topk(10, 
-  histogram_quantile(0.95, 
-    rate(http_request_duration_seconds_bucket[5m])
-  )
+topk(10,
+  histogram_quantile(0.95,
+    rate(fastapi_requests_duration_seconds_bucket{job="ssgg-be-v2-api-production"}[5m])
+  ) by (path)
 )
+
+# Current in-flight requests
+sum(fastapi_requests_in_progress{job="ssgg-be-v2-api-production"}) by (path)
+
+# Exception count by type
+rate(fastapi_exceptions_total{job="ssgg-be-v2-api-production"}[5m])
 ```
 
 ### Database Health
 
 ```promql
-# Connection pool utilization
-(ssgg_db_active_connections / ssgg_db_connection_pool_size) * 100
+# Database connectivity status (1=healthy, 0.5=warning, 0=unhealthy)
+ssgg_health_database_up
 
-# Database response time trend
-ssgg_db_response_time_ms
+# Database test query response time
+ssgg_health_database_response_time_ms
 
-# Database availability (should be 1)
-min(ssgg_db_health_status) by (environment)
+# Connection pool utilization percentage
+ssgg_health_connection_pool_utilization_percent
+
+# Active vs available connections
+ssgg_health_connection_pool_active_connections
+ssgg_health_connection_pool_available_connections
+
+# Schema drift — should always be 0
+ssgg_health_db_schema_missing_tables_total
 
 # Alert if any replica has unhealthy DB
-ssgg_db_health_status == 0
+ssgg_health_database_up == 0
 ```
 
 ### Redis Monitoring
 
 ```promql
-# Redis health status
-ssgg_redis_health_status
+# Redis health status (1=healthy, 0=unhealthy)
+ssgg_health_redis_up
 
-# Redis operation latency
-ssgg_redis_response_time_ms
+# Redis check response time
+ssgg_health_redis_response_time_ms
 
-# Redis operations per second
-rate(ssgg_redis_operations_total[5m])
+# Connected clients
+ssgg_health_redis_connected_clients
+
+# Cache hit rate
+ssgg_health_redis_keyspace_hits_total /
+  (ssgg_health_redis_keyspace_hits_total + ssgg_health_redis_keyspace_misses_total)
+```
+
+### Overall Application Health
+
+```promql
+# Overall health (1=healthy, 0.5=warning, 0=unhealthy)
+ssgg_health_overall_up
+
+# Count of unhealthy services (alert threshold: > 0)
+ssgg_health_services_unhealthy_total
+
+# Full health check duration trend
+ssgg_health_check_duration_ms
 ```
 
 ### System Resources
@@ -334,7 +395,7 @@ rate(ssgg_redis_operations_total[5m])
 (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
 
 # Disk space usage
-(node_filesystem_size_bytes - node_filesystem_free_bytes) / 
+(node_filesystem_size_bytes - node_filesystem_free_bytes) /
 node_filesystem_size_bytes * 100
 
 # Network throughput (MB/s)
@@ -345,13 +406,13 @@ rate(node_network_receive_bytes_total[5m]) / 1024 / 1024
 
 ```promql
 # Compare DB response time across environments
-ssgg_db_response_time_ms{environment=~"staging|production"}
+ssgg_health_database_response_time_ms
 
-# Request rate comparison
-sum(rate(http_requests_total[5m])) by (environment)
+# Request rate comparison by job
+sum(rate(fastapi_requests_total[5m])) by (job)
 
-# Error rate comparison
-sum(rate(http_requests_total{status=~"5.."}[5m])) by (environment)
+# Error rate comparison by job
+sum(rate(fastapi_responses_total{status_code=~"5.."}[5m])) by (job)
 ```
 
 ## Sample Log Queries (LogQL)
@@ -572,51 +633,68 @@ groups:
     rules:
       - alert: APIHighErrorRate
         expr: |
-          rate(http_requests_total{status=~"5.."}[5m]) / 
-          rate(http_requests_total[5m]) > 0.05
+          rate(fastapi_responses_total{status_code=~"5.."}[5m]) /
+          rate(fastapi_requests_total[5m]) > 0.05
         for: 5m
         labels:
           severity: critical
         annotations:
-          summary: "{{ $labels.environment }} API error rate above 5%"
+          summary: "API error rate above 5% on {{ $labels.job }}"
           description: "Error rate is {{ $value | humanizePercentage }}"
 
       - alert: DatabaseDown
-        expr: ssgg_db_health_status == 0
+        expr: ssgg_health_database_up == 0
         for: 2m
         labels:
           severity: critical
         annotations:
-          summary: "{{ $labels.environment }} database is unhealthy"
+          summary: "Database is unhealthy on {{ $labels.instance }}"
 
       - alert: RedisDown
-        expr: ssgg_redis_health_status == 0
+        expr: ssgg_health_redis_up == 0
         for: 2m
         labels:
           severity: critical
         annotations:
-          summary: "{{ $labels.environment }} Redis is unhealthy"
+          summary: "Redis is unhealthy on {{ $labels.instance }}"
+
+      - alert: SchemaDrift
+        expr: ssgg_health_db_schema_missing_tables_total > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Required database tables are missing on {{ $labels.instance }}"
+          description: "{{ $value }} required table(s) missing from the database"
+
+      - alert: AnyServiceUnhealthy
+        expr: ssgg_health_services_unhealthy_total > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $value }} service(s) unhealthy on {{ $labels.instance }}"
 
   - name: ssgg_warnings
     interval: 1m
     rules:
       - alert: HighDatabaseLatency
-        expr: ssgg_db_response_time_ms > 1000
+        expr: ssgg_health_database_response_time_ms > 1000
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "High database latency in {{ $labels.environment }}"
+          summary: "High database latency on {{ $labels.instance }}"
           description: "DB response time is {{ $value }}ms"
 
       - alert: HighConnectionPoolUsage
-        expr: |
-          (ssgg_db_active_connections / ssgg_db_connection_pool_size) > 0.8
+        expr: ssgg_health_connection_pool_utilization_percent > 80
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "Connection pool usage above 80% in {{ $labels.environment }}"
+          summary: "Connection pool usage above 80% on {{ $labels.instance }}"
+          description: "Pool utilization is {{ $value }}%"
 
       - alert: HighMemoryUsage
         expr: |

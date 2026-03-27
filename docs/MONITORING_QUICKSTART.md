@@ -1,6 +1,6 @@
 # Monitoring Stack - Quick Start Guide
 
-> **Note**: The monitoring stack is automatically deployed by the CI/CD pipeline (`build_and_deploy.yml` workflow) along with Traefik and the application stacks. This guide is for manual deployment or troubleshooting purposes.
+> **Note**: The monitoring stack is manually deployed by the CI/CD pipeline (`deploy_monitoring.yml` workflow). This guide is for manual deployment or troubleshooting purposes.
 
 This guide will help you deploy the Prometheus, Grafana, and Loki monitoring stack for the SSGG application.
 
@@ -67,10 +67,9 @@ docker stack deploy -c docker-stack.production.yml ssgg-production
 
 **Automated Deployment (Recommended)**:
 
-The monitoring stack is automatically deployed when you push to the `main` or `stage` branch. The GitHub Actions workflow:
-1. Checks if the monitoring stack already exists
-2. Deploys it automatically if not found
-3. Skips deployment if already running
+The monitoring stack is automatically deployed when the CI/CD pipeline runs the `deploy_monitoring.yml` workflow. This workflow:
+1. Builds and pushes monitoring service images (Prometheus, Grafana, Loki, Promtail)
+2. Deploys the `ssgg-monitoring` stack using `docker-stack-monitoring.yml`
 
 **Manual Deployment** (if needed for troubleshooting or custom setup):
 
@@ -127,9 +126,16 @@ docker service logs ssgg-monitoring_promtail --tail 50
 curl -k -u admin:your-prometheus-password https://prometheus.sportingscout.org/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health, instance: .labels.instance}'
 
 # Expected output should show:
-# - ssgg-api-staging (1 target, health=up)
-# - ssgg-api-production (5 targets, health=up)
-# - node-exporter (N targets based on number of nodes, health=up)
+# {
+#   "job": "ssgg-be-v2-api-staging",
+#   "health": "up",
+#   "instance": "tasks.ssgg-staging_api:8000"
+# }
+# {
+#   "job": "ssgg-be-v2-api-production",
+#   "health": "up",
+#   "instance": "tasks.ssgg-production_api:8000"
+# }
 ```
 
 ## Step 6: Access Monitoring Interfaces
@@ -188,9 +194,13 @@ curl http://api.stg.sportingscout.org/metrics | head -20
 curl http://api.sportingscout.org/metrics | head -20
 
 # You should see metrics like:
-# http_requests_total{...}
-# ssgg_db_health_status{...}
-# ssgg_redis_health_status{...}
+# fastapi_requests_total{...}
+# fastapi_responses_total{...}
+# fastapi_requests_duration_seconds_bucket{...}
+# ssgg_health_overall_up{...}
+# ssgg_health_database_up{...}
+# ssgg_health_redis_up{...}
+# ssgg_health_connection_pool_utilization_percent{...}
 ```
 
 ### Run Sample Queries in Prometheus
@@ -199,16 +209,22 @@ Go to Prometheus → **Graph** and try these queries:
 
 ```promql
 # Check if all API instances are being scraped
-up{job=~"ssgg-api.*"}
+up{job=~"ssgg-be-v2-api.*"}
 
-# View database health across all environments
-ssgg_db_health_status
+# View database health
+ssgg_health_database_up
 
-# View request rate
-rate(http_requests_total[5m])
+# View overall application health
+ssgg_health_overall_up
+
+# View request rate (production)
+rate(fastapi_requests_total{job="ssgg-be-v2-api-production"}[5m])
 
 # View 95th percentile API latency
-histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+histogram_quantile(0.95, rate(fastapi_requests_duration_seconds_bucket[5m]))
+
+# Connection pool utilization
+ssgg_health_connection_pool_utilization_percent
 ```
 
 ### View Data in Grafana
@@ -446,7 +462,9 @@ After completing this guide, verify:
 - [ ] Logs are being collected (check Grafana Explore with Loki)
 - [ ] JSON logs are properly parsed (fields appear as labels)
 - [ ] Both staging and production environments are monitored
-- [ ] Health metrics are visible (`ssgg_db_health_status`, `ssgg_redis_health_status`)
+- [ ] Health metrics are visible in Prometheus (`ssgg_health_overall_up`, `ssgg_health_database_up`, `ssgg_health_redis_up`)
+- [ ] Health background loop is running (check `ssgg_health_check_duration_ms` updates every ~30s)
+- [ ] Connection pool metrics visible (`ssgg_health_connection_pool_utilization_percent`)
 - [ ] System metrics are visible (CPU, memory, disk from node-exporter)
 - [ ] Environment labels are working (can filter by staging/production)
 - [ ] Log queries work (`{environment="production"}` returns results)
