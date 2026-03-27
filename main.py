@@ -1,3 +1,4 @@
+import asyncio
 import os
 from contextlib import asynccontextmanager
 from typing import Callable
@@ -13,7 +14,9 @@ from app.api import (auth, entities, events, health, lookups, members,
 from app.config.logging_config import logger
 from app.config.settings import settings
 from app.config.version import __version__
+from app.core.health_metrics import update_health_metrics
 from app.core.metrics_middleware import metrics_middleware
+from app.services.healthcheck_service import HealthCheckService
 from app.core.access_control_middleware import access_control_middleware
 from app.core.auditing_middleware import auditing_middleware
 from app.core.exceptions import (AuthenticationFailed, EntityDoesNotExistError,
@@ -28,9 +31,23 @@ from app.schemas.common_schema import ErrorResponse
 # Add lifespan to the application
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Application started")
-    yield
-    logger.info("Application shutdown")
+    async def _health_metrics_loop():
+        service = HealthCheckService()
+        while True:
+            try:
+                report = await service.check_health(summary_only=False)
+                update_health_metrics(report)
+            except Exception as exc:
+                logger.warning(f"Health metrics collection failed: {exc}")
+            await asyncio.sleep(30)
+
+    task = asyncio.create_task(_health_metrics_loop())
+    logger.info("Application started — health metrics collection running")
+    try:
+        yield
+    finally:
+        task.cancel()
+        logger.info("Application shutdown")
 
 app = FastAPI(
     title="SSGG",
@@ -44,7 +61,7 @@ app = FastAPI(
         500: {"description": "Internal server error", "model": ErrorResponse},
         503: {"description": "Service unavailable", "model": ErrorResponse},
     },
-    # lifespan=lifespan,
+    lifespan=lifespan,
 )
 
 app.add_middleware(
