@@ -1,3 +1,4 @@
+import asyncio
 import os
 from contextlib import asynccontextmanager
 from typing import Callable
@@ -6,14 +7,16 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
-from prometheus_client import Counter, Gauge
 from pymysql import DataError, IntegrityError
 
 from app.api import (auth, entities, events, health, lookups, members,
-                     permissions, roles, users, visualizer)
+                     permissions, roles, users, visualizer, metrics)
 from app.config.logging_config import logger
 from app.config.settings import settings
 from app.config.version import __version__
+from app.core.health_metrics import update_health_metrics
+from app.core.metrics_middleware import metrics_middleware
+from app.services.healthcheck_service import HealthCheckService
 from app.core.access_control_middleware import access_control_middleware
 from app.core.auditing_middleware import auditing_middleware
 from app.core.exceptions import (AuthenticationFailed, EntityDoesNotExistError,
@@ -22,62 +25,44 @@ from app.core.exceptions import (AuthenticationFailed, EntityDoesNotExistError,
 from app.core.logging_middleware import logging_middleware
 from app.core.rate_limitting import setup_rate_limiting
 from app.core.user_context_middleware import user_context_middleware
-# from app.core.prometheus_middleware import PrometheusMiddleware, metrics, setting_otlp
 from app.schemas.common_schema import ErrorResponse
 
 
 # Add lifespan to the application
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Application started", extra={"event": "startup"})
-    yield
-    logger.info("Application shutdown", extra={"event": "shutdown"})
+    async def _health_metrics_loop():
+        service = HealthCheckService()
+        while True:
+            try:
+                report = await service.check_health(summary_only=False)
+                update_health_metrics(report)
+            except Exception as exc:
+                logger.warning(f"Health metrics collection failed: {exc}")
+            await asyncio.sleep(30)
+
+    task = asyncio.create_task(_health_metrics_loop())
+    logger.info("Application started — health metrics collection running")
+    try:
+        yield
+    finally:
+        task.cancel()
+        logger.info("Application shutdown")
 
 app = FastAPI(
     title="SSGG",
     summary="This is the documentation for the backend APIs for the Sporting Scouts and Girl Guides members management app",
     version=__version__,
     responses={
+        200: {"description": "Successful response"},
+        201: {"description": "Resource created successfully"},
         400: {"description": "Bad request", "model": ErrorResponse},
         401: {"description": "Unauthorized", "model": ErrorResponse},
         500: {"description": "Internal server error", "model": ErrorResponse},
+        503: {"description": "Service unavailable", "model": ErrorResponse},
     },
-    # lifespan=lifespan,
+    lifespan=lifespan,
 )
-
-# if settings.otel_exporter_otlp_endpoint:
-#     setting_otlp(
-#         app=app,
-#         app_name=settings.otel_service_name,
-#         endpoint=settings.otel_exporter_otlp_endpoint,
-#         log_correlation=settings.otel_log_correlation,
-#     )
-
-# app.add_middleware(PrometheusMiddleware, app_name=settings.otel_service_name)
-
-# Custom Prometheus metrics for application-specific monitoring
-db_connection_pool_gauge = Gauge('ssgg_db_connection_pool_size', 'Database connection pool size')
-db_active_connections_gauge = Gauge('ssgg_db_active_connections', 'Active database connections')
-db_health_gauge = Gauge('ssgg_db_health_status', 'Database health status (1=healthy, 0=unhealthy)')
-db_response_time_gauge = Gauge('ssgg_db_response_time_ms', 'Database response time in milliseconds')
-redis_health_gauge = Gauge('ssgg_redis_health_status', 'Redis health status (1=healthy, 0=unhealthy)')
-redis_response_time_gauge = Gauge('ssgg_redis_response_time_ms', 'Redis response time in milliseconds')
-redis_operations_counter = Counter('ssgg_redis_operations_total', 'Total Redis operations', ['operation', 'status'])
-
-# app.add_middleware(PrometheusMiddleware, app_name=settings.otel_service_name)
-app.middleware("http")(access_control_middleware)
-app.middleware("http")(user_context_middleware)
-app.middleware("http")(auditing_middleware)
-@app.middleware("http")
-async def add_logging_middleware(request: Request, call_next):
-    return await logging_middleware(request, call_next)
-
-
-
-
-
-# Setup rate limiting
-setup_rate_limiting(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -86,6 +71,18 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["*"],
 )
+app.middleware("http")(metrics_middleware)
+app.middleware("http")(access_control_middleware)
+app.middleware("http")(user_context_middleware)
+app.middleware("http")(auditing_middleware)
+@app.middleware("http")
+async def add_logging_middleware(request: Request, call_next):
+    return await logging_middleware(request, call_next)
+
+# Setup rate limiting
+setup_rate_limiting(app)
+
+
 
 tags_metadata = [
     {
@@ -132,11 +129,6 @@ tags_metadata = [
 app.openapi_tags = tags_metadata
 
 
-# @app.get("/metrics", include_in_schema=False)
-# async def app_metrics(request: Request):
-#     return metrics(request)
-
-
 # ------------------------------#
 # API routes
 # ------------------------------#
@@ -150,6 +142,7 @@ app.include_router(health.router)
 app.include_router(roles.router)
 app.include_router(permissions.router)
 app.include_router(visualizer.router)
+app.include_router(metrics.router)
 
 
 # Mount the static directory

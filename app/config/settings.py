@@ -2,8 +2,9 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # #APP settings
+    # APP settings
     environment: str
+    app_name: str = "SSGG API"
     
     # Database settings
     db_host: str
