@@ -13,6 +13,7 @@ from app.api import (auth, entities, events, health, lookups, members,
 from app.config.logging_config import logger
 from app.config.settings import settings
 from app.config.version import __version__
+from app.core.metrics_middleware import metrics_middleware
 from app.core.access_control_middleware import access_control_middleware
 from app.core.auditing_middleware import auditing_middleware
 from app.core.exceptions import (AuthenticationFailed, EntityDoesNotExistError,
@@ -46,6 +47,14 @@ app = FastAPI(
     # lifespan=lifespan,
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[s for s in settings.cors_origins.split(",")],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["*"],
+)
+app.middleware("http")(metrics_middleware)
 app.middleware("http")(access_control_middleware)
 app.middleware("http")(user_context_middleware)
 app.middleware("http")(auditing_middleware)
@@ -56,13 +65,7 @@ async def add_logging_middleware(request: Request, call_next):
 # Setup rate limiting
 setup_rate_limiting(app)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[s for s in settings.cors_origins.split(",")],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allow_headers=["*"],
-)
+
 
 tags_metadata = [
     {

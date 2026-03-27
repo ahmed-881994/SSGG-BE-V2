@@ -4,6 +4,9 @@ global:
   external_labels:
     cluster: 'ssgg'
 
+rule_files:
+  - /etc/prometheus/alerts.yml
+
 scrape_configs:
   # Staging API - scrape all replicas
   - job_name: 'ssgg-be-v2-api-staging'
@@ -22,7 +25,7 @@ scrape_configs:
         regex: '([^:]+):.*'
         replacement: '${1}'
     
-  # Production API - scrape all 5 replicas
+  # Production API - scrape all replicas
   - job_name: 'ssgg-be-v2-api-production'
     dns_sd_configs:
       - names:

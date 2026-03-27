@@ -1,27 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
+from prometheus_client import CONTENT_TYPE_LATEST
 
 # from app.core.dependencies import get_user_in_token
-# from app.services.healthcheck_service import HealthCheckService
+from app.services.metrics_service import MetricsService
 
 router = APIRouter(tags=["Metrics"], include_in_schema=False)
 
 @router.get("/metrics")
 async def health_check():
     """Metrics endpoint for monitoring"""
-    pass
-    # health_service = HealthCheckService()
-    # health_status = await health_service.check_health(summary_only=True)
-
-    # if health_status["status"] == "unhealthy":
-    #     raise HTTPException(status_code=503, detail=health_status)
+    metrics_service = MetricsService()
     
-    # return health_status
-
-# @router.get("/health/report")
-# async def health_report(current_user=Depends(get_user_in_token)):
-#     """Health report"""
-#     health_service = HealthCheckService()
-#     health_report = await health_service.check_health()
-#     if health_report["status"] == "unhealthy":
-#         raise HTTPException(status_code=503, detail=health_report)
-#     return health_report
+    metrics = metrics_service.get_application_metrics()
+    return Response(content=metrics, media_type=CONTENT_TYPE_LATEST)

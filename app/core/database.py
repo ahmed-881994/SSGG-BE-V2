@@ -1,6 +1,7 @@
 from typing import AsyncGenerator, Generator
 
-from sqlalchemy import QueuePool, create_engine
+from prometheus_client import Counter, Gauge
+from sqlalchemy import QueuePool, create_engine, event
 from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
 from sqlalchemy.orm import Session, sessionmaker
@@ -14,6 +15,20 @@ DATABASE_URL = f"mysql+pymysql://{settings.db_username}:{settings.db_password}@{
 
 # Asynchronous URL: mysql+aiomysql://user:password@host:port/database?charset=utf8mb4
 ASYNC_DATABASE_URL = f"mysql+aiomysql://{settings.db_username}:{settings.db_password}@{settings.db_host}:{settings.db_port}/{settings.db_database}?charset=utf8mb4"
+
+# Prometheus metrics for DB pool behavior
+db_pool_configured_size_gauge = Gauge(
+    "ssgg_db_pool_configured_size",
+    "Configured SQLAlchemy pool size per worker process"
+)
+db_pool_checked_out_gauge = Gauge(
+    "ssgg_db_pool_checked_out_connections",
+    "Currently checked out SQLAlchemy DB connections per worker process"
+)
+db_pool_checkout_timeouts_counter = Counter(
+    "ssgg_db_pool_checkout_timeouts_total",
+    "Total SQLAlchemy DB connection checkout timeout exceptions"
+)
 
 # Create SQLAlchemy engine with optimized configuration
 engine = create_engine(
@@ -38,6 +53,32 @@ engine = create_engine(
     }
 )
 
+def _refresh_pool_metrics() -> None:
+    try:
+        db_pool_configured_size_gauge.set(engine.pool.size())
+        db_pool_checked_out_gauge.set(engine.pool.checkedout())
+    except Exception:
+        # Metrics must never break request flow
+        pass
+
+
+@event.listens_for(engine, "connect")
+def _on_connect(dbapi_connection, connection_record):
+    _refresh_pool_metrics()
+
+
+@event.listens_for(engine, "checkout")
+def _on_checkout(dbapi_connection, connection_record, connection_proxy):
+    _refresh_pool_metrics()
+
+
+@event.listens_for(engine, "checkin")
+def _on_checkin(dbapi_connection, connection_record):
+    _refresh_pool_metrics()
+
+
+# Initialize gauges on startup
+_refresh_pool_metrics()
 
 # Create asynchronous SQLAlchemy engine
 async_engine = create_async_engine(

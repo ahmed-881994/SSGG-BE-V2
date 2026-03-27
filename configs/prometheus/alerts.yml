@@ -1,0 +1,29 @@
+groups:
+  - name: ssgg-db-pool-alerts
+    rules:
+      - alert: SSGGDbPoolHighUtilization
+        expr: (ssgg_db_pool_checked_out_connections / ssgg_db_pool_configured_size) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: DB pool utilization above 85 percent
+          description: Checked out DB connections are above 85 percent for 5 minutes.
+
+      - alert: SSGGDbPoolCriticalUtilization
+        expr: (ssgg_db_pool_checked_out_connections / ssgg_db_pool_configured_size) > 0.95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: DB pool utilization above 95 percent
+          description: Checked out DB connections are above 95 percent for 2 minutes.
+
+      - alert: SSGGDbCheckoutTimeoutsDetected
+        expr: increase(ssgg_db_pool_checkout_timeouts_total[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: DB checkout timeouts detected
+          description: SQLAlchemy pool checkout timeout errors detected in the last 5 minutes.
