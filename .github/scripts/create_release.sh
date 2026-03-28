@@ -14,18 +14,24 @@ fi
 
 TYPE=$1
 
+# Resolve paths relative to this script, not the caller's current directory.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+cd "${REPO_ROOT}" # Move to repository root
+
 # Run the version bump script first to update the VERSION file
-./bump_version.sh $TYPE
+"${SCRIPT_DIR}/bump_version.sh" $TYPE
 
 # Check if VERSION file exists
-if [ ! -f "VERSION" ]; then
+if [ ! -f "${REPO_ROOT}/VERSION" ]; then
     echo "❌ Error: VERSION file not found"
     echo "   Make sure you're in the repository root directory"
     exit 1
 fi
 
 # Read version from VERSION file
-VERSION=$(cat VERSION | tr -d '[:space:]')
+VERSION=$(cat "${REPO_ROOT}/VERSION" | tr -d '[:space:]')
 
 # Validate version format (X.Y.Z)
 if ! [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
