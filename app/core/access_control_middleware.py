@@ -61,6 +61,10 @@ class AccessControlMiddleware:
     async def __call__(self, request: Request, call_next):
         db = None
         try:
+            # Let CORS preflight requests pass through without authz checks.
+            if request.method == "OPTIONS":
+                return await call_next(request)
+
             # Check if the route is public
             path = request.url.path
             method = request.method
