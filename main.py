@@ -68,7 +68,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[s for s in settings.cors_origins.split(",")],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_methods=["OPTIONS", "GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["*"],
 )
 app.middleware("http")(metrics_middleware)
