@@ -198,16 +198,11 @@ jobs:
           access_token_expires_minutes=${{ vars.JWT_EXPIRES_IN }}
 
           # Security settings
-          cors_origins="*"
+          cors_origins=${{ vars.CORS_ORIGINS }}
           rate_limit_per_minute=${{ vars.RATE_LIMIT_PER_MINUTE }}
 
           # Logging settings
           log_level=${{ vars.LOG_LEVEL }}
-
-          # # OpenTelemetry settings
-          # otel_exporter_otlp_endpoint=${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
-          # otel_service_name=${{ vars.OTEL_SERVICE_NAME }}
-          # otel_log_correlation=${{ vars.OTEL_LOG_CORRELATION }}
 
           # Email settings
           smtp_server=${{ secrets.SMTP_SERVER }}
@@ -311,7 +306,7 @@ jobs:
           access_token_expires_minutes=${{ vars.JWT_EXPIRES_IN }}
 
           # Security settings
-          cors_origins="*"
+          cors_origins=${{ vars.CORS_ORIGINS }}
           rate_limit_per_minute=${{ vars.RATE_LIMIT_PER_MINUTE }}
 
           # Logging settings

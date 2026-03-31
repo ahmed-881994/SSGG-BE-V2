@@ -68,8 +68,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[s for s in settings.cors_origins.split(",")],
     allow_credentials=True,
-    allow_methods=["OPTIONS", "GET", "POST", "PUT", "PATCH", "DELETE"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
 app.middleware("http")(metrics_middleware)
 app.middleware("http")(access_control_middleware)
