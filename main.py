@@ -169,11 +169,11 @@ def create_exception_handler(status_code: int, initial_detail: str) -> Callable[
             logger.error(exc)
             return JSONResponse(
                 status_code=status_code,
-                content={"detail": detail["message"]},
-                headers={"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-                         "Access-Control-Allow-Origin": settings.cors_origins,
-                         "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Requested-With",
-                         "Access-Control-Allow-Credentials": "true"},
+                content={"detail": detail["message"]}
+                # headers={"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                #          "Access-Control-Allow-Origin": settings.cors_origins,
+                #          "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Requested-With",
+                #          "Access-Control-Allow-Credentials": "true"},
             )
         # Default response for other exceptions
         logger.error(exc)
