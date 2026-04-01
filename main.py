@@ -64,13 +64,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
-    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
-)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=[origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()],
+#     allow_credentials=True,
+#     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
+#     allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
+# )
 app.middleware("http")(metrics_middleware)
 app.middleware("http")(access_control_middleware)
 app.middleware("http")(user_context_middleware)
@@ -78,6 +78,13 @@ app.middleware("http")(auditing_middleware)
 @app.middleware("http")
 async def add_logging_middleware(request: Request, call_next):
     return await logging_middleware(request, call_next)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
+)
 
 # Setup rate limiting
 setup_rate_limiting(app)
