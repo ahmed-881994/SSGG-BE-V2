@@ -33,7 +33,7 @@ class AttendanceUpdateRecord(BaseSchema):
 class EventCreate(BaseSchema):
     event_name: NameObject = Field(alias="EventName")
     event_start_date: date = Field(alias="EventStartDate")
-    event_end_date: Optional[date] = Field(default=None,alias="EventEndDate")
+    event_end_date: date = Field(alias="EventEndDate")
     event_location: Optional[str] = Field(default=None,alias="EventLocation")
     is_multi_team: bool = Field(alias="IsMultiTeam")
     event_type_id: int = Field(alias="EventTypeID")
