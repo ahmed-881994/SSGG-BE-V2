@@ -66,9 +66,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[s for s in settings.cors_origins.split(",")],
+    allow_origins=[origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
     allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
 app.middleware("http")(metrics_middleware)
@@ -170,7 +170,10 @@ def create_exception_handler(status_code: int, initial_detail: str) -> Callable[
             return JSONResponse(
                 status_code=status_code,
                 content={"detail": detail["message"]},
-                headers={"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS", "Access-Control-Allow-Origin": settings.cors_origins, "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Requested-With", "Access-Control-Allow-Credentials": "true"},
+                headers={"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                         "Access-Control-Allow-Origin": settings.cors_origins,
+                         "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Requested-With",
+                         "Access-Control-Allow-Credentials": "true"},
             )
         # Default response for other exceptions
         logger.error(exc)
