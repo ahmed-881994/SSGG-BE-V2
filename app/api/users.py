@@ -94,7 +94,7 @@ def get_user(user_id: str, db: Session = Depends(get_db_session)):
 def update_user_password(request: Request, user_id: str, password_data: UserUpdatePassword, db: Session = Depends(get_db_session)):
     """Update a user's password."""
     try:
-        if request.state.user_id != user_id:
+        if request.state.member_id != user_id:
             raise AuthorizationError("You can only update your own password")
         user_service = UserService(db)
         user_service.update_user_password(user_id=user_id, **password_data.model_dump())
