@@ -167,7 +167,7 @@ class EntityService:
                     "en": entity.entity_name_en,
                     "ar": entity.entity_name_ar
                 },
-                "parent_id": entity.entity_parent_id,
+                "entity_parent_id": entity.entity_parent_id,
                 "entity_type": {
                     "entity_type_id": entity.entity_type_id,
                     "entity_type_name": {
