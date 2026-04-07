@@ -1,11 +1,11 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db_session
 from app.core.dependencies import get_user_in_token
-from app.core.exceptions import (EntityAlreadyExistsError,
+from app.core.exceptions import (AuthorizationError, EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
 from app.schemas.common_schema import SuccessResponse
 from app.schemas.users_schema import (UserCreate, UserResponse,
@@ -91,14 +91,18 @@ def get_user(user_id: str, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
     
 @router.patch("/{user_id}/password", response_model=SuccessResponse)
-def update_user_password(user_id: str, password_data: UserUpdatePassword, db: Session = Depends(get_db_session)):
+def update_user_password(request: Request, user_id: str, password_data: UserUpdatePassword, db: Session = Depends(get_db_session)):
     """Update a user's password."""
     try:
+        if request.state.user_id != user_id:
+            raise AuthorizationError("You can only update your own password")
         user_service = UserService(db)
         user_service.update_user_password(user_id=user_id, **password_data.model_dump())
         return {"message": "Password updated successfully"}
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except AuthorizationError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except ServiceError as e:
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:

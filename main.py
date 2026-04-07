@@ -5,27 +5,28 @@ from typing import Callable
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pymysql import DataError, IntegrityError
 
-from app.api import (auth, entities, events, health, lookups, members,
-                     permissions, roles, users, visualizer, metrics)
+from app.api import (auth, entities, events, health, lookups, members, metrics,
+                     permissions, roles, users, visualizer)
 from app.config.logging_config import logger
 from app.config.settings import settings
 from app.config.version import __version__
-from app.core.health_metrics import update_health_metrics
-from app.core.metrics_middleware import metrics_middleware
-from app.services.healthcheck_service import HealthCheckService
 from app.core.access_control_middleware import access_control_middleware
 from app.core.auditing_middleware import auditing_middleware
-from app.core.exceptions import (AuthenticationFailed, EntityDoesNotExistError,
+from app.core.exceptions import (AuthenticationFailed, AuthorizationError,
+                                 EntityDoesNotExistError,
                                  InvalidOperationError, InvalidTokenError,
                                  ServiceError, SSGGApiError)
+from app.core.health_metrics import update_health_metrics
 from app.core.logging_middleware import logging_middleware
+from app.core.metrics_middleware import metrics_middleware
 from app.core.rate_limitting import setup_rate_limiting
 from app.core.user_context_middleware import user_context_middleware
 from app.schemas.common_schema import ErrorResponse
+from app.services.healthcheck_service import HealthCheckService
 
 
 # Add lifespan to the application
@@ -225,5 +226,13 @@ app.add_exception_handler(
     handler=create_exception_handler(
         status.HTTP_500_INTERNAL_SERVER_ERROR,
         "A service seems to be down, try again later.",
+    ),
+)
+
+app.add_exception_handler(
+    exc_class_or_status_code=AuthorizationError,
+    handler=create_exception_handler(
+        status.HTTP_403_FORBIDDEN,
+        "You don't have permission to perform this action.",
     ),
 )

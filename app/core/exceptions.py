@@ -49,3 +49,8 @@ class InvalidTokenError(SSGGApiError):
     """invalid token"""
 
     pass
+
+class AuthorizationError(SSGGApiError):
+    """insufficient permissions or forbidden access"""
+
+    pass
