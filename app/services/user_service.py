@@ -257,7 +257,8 @@ class UserService:
             user = self.user_repository.update_user(
                 user_id,
                 password_hash=hashed_password,
-                salt=salt
+                salt=salt,
+                password_reset=False
             )
             logger.info(f"Password for user {user_id} updated successfully")
             return True
