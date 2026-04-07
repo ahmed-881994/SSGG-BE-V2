@@ -68,7 +68,8 @@ def login(request: Request, form_data: Annotated[OAuth2PasswordRequestForm, Depe
         return Token(
             access_token=access_token, 
             token_type="bearer", 
-            refresh_token=refresh_token
+            refresh_token=refresh_token,
+            password_reset_required=user.password_reset
         )
     except AuthenticationFailed as e:
         raise HTTPException(
