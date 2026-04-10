@@ -153,13 +153,19 @@ class AccessControlMiddleware:
 
             return await call_next(request)
         except AuthorizationError as e:
-            logger.warning(f"Access denied: {str(e)}")
+            logger.warning(f"Access denied: {str(e.message)}")
             return JSONResponse(
                 status_code=status.HTTP_403_FORBIDDEN,
-                content={"detail": str(e)}
+                content={"detail": str(e.message)}
+            )
+        except AuthenticationFailed as e:
+            logger.warning(f"Authentication failed: {str(e.message)}")
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={"detail": str(e.message)}
             )
         except Exception as e:
-            logger.error(f"Access control error", exc_info=True)
+            logger.error(f"Access control error:", exc_info=True)
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content={"detail": "Internal server error"}
