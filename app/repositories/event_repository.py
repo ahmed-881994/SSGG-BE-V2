@@ -43,7 +43,7 @@ class EventRepository(BaseRepository[Event]):
             raise ServiceError(message=f"Failed to retrieve event: {str(e)}",
                 name="Database Error")
 
-    def search_events(self, name: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None, entity_id: Optional[int] = None) -> list[Event]:
+    def search_events(self, name: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None, entity_id: Optional[int] = None, include_children: bool = False) -> list[Event]:
         """Search for events based on various criteria."""
         try:
             query = self.db.query(Event)
@@ -54,11 +54,15 @@ class EventRepository(BaseRepository[Event]):
             if end_date:
                 query = query.filter(Event.event_end_date <= end_date)
             if entity_id is not None:
+                entity_children = []
+                if include_children:
+                    entity_children = self.db.query(Entity).filter(Entity.entity_parent_id == entity_id).all()
                 query = query.filter(
                     or_(
                         Event.organizing_entity_id == entity_id,
-                        Event.event_entities.any(EventEntity.entity_id == entity_id))
-                    )
+                        Event.event_entities.any(EventEntity.entity_id == entity_id),
+                        Event.organizing_entity_id.in_([child.entity_id for child in entity_children])
+                    ))
             return query.all()
         except SQLAlchemyError as e:
             logger.error(f"Error searching events: {e}")

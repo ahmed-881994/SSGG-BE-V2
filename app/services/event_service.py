@@ -68,11 +68,11 @@ class EventService:
                 name="Event Retrieval Error"
             )
 
-    def search_events(self, name: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None, entity_id: Optional[int] = None) -> Dict[str, List[Dict[str, Any]]]:
+    def search_events(self, name: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None, entity_id: Optional[int] = None, include_children: bool = False) -> Dict[str, List[Dict[str, Any]]]:
         """Search for events based on various criteria."""
-        logger.info(f"Searching events: name={name}, start_date={start_date}, end_date={end_date}, entity_id={entity_id}")
+        logger.info(f"Searching events: name={name}, start_date={start_date}, end_date={end_date}, entity_id={entity_id}, include_children={include_children}")
         try:
-            events = self.event_repository.search_events(name=name, start_date=start_date, end_date=end_date, entity_id=entity_id)
+            events = self.event_repository.search_events(name=name, start_date=start_date, end_date=end_date, entity_id=entity_id, include_children=include_children)
             if not events:
                 logger.info("No events found matching the criteria.")
                 raise EntityDoesNotExistError("No events found matching the criteria.")
