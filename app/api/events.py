@@ -17,14 +17,14 @@ router = APIRouter(prefix="/events", tags=["Events"], dependencies=[Depends(get_
 
 
 @router.get("", response_model=SearchEventsResponse)
-def search_events(entityID: Optional[int] = None, startDate: Optional[str] = Query(default=None, example="2023-01-01"), endDate: Optional[str] = Query(default=None, example="2023-01-01"), name: Optional[str] = Query(default=None, example="Mid year camp"), includeChildren: Optional[bool] = Query(default=False), db: Session = Depends(get_db_session)):
+def search_events(entityID: Optional[int] = None, startDate: Optional[str] = Query(default=None, example="2023-01-01"), endDate: Optional[str] = Query(default=None, example="2023-01-01"), name: Optional[str] = Query(default=None, example="Mid year camp"), includeChildren: Optional[bool] = Query(default=True), db: Session = Depends(get_db_session)):
     """
     Search for events based on various criteria.
      - **name**: Filter events by name (partial match).
      - **startDate**: Filter events that start on or after this date (YYYY-MM-DD).
      - **endDate**: Filter events that end on or before this date (YYYY-MM-DD).
      - **entityID**: Filter events associated with a specific entity (either as an organizing entity or a participating entity).
-     - **includeChildren**: If true, include events associated with child entities of the specified entityID. (default: false)
+     - **includeChildren**: If true, include events associated with child entities of the specified entityID. (default: true)
      - **Returns**: A list of events matching the search criteria.
      - **Errors**:
         - 404: No events found matching the criteria.
