@@ -33,6 +33,9 @@ class EntityAssign(BaseSchema):
 class RoleUpdate(BaseSchema):
     member_id: str = Field(alias='MemberID')
     role_id: int = Field(alias='RoleID')
+    
+class EntityRemove(BaseSchema):
+    member_ids: List[str] = Field(alias='MemberIDs')
 
 
 # Responses

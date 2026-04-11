@@ -12,7 +12,7 @@ from app.schemas.common_schema import SuccessResponse
 from app.schemas.entity_schema import (EntityAssign, EntityAttendanceResponse,
                                        EntityCreate,
                                        EntityHierarchicalResponse,
-                                       EntityMembersResponse, EntityResponse,
+                                       EntityMembersResponse, EntityRemove, EntityResponse,
                                        EntitySearchResponse, EntityTransfer,
                                        RoleUpdate)
 from app.services.entity_service import EntityService
@@ -92,7 +92,7 @@ def transfer_entity(body: List[EntityTransfer], db: Session = Depends(get_db_ses
     200: {"description": "Success", "model": SuccessResponse}})
 def add_entity_members(body: EntityAssign, entityID: int, db: Session = Depends(get_db_session)):
     """
-    Add a member to an entity.
+        Assign members to an entity.
 
     Args:
         body (List[dict]): The request body containing member details.
@@ -113,6 +113,33 @@ def add_entity_members(body: EntityAssign, entityID: int, db: Session = Depends(
         raise HTTPException(status_code=500, detail="Internal server error")
     except Exception as e:
         logger.error(f"Unexpected error during member addition: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Unexpected error")
+    
+@router.delete("/{entityID}/members", response_model=SuccessResponse, responses={
+    200: {"description": "Success", "model": SuccessResponse}})
+def remove_entity_members(body: EntityRemove, entityID: int, db: Session = Depends(get_db_session)):
+    """
+        removes members of an entity.
+
+    Args:
+        body (List[dict]): The request body containing member ids.
+
+    Returns:
+        dict: A confirmation message or details about the updated member.
+    """
+    try:
+        entity_service = EntityService(db)
+        member_ids = body.member_ids
+        if entity_service.remove_entity_members(member_ids=member_ids, entity_id=entityID):
+            return {"message": "Members updated successfully"}
+    except EntityDoesNotExistError as e:
+        logger.error(f"Entity not found during member update: {e.message}", exc_info=True)
+        raise HTTPException(status_code=404, detail='Entity not found')
+    except ServiceError as e:
+        logger.error(f"Database error during member update: {e.message}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+    except Exception as e:
+        logger.error(f"Unexpected error during member update: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Unexpected error")
 @router.get("/{entityID}", tags=['Entities'], response_model=EntityHierarchicalResponse)
 def get_entity(entityID: int, db: Session = Depends(get_db_session)):

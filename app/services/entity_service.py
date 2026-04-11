@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from app.config.logging_config import logger
@@ -241,7 +242,7 @@ class EntityService:
 
     def assign_member_to_entity(self, entity_id: int, memberships: List[dict]) -> bool:
         """
-        Add a member to an entity.
+        Assign members to an entity.
 
         Args:
             entity_id (int): The ID of the entity.
@@ -323,6 +324,65 @@ class EntityService:
                 name="Entity Member Addition Error"
             )
 
+    def remove_entity_members(self, entity_id: int, member_ids: List[str]) -> bool:
+        """
+            Removes members from an entity
+        Args:
+            entity_id (int): The ID of the entity.
+            member_ids (List[str]): A list of member IDs to be assigned to the entity.
+
+        Returns:
+            bool: True if the update was successful, False otherwise.
+
+        Raises:
+            EntityDoesNotExistError: If the entity does not exist.
+            ServiceError: If there is a service-related error.
+        """
+        logger.info(f"Updating members for entity {entity_id}")
+        try:
+            if not self._entity_exists(entity_id):
+                raise EntityDoesNotExistError(
+                    message=f"Entity with ID {entity_id} not found",
+                    name="Entity ID"
+                )
+                
+            # Get current active members
+            current_members = self.db_session.query(EntityMember).filter(
+                and_(
+                    EntityMember.entity_id == entity_id,
+                    EntityMember.date_to.is_(None)
+                )
+            ).all()
+            
+            current_member_map = {em.member_id: em for em in current_members}
+            
+            # for member_id in member_ids:
+            #     # Validate member existence
+            #     member = current_member_map.get(member_id)
+            #     if not member:
+            #         raise EntityDoesNotExistError(
+            #             message=f"Member with ID {member_id} not found or not currently active in entity {entity_id}",
+            #             name="Member ID"
+            #         )
+            # Remove members that are not in the new list
+            members_to_remove = [em for em in current_members if em.member_id not in member_ids]
+            for member in members_to_remove:
+                self.entity_repository.end_member_membership(
+                    entity_id=entity_id,
+                    member_id=member.member_id,
+                    end_date=None
+                )
+            
+            return True
+        except EntityDoesNotExistError:
+            raise
+        except Exception as e:
+            logger.error(f"Error updating entity members: {str(e)}")
+            raise ServiceError(
+                message=f"Failed to update entity members: {str(e)}",
+                name="Entity Member Update Error"
+            )
+            
 
     def update_entity_member_role(self, entity_id: int, body: dict) -> bool:
         """
@@ -532,7 +592,7 @@ class EntityService:
                                     } if attendance.attendance_state else None
                                 } if attendance.attendance_state else None
                             }
-                            for attendance in event.attendance_records
+                            for attendance in event.attendance_records if attendance.member.member_id in [member.member_id for member in entity.members]
                         ] if hasattr(event, 'attendance_records') else []
                     }
                     for event in entity_events
