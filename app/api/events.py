@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db_session
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/events", tags=["Events"], dependencies=[Depends(get_
 
 
 @router.get("", response_model=SearchEventsResponse)
-def search_events(entityID: Optional[int] = None, startDate: Optional[str] = Query(default=None, example="2023-01-01"), endDate: Optional[str] = Query(default=None, example="2023-01-01"), name: Optional[str] = Query(default=None, example="Mid year camp"), includeChildren: Optional[bool] = Query(default=True), db: Session = Depends(get_db_session)):
+def search_events(request: Request,entityID: Optional[int] = None, startDate: Optional[str] = Query(default=None, example="2023-01-01"), endDate: Optional[str] = Query(default=None, example="2023-01-01"), name: Optional[str] = Query(default=None, example="Mid year camp"), includeChildren: Optional[bool] = Query(default=True), db: Session = Depends(get_db_session)):
     """
     Search for events based on various criteria.
      - **name**: Filter events by name (partial match).
@@ -32,7 +32,8 @@ def search_events(entityID: Optional[int] = None, startDate: Optional[str] = Que
     """
     try:
         event_service = EventService(db)
-        return event_service.search_events(name=name, start_date=startDate, end_date=endDate, entity_id=entityID, include_children=includeChildren or False)
+        requester_member_id = request.state.member_id
+        return event_service.search_events(requester_member_id=requester_member_id, name=name, start_date=startDate, end_date=endDate, entity_id=entityID, include_children=includeChildren or False)
     except EntityDoesNotExistError as e:
         raise HTTPException(status_code=404, detail=str(e.message))
     except ServiceError as e:

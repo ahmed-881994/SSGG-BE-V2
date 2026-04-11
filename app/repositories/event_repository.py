@@ -9,6 +9,7 @@ from app.config.logging_config import logger
 from app.core.exceptions import ServiceError
 from app.models.attendance_model import Attendance
 from app.models.attendance_state_model import AttendanceState
+from app.models.entity_member_model import EntityMember
 from app.models.entity_model import Entity
 from app.models.event_entity_model import EventEntity
 from app.models.event_model import Event
@@ -21,8 +22,7 @@ class EventRepository(BaseRepository[Event]):
 
     def __init__(self, db_session: Session):
         super().__init__(db_session, Event)
-        
-    
+
     def get_next_event_id(self) -> int:
         """Get the next available event ID."""
         try:
@@ -33,7 +33,6 @@ class EventRepository(BaseRepository[Event]):
                 name="Database Error"
             )
 
-
     def get_event_by_event_id(self, event_id: int) -> Event | None:
         """Get an event by its ID."""
         try:
@@ -41,14 +40,15 @@ class EventRepository(BaseRepository[Event]):
         except SQLAlchemyError as e:
             logger.error(f"Error fetching event by ID {event_id}: {e}")
             raise ServiceError(message=f"Failed to retrieve event: {str(e)}",
-                name="Database Error")
+                               name="Database Error")
 
-    def search_events(self, name: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None, entity_id: Optional[int] = None, include_children: bool = False) -> list[Event]:
+    def search_events(self, requester_member_id: str, name: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None, entity_id: Optional[int] = None, include_children: bool = False) -> list[Event]:
         """Search for events based on various criteria."""
         try:
             query = self.db.query(Event)
             if name:
-                query = query.filter(or_(Event.event_name_en.ilike(f"%{name}%"), Event.event_name_ar.ilike(f"%{name}%")))
+                query = query.filter(or_(Event.event_name_en.ilike(
+                    f"%{name}%"), Event.event_name_ar.ilike(f"%{name}%")))
             if start_date:
                 query = query.filter(Event.event_start_date >= start_date)
             if end_date:
@@ -56,19 +56,32 @@ class EventRepository(BaseRepository[Event]):
             if entity_id is not None:
                 entity_children = []
                 if include_children:
-                    entity_children = self.db.query(Entity).filter(Entity.entity_parent_id == entity_id).all()
+                    requesting_member = self.db.query(EntityMember).filter(
+                        EntityMember.entity_id == entity_id,
+                        EntityMember.member_id == requester_member_id
+                    ).first()
+
+                    # Only check role if the member exists in this entity
+                    if requesting_member is not None:
+                        requesting_member_entity_role = requesting_member.member_entity_role_id
+                        # If the requesting member is a Leader, Assistant leader, or Secretary
+                        if requesting_member_entity_role in [1, 2, 4]:
+                            entity_children = self.db.query(Entity).filter(
+                                Entity.entity_parent_id == entity_id
+                            ).all()
                 query = query.filter(
                     or_(
                         Event.organizing_entity_id == entity_id,
-                        Event.event_entities.any(EventEntity.entity_id == entity_id),
-                        Event.organizing_entity_id.in_([child.entity_id for child in entity_children])
+                        Event.event_entities.any(
+                            EventEntity.entity_id == entity_id),
+                        Event.organizing_entity_id.in_(
+                            [child.entity_id for child in entity_children])
                     ))
             return query.all()
         except SQLAlchemyError as e:
             logger.error(f"Error searching events: {e}")
             raise ServiceError(message=f"Failed to search events: {str(e)}",
                                name="Database Error")
-
 
     def create_event(self, event: dict, current_user_id: int) -> Event:
         """Create a new event."""
@@ -87,19 +100,20 @@ class EventRepository(BaseRepository[Event]):
             new_event.created_by = current_user_id
 
             super().create(new_event)
-            
+
             # Get the "Not Specified" attendance state ID from the database
             not_specified_state = self.db.query(AttendanceState).filter(
                 AttendanceState.attendance_state_name_en == "Not Specified"
             ).first()
-            
+
             if not_specified_state is None:
                 raise ServiceError(
                     message="Default attendance state 'Not Specified' not found in database",
                     name="Configuration Error"
                 )
 
-            organizing_entity_members = self.db.query(Entity).filter(Entity.entity_id == event["organizing_entity_id"]).first().members
+            organizing_entity_members = self.db.query(Entity).filter(
+                Entity.entity_id == event["organizing_entity_id"]).first().members
 
             for member in organizing_entity_members:
                 member_attendance = Attendance()
@@ -107,15 +121,16 @@ class EventRepository(BaseRepository[Event]):
                 member_attendance.member_id = member.member_id
                 member_attendance.attendance_state_id = not_specified_state.attendance_state_id
                 new_event.attendance_records.append(member_attendance)
-                
-            
+
             logger.info(f"is_multi_team: {event.get('is_multi_team')}")
-            logger.info(f"participating_entities_ids: {event.get('participating_entities_ids')}")
+            logger.info(
+                f"participating_entities_ids: {event.get('participating_entities_ids')}")
             logger.info(f"Event dict keys: {event.keys()}")
 
             if event.get("is_multi_team") and event.get("participating_entities_ids"):
                 for entity_id in event["participating_entities_ids"]:
-                    participating_entity = self.db.query(Entity).filter(Entity.entity_id == entity_id).first()
+                    participating_entity = self.db.query(Entity).filter(
+                        Entity.entity_id == entity_id).first()
                     participating_entity_members = participating_entity.members
                     # Create event entity record
                     event_entity = EventEntity()
@@ -130,8 +145,9 @@ class EventRepository(BaseRepository[Event]):
                             member_attendance.event_id = new_event.event_id
                             member_attendance.member_id = member.member_id
                             member_attendance.attendance_state_id = not_specified_state.attendance_state_id
-                            new_event.attendance_records.append(member_attendance)
-                            
+                            new_event.attendance_records.append(
+                                member_attendance)
+
                     # Create attendance records for members of child entities & add entity as participant
                     # if participating_entity.children:
                     #     for child_entity in participating_entity.children:
@@ -147,7 +163,7 @@ class EventRepository(BaseRepository[Event]):
                     #                 member_attendance.member_id = member.member_id
                     #                 member_attendance.attendance_state_id = not_specified_state.attendance_state_id
                     #                 new_event.attendance_records.append(member_attendance)
-                            
+
             self.db.commit()
 
             return new_event
@@ -159,22 +175,32 @@ class EventRepository(BaseRepository[Event]):
     def update_event(self, event_id: int, event: dict, current_user_id: int) -> Event:
         """Update an existing event."""
         try:
-            existing_event = self.db.query(Event).filter(Event.event_id == event_id).first()
-            
-            existing_event.event_name_en = event.get("event_name", {}).get("en", existing_event.event_name_en)
-            existing_event.event_name_ar = event.get("event_name", {}).get("ar", existing_event.event_name_ar)
-            existing_event.event_start_date = event.get("event_start_date", existing_event.event_start_date)
-            existing_event.event_end_date = event.get("event_end_date", existing_event.event_end_date)
-            existing_event.event_location = event.get("event_location", existing_event.event_location)
-            existing_event.is_multi_team = event.get("is_multi_team", existing_event.is_multi_team)
-            existing_event.event_type_id = event.get("event_type_id", existing_event.event_type_id)
-            existing_event.organizing_entity_id = event.get("organizing_entity_id", existing_event.organizing_entity_id)
+            existing_event = self.db.query(Event).filter(
+                Event.event_id == event_id).first()
+
+            existing_event.event_name_en = event.get(
+                "event_name", {}).get("en", existing_event.event_name_en)
+            existing_event.event_name_ar = event.get(
+                "event_name", {}).get("ar", existing_event.event_name_ar)
+            existing_event.event_start_date = event.get(
+                "event_start_date", existing_event.event_start_date)
+            existing_event.event_end_date = event.get(
+                "event_end_date", existing_event.event_end_date)
+            existing_event.event_location = event.get(
+                "event_location", existing_event.event_location)
+            existing_event.is_multi_team = event.get(
+                "is_multi_team", existing_event.is_multi_team)
+            existing_event.event_type_id = event.get(
+                "event_type_id", existing_event.event_type_id)
+            existing_event.organizing_entity_id = event.get(
+                "organizing_entity_id", existing_event.organizing_entity_id)
             # Update participating_entities via IDs if provided
-            participating_entities_ids = event.get("participating_entities_ids", None)
+            participating_entities_ids = event.get(
+                "participating_entities_ids", None)
             if participating_entities_ids is not None:
                 # Clear existing participating entities
                 existing_event.event_entities.clear()
-                
+
                 # Add new participating entities
                 for entity_id in participating_entities_ids:
                     event_entity = EventEntity()
@@ -190,17 +216,19 @@ class EventRepository(BaseRepository[Event]):
             logger.error(f"Error updating event: {e}")
             raise ServiceError(message=f"Failed to update event: {str(e)}",
                                name="Database Error")
-            
+
     def delete_event(self, event_id: int) -> None:
         """Delete an event."""
         try:
-            event_to_delete = self.db.query(Event).filter(Event.event_id == event_id).first()
+            event_to_delete = self.db.query(Event).filter(
+                Event.event_id == event_id).first()
 
-            attendance_records = self.db.query(Attendance).filter(Attendance.event_id == event_id).all()
+            attendance_records = self.db.query(Attendance).filter(
+                Attendance.event_id == event_id).all()
 
             for attendance in attendance_records:
                 super().delete(attendance)
-            
+
             super().delete(event_to_delete)
         except SQLAlchemyError as e:
             logger.error(f"Error deleting event: {e}")
@@ -220,7 +248,7 @@ class EventRepository(BaseRepository[Event]):
         """Update attendance records for an event."""
         try:
             attendance_record = self.db.query(Attendance).filter(Attendance.event_id == event_id,
-                                                                    Attendance.member_id == member_id).first()
+                                                                 Attendance.member_id == member_id).first()
             if attendance_record:
                 attendance_record.attendance_state_id = attendance_state_id
                 attendance_record.updated_at = datetime.now()
