@@ -39,7 +39,7 @@ def search_entities(entityID: Optional[int] = None, entityParentID: Optional[int
         raise HTTPException(status_code=404, detail='Entity not found')
     except ServiceError as e:
         logger.error(f"Database error during entity search: {e.message}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=e.message)
     except Exception as e:
         logger.error(f"Unexpected error during entity search: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Unexpected error")
@@ -61,7 +61,7 @@ def create_entity(body: EntityCreate, db: Session = Depends(get_db_session)):
         raise HTTPException(status_code=409, detail='Entity already exists')
     except ServiceError as e:
         logger.error(f"Database error during entity creation: {e.message}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=e.message)
     except Exception as e:
         logger.error(f"Unexpected error during entity creation: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Unexpected error")
@@ -83,7 +83,7 @@ def transfer_entity(body: List[EntityTransfer], db: Session = Depends(get_db_ses
         raise HTTPException(status_code=404, detail='Entity not found')
     except ServiceError as e:
         logger.error(f"Database error during entity transfer: {e.message}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=e.message)
     except Exception as e:
         logger.error(f"Unexpected error during entity transfer: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Unexpected error")
@@ -107,10 +107,10 @@ def add_entity_members(body: EntityAssign, entityID: int, db: Session = Depends(
             return {"message": "Members added successfully"}
     except EntityDoesNotExistError as e:
         logger.error(f"Entity not found during member addition: {e.message}", exc_info=True)
-        raise HTTPException(status_code=404, detail='Entity not found')
+        raise HTTPException(status_code=404, detail=e.message)
     except ServiceError as e:
         logger.error(f"Database error during member addition: {e.message}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=e.message)
     except Exception as e:
         logger.error(f"Unexpected error during member addition: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Unexpected error")
@@ -125,21 +125,21 @@ def remove_entity_members(body: EntityRemove, entityID: int, db: Session = Depen
         body (List[dict]): The request body containing member ids.
 
     Returns:
-        dict: A confirmation message or details about the updated member.
+        dict: A confirmation message or details about the removed member.
     """
     try:
         entity_service = EntityService(db)
         member_ids = body.member_ids
         if entity_service.remove_entity_members(member_ids=member_ids, entity_id=entityID):
-            return {"message": "Members updated successfully"}
+            return {"message": "Members removed successfully"}
     except EntityDoesNotExistError as e:
-        logger.error(f"Entity not found during member update: {e.message}", exc_info=True)
-        raise HTTPException(status_code=404, detail='Entity not found')
+        logger.error(f"Entity not found during member removal: {e.message}", exc_info=True)
+        raise HTTPException(status_code=404, detail=e.message)
     except ServiceError as e:
-        logger.error(f"Database error during member update: {e.message}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.error(f"Database error during member removal: {e.message}", exc_info=True)
+        raise HTTPException(status_code=500, detail=e.message)
     except Exception as e:
-        logger.error(f"Unexpected error during member update: {str(e)}", exc_info=True)
+        logger.error(f"Unexpected error during member removal: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Unexpected error")
 @router.get("/{entityID}", tags=['Entities'], response_model=EntityHierarchicalResponse)
 def get_entity(entityID: int, db: Session = Depends(get_db_session)):
@@ -148,10 +148,10 @@ def get_entity(entityID: int, db: Session = Depends(get_db_session)):
         return entity_service.get_entity(entity_id=entityID)
     except EntityDoesNotExistError as e:
         logger.error(f"Entity not found during retrieval: {e.message}", exc_info=True)
-        raise HTTPException(status_code=404, detail='Entity not found')
+        raise HTTPException(status_code=404, detail=e.message)
     except ServiceError as e:
         logger.error(f"Database error during entity retrieval: {e.message}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=e.message)
     except Exception as e:
         logger.error(f"Unexpected error during entity retrieval: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Unexpected error")
@@ -163,10 +163,10 @@ def update_entity(entityID: int, body: EntityCreate, db: Session = Depends(get_d
         return entity_service.update_entity(entity_id=entityID, entity_data=body.model_dump())
     except EntityDoesNotExistError as e:
         logger.error(f"Entity not found during update: {e.message}", exc_info=True)
-        raise HTTPException(status_code=404, detail='Entity not found')
+        raise HTTPException(status_code=404, detail=e.message)
     except ServiceError as e:
         logger.error(f"Database error during update: {e.message}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=e.message)
     except Exception as e:
         logger.error(f"Unexpected error during update: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Unexpected error")
@@ -177,10 +177,10 @@ def delete_entity(entityID: int, db: Session = Depends(get_db_session)):
         entity_service.delete_entity(entity_id=entityID)
     except EntityDoesNotExistError as e:
         logger.error(f"Entity not found during deletion: {e.message}", exc_info=True)
-        raise HTTPException(status_code=404, detail='Entity not found')
+        raise HTTPException(status_code=404, detail=e.message)
     except ServiceError as e:
         logger.error(f"Database error during deletion: {e.message}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=e.message)
     except Exception as e:
         logger.error(f"Unexpected error during deletion: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Unexpected error")
@@ -194,10 +194,10 @@ def get_entity_members(entityID: int, includeInactive: Optional[bool] = False, r
         return entity_service.get_entity_members(entity_id=entityID, include_inactive=includeInactive or False, role_id=roleId)
     except EntityDoesNotExistError as e:
         logger.error(f"Entity not found during member retrieval: {e.message}", exc_info=True)
-        raise HTTPException(status_code=404, detail='Entity not found')
+        raise HTTPException(status_code=404, detail=e.message)
     except ServiceError as e:
         logger.error(f"Database error during member retrieval: {e.message}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=e.message)
     except Exception as e:
         logger.error(f"Unexpected error during member retrieval: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Unexpected error")
@@ -213,10 +213,10 @@ def update_entity_member_role(entityID: int, body: RoleUpdate, db: Session = Dep
             return {"message": "Roles updated successfully"}
     except EntityDoesNotExistError as e:
         logger.error(f"Entity not found during role update: {e.message}", exc_info=True)
-        raise HTTPException(status_code=404, detail='Entity not found')
+        raise HTTPException(status_code=404, detail=e.message)
     except ServiceError as e:
         logger.error(f"Database error during role update: {e.message}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=e.message)
     except Exception as e:
         logger.error(f"Unexpected error during role update: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Unexpected error")
@@ -231,10 +231,10 @@ def get_entity_attendance(entityID: int, db: Session = Depends(get_db_session)):
         return entity_service.get_entity_attendance(entity_id=entityID)
     except EntityDoesNotExistError as e:
         logger.error(f"Entity not found during attendance retrieval: {e.message}", exc_info=True)
-        raise HTTPException(status_code=404, detail='Entity not found')
+        raise HTTPException(status_code=404, detail=e.message)
     except ServiceError as e:
         logger.error(f"Database error during attendance retrieval: {e.message}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=e.message)
     except Exception as e:
         logger.error(f"Unexpected error during attendance retrieval: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Unexpected error")

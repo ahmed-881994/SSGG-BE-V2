@@ -264,3 +264,34 @@ class EntityRepository(BaseRepository[Entity]):
                 message=f"Failed to delete entity: {str(e)}",
                 name="Database Error"
             )
+            
+    def delete_member_from_entity(self, entity_id: int, member_id: str) -> None:
+        """Permanently delete a member's assignment from an entity (hard delete)."""
+        logger.info(f"Permanently removing member {member_id} from entity {entity_id}")
+        try:
+            deleted_count = (
+                self.db.query(EntityMember)
+                .filter(
+                    and_(
+                        EntityMember.entity_id == entity_id,
+                        EntityMember.member_id == member_id
+                    )
+                )
+                .delete()
+            )
+            
+            if deleted_count == 0:
+                logger.warning(f"No assignment found for member {member_id} in entity {entity_id}")
+                raise EntityDoesNotExistError(
+                    message=f"No assignment found for member {member_id} in entity {entity_id}",
+                    name="Member Assignment Not Found"
+                )
+            
+            self.db.commit()
+            logger.info(f"Successfully deleted {deleted_count} assignment(s) for member {member_id}")
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise ServiceError(
+                message=f"Failed to delete member assignment: {str(e)}",
+                name="Database Error"
+            )

@@ -326,61 +326,45 @@ class EntityService:
 
     def remove_entity_members(self, entity_id: int, member_ids: List[str]) -> bool:
         """
-            Removes members from an entity
+        Permanently removes members from an entity (hard delete).
+        Use this to correct wrongful assignments. For normal member departures,
+        use transfer_entity_members to maintain historical records.
+        
         Args:
             entity_id (int): The ID of the entity.
-            member_ids (List[str]): A list of member IDs to be assigned to the entity.
+            member_ids (List[str]): A list of member IDs to be permanently removed.
 
         Returns:
-            bool: True if the update was successful, False otherwise.
+            bool: True if the removal was successful.
 
         Raises:
             EntityDoesNotExistError: If the entity does not exist.
             ServiceError: If there is a service-related error.
         """
-        logger.info(f"Updating members for entity {entity_id}")
+        logger.info(f"Permanently removing {len(member_ids)} member(s) from entity {entity_id}")
         try:
             if not self._entity_exists(entity_id):
                 raise EntityDoesNotExistError(
                     message=f"Entity with ID {entity_id} not found",
                     name="Entity ID"
                 )
-                
-            # Get current active members
-            current_members = self.db_session.query(EntityMember).filter(
-                and_(
-                    EntityMember.entity_id == entity_id,
-                    EntityMember.date_to.is_(None)
-                )
-            ).all()
             
-            current_member_map = {em.member_id: em for em in current_members}
-            
-            # for member_id in member_ids:
-            #     # Validate member existence
-            #     member = current_member_map.get(member_id)
-            #     if not member:
-            #         raise EntityDoesNotExistError(
-            #             message=f"Member with ID {member_id} not found or not currently active in entity {entity_id}",
-            #             name="Member ID"
-            #         )
-            # Remove members that are not in the new list
-            members_to_remove = [em for em in current_members if em.member_id not in member_ids]
-            for member in members_to_remove:
-                self.entity_repository.end_member_membership(
+            # Permanently delete each member's assignment
+            for member_id in member_ids:
+                self.entity_repository.delete_member_from_entity(
                     entity_id=entity_id,
-                    member_id=member.member_id,
-                    end_date=None
+                    member_id=member_id
                 )
             
+            logger.info(f"Successfully removed {len(member_ids)} member(s) from entity {entity_id}")
             return True
         except EntityDoesNotExistError:
             raise
         except Exception as e:
-            logger.error(f"Error updating entity members: {str(e)}")
+            logger.error(f"Error removing entity members: {str(e)}")
             raise ServiceError(
-                message=f"Failed to update entity members: {str(e)}",
-                name="Entity Member Update Error"
+                message=f"Failed to remove entity members: {str(e)}",
+                name="Entity Member Removal Error"
             )
             
 
