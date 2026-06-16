@@ -16,7 +16,7 @@ class MemberCreateRequest(BaseSchema):
     gender: Literal['male', 'female'] = Field(alias='Gender', description="The gender of the member")
     address: Optional[str] = Field(default=None,alias='Address', description="The address of the member")
     national_id_no: Optional[str] = Field(default=None,alias='NationalIdNo', description="The national ID number of the member")
-    club_id_no: Optional[str] = Field(default=None,alias='ClubIdNo', description="The club ID number of the member")
+    club_id_no: Optional[str] = Field(default=None,alias='ClubIdNo', description="The club ID number of the member", max_length=12)
     passport_no: Optional[str] = Field(default=None,alias='PassportNo', description="The passport number of the member")
     date_joined: int = Field(alias='DateJoined', ge=2003, description="The date the member joined")
     mobile_number: Optional[str] = Field(default=None,alias='MobileNo', description="The mobile number of the member", max_length=13)
@@ -48,6 +48,39 @@ class MemberCreateRequest(BaseSchema):
     photo_consent: Optional[bool] = Field(default=None,alias='PhotoConsent', description="The photo consent status of the member")
     conditions_consent: Optional[bool] = Field(default=None,alias='ConditionsConsent', description="The conditions consent status of the member")
     stage_joined: Literal['Smurfs/Pres', 'Cubs/Jeanette', 'Scout/Guide', 'Senior/GA', 'Rover', 'Leader'] = Field(alias='StageJoined', description="The stage the member joined at (e.g., Smurfs/Pres, Cubs/Jeanette, Scout/Guide, Senior/GA, Rover, Leader)")
+
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v):
+        if v is None or v == '':
+            return None
+        import re
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(pattern, v):
+            raise ValueError('Invalid email format')
+        return v
+    
+    @field_validator('mobile_number', 'father_contact', 'mother_contact', 'guardian_contact')
+    @classmethod
+    def validate_phone_number(cls, v):
+        if v is None or v == '':
+            return None
+        import re
+        pattern = r'^(?:\+2)?\d{11}$'
+        if not re.match(pattern, v):
+            raise ValueError('Invalid phone number format')
+        return v
+
+    @field_validator('club_id_no')
+    @classmethod
+    def validate_club_id_no(cls, v):
+        if v is None or v == '':
+            return None
+        import re
+        pattern = r'^[0-9]{12}$'
+        if not re.match(pattern, v):
+            raise ValueError('Invalid club ID number format')
+        return v
     
     
 class MemberUpdateRequest(BaseSchema):
