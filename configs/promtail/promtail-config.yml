@@ -81,6 +81,11 @@ scrape_configs:
       # Parse standard Python log format: "2026-03-18 10:30:45 - logger_name - LEVEL - message [extras]"
       - regex:
           expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) - (?P<logger>\S+) - (?P<level>\w+) - (?P<message>.*?)(?:\s+\[(?P<extras>.*?)\])?$'
+
+      # Normalize level values (e.g., ERROR -> error) for consistent Grafana filtering
+      - template:
+          source: level
+          template: '{{ ToLower .Value }}'
       
       # Parse the extras section if present (e.g., "request_id=abc, method=GET, url=/api/users")
       - regex:

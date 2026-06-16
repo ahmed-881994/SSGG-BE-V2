@@ -26,8 +26,12 @@ class MemberService:
 
     def _transform_name_fields(self, member_data: Dict[str, Any]) -> Dict[str, Any]:
         """Transform name fields to separate English and Arabic names."""
-        member_data['name_en'] = member_data.get('name', {}).get('en', '').strip()
-        member_data['name_ar'] = member_data.get('name', {}).get('ar', '').strip()
+        name_data = member_data.get('name')
+        if not isinstance(name_data, dict):
+            name_data = {}
+
+        member_data['name_en'] = str(name_data.get('en') or '').strip()
+        member_data['name_ar'] = str(name_data.get('ar') or '').strip()
         member_data.pop('name', None)
         return member_data
     
