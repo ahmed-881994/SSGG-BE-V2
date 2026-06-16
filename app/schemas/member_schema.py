@@ -57,25 +57,25 @@ class MemberUpdateRequest(BaseSchema):
     date_of_birth: Optional[date] = Field(default=None,alias='DateOfBirth', description="The date of birth of the member")
     gender: Optional[Literal['male', 'female']] = Field(default=None,alias='Gender', description="The gender of the member")
     address: Optional[str] = Field(default=None,alias='Address', description="The address of the member")
-    national_id_no: Optional[str] = Field(default=None,alias='NationalIdNo', description="The national ID number of the member")
-    club_id_no: Optional[str] = Field(default=None,alias='ClubIdNo', description="The club ID number of the member")
+    national_id_no: Optional[str] = Field(default=None,alias='NationalIdNo', description="The national ID number of the member", max_length=14)
+    club_id_no: Optional[str] = Field(default=None,alias='ClubIdNo', description="The club ID number of the member", max_length=12)
     passport_no: Optional[str] = Field(default=None,alias='PassportNo', description="The passport number of the member")
     date_joined: Optional[int] = Field(default=None,alias='DateJoined', ge=2003, description="The date the member joined")
-    mobile_number: Optional[str] = Field(default=None,alias='MobileNo', description="The mobile number of the member")
-    home_contact: Optional[str] = Field(default=None,alias='HomeContact', description="The home contact number of the member")
+    mobile_number: Optional[str] = Field(default=None,alias='MobileNo', description="The mobile number of the member", max_length=13)
+    home_contact: Optional[str] = Field(default=None,alias='HomeContact', description="The home contact number of the member", max_length=13)
     email: Optional[str] = Field(default=None,alias='Email', description="The email address of the member")
     facebook_url: Optional[str] = Field(default=None,alias='FacebookURL', description="The Facebook profile URL of the member")
     school_name: Optional[str] = Field(default=None,alias='SchoolName', description="The school name of the member")
     education_type: Optional[str] = Field(default=None,alias='EducationType', description="The education type of the member")
-    job: Optional[str] = Field(alias='Job', description="The job/occupation of the member")
+    job: Optional[str] = Field(default=None,alias='Job', description="The job/occupation of the member")
     father_name: Optional[str] = Field(default=None,alias='FatherName', description="The father's name of the member")
-    father_contact: Optional[str] = Field(default=None,alias='FatherContact', description="The father's contact number of the member")
+    father_contact: Optional[str] = Field(default=None,alias='FatherContact', description="The father's contact number of the member", max_length=13)
     father_job: Optional[str] = Field(default=None,alias='FatherJob', description="The father's job of the member")
     mother_name: Optional[str] = Field(default=None,alias='MotherName', description="The mother's name of the member")
-    mother_contact: Optional[str] = Field(default=None,alias='MotherContact', description="The mother's contact number of the member")
+    mother_contact: Optional[str] = Field(default=None,alias='MotherContact', description="The mother's contact number of the member", max_length=13)
     mother_job: Optional[str] = Field(default=None,alias='MotherJob', description="The mother's job of the member")
     guardian_name: Optional[str] = Field(default=None,alias='GuardianName', description="The guardian's name of the member")
-    guardian_contact: Optional[str] = Field(default=None,alias='GuardianContact', description="The guardian's contact number of the member")
+    guardian_contact: Optional[str] = Field(default=None,alias='GuardianContact', description="The guardian's contact number of the member", max_length=13)
     guardian_relationship: Optional[str] = Field(default=None,alias='GuardianRelationship', description="The guardian's relationship to the member")
     hobbies: Optional[str] = Field(default=None,alias='Hobbies', description="The hobbies of the member")
     health_issues: Optional[str] = Field(default=None,alias='HealthIssues', description="The health issues of the member")
@@ -100,7 +100,28 @@ class MemberUpdateRequest(BaseSchema):
         if not re.match(pattern, v):
             raise ValueError('Invalid email format')
         return v
+    
+    @field_validator('mobile_number', 'father_contact', 'mother_contact', 'guardian_contact')
+    @classmethod
+    def validate_phone_number(cls, v):
+        if v is None or v == '':
+            return None
+        import re
+        pattern = r'^(?:\+2)?\d{11}$'
+        if not re.match(pattern, v):
+            raise ValueError('Invalid phone number format')
+        return v
 
+    @field_validator('club_id_no')
+    @classmethod
+    def validate_club_id_no(cls, v):
+        if v is None or v == '':
+            return None
+        import re
+        pattern = r'^[0-9]{12}$'
+        if not re.match(pattern, v):
+            raise ValueError('Invalid club ID number format')
+        return v
 
 
 # Responses
