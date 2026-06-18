@@ -82,10 +82,10 @@ scrape_configs:
       - regex:
           expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) - (?P<logger>\S+) - (?P<level>\w+) - (?P<message>.*?)(?:\s+\[(?P<extras>.*?)\])?$'
 
-      # Normalize level values (e.g., ERROR -> error) for consistent Grafana filtering
+      # Normalize level values to uppercase (e.g., error -> ERROR) for consistent Grafana filtering
       - template:
           source: level
-          template: '{{ ToLower .Value }}'
+          template: '{{ ToUpper .Value }}'
       
       # Parse the extras section if present (e.g., "request_id=abc, method=GET, url=/api/users")
       - regex:
