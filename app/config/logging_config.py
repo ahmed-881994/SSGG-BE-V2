@@ -44,7 +44,7 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
         ).isoformat()
         
         # Standard fields - lowercase level for Loki label consistency
-        log_record['level'] = record.levelname
+        log_record['level'] = record.levelname.lower()
         log_record['severity'] = record.levelname  # Original case for compatibility
         log_record['logger'] = record.name
         log_record['module'] = record.module

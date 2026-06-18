@@ -1,12 +1,10 @@
 version: "3.9"
 
 x-logging: &default-logging
-  driver: loki
+  driver: json-file
   options:
-    loki-url: "http://loki:3100/loki/api/v1/push"
-    loki-batch-size: "400"
-    loki-retries: "2"
-    loki-external-labels: "environment=staging,stack=ssgg-be-v2-staging"
+    max-size: "10m"
+    max-file: "3"
 
 services:
   #------ mysql ------
