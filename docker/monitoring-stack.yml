@@ -162,6 +162,7 @@ services:
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - promtail-positions:/var/lib/promtail
     configs:
       - source: promtail_config
         target: /etc/promtail/config.yml
@@ -211,3 +212,4 @@ volumes:
   grafana-data:
   loki-data:
   tempo-data:
+  promtail-positions:

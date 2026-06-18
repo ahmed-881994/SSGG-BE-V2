@@ -264,8 +264,8 @@ ssgg_health_connection_pool_utilization_percent
 # Logs from specific service
 {service="ssgg-production_api"}
 
-# Filter by request ID
-{environment="production", requestId="<request-id-value>"}
+# Filter by request ID (content filter)
+{environment="production"} |= "request_id=<request-id-value>"
 ```
 
 ### Verify JSON Log Parsing

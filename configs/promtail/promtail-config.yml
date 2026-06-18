@@ -3,7 +3,7 @@ server:
   grpc_listen_port: 0
 
 positions:
-  filename: /tmp/positions.yaml
+  filename: /var/lib/promtail/positions.yaml
 
 clients:
   - url: http://loki:3100/loki/api/v1/push
@@ -91,11 +91,6 @@ scrape_configs:
       - regex:
           source: extras
           expression: 'request_id=(?P<request_id>[^,\]\s]+)'
-
-      # Expose a camelCase key for Grafana-friendly filtering by requestId.
-      - regex:
-          source: extras
-          expression: 'request_id=(?P<requestId>[^,\]\s]+)'
       
       - regex:
           source: extras
@@ -121,17 +116,18 @@ scrape_configs:
       - timestamp:
           source: timestamp
           format: '2006-01-02 15:04:05'
+
+      # Drop stale entries locally so Loki doesn't reject them as too old.
+      - drop:
+          older_than: 168h
       
-      # Extract ONLY low-cardinality fields as labels
-      # High-cardinality fields (request_id, url, client_ip) remain as indexed fields
+      # Keep only low-cardinality fields as labels to avoid active-stream explosions.
+      # High-cardinality fields (request_id, url, client_ip) stay in log payload.
       - labels:
           level:
           logger:
-          request_id:
-          requestId:
           method:
           status_code:
-          url:
           environment:
           stack:
           service:
@@ -140,60 +136,3 @@ scrape_configs:
       - static_labels:
           app: ssgg-api
           job: ssgg-api
-
-    # # Parse logs based on application
-    # pipeline_stages:
-    #   # Try to parse as JSON first (for structured logs from FastAPI)
-    #   - json:
-    #       expressions:
-    #         timestamp: timestamp
-    #         level: level
-    #         severity: severity
-    #         message: message
-    #         logger: logger
-    #         module: module
-    #         function: function
-    #         line: line
-    #         request_id: request_id
-    #         user_id: user_id
-    #         endpoint: endpoint
-    #         method: method
-    #         url: url
-    #         status_code: status_code
-    #         duration_ms: duration_ms
-    #         client_ip: client_ip
-    #         env: env
-    #         app: app
-    #         job: job
-    #         version: version
-    #         pid: pid
-    #         thread: thread
-      
-    #   # Extract labels from parsed JSON (only low-cardinality fields)
-    #   - labels:
-    #       level:
-    #       app:
-    #       job:
-    #       env:
-    #       url:
-    #       method:
-    #       status_code:
-      
-    #   # Set timestamp from log if available (ISO 8601 format)
-    #   - timestamp:
-    #       source: timestamp
-    #       format: RFC3339
-    #       fallback_formats:
-    #         - RFC3339Nano
-    #         - '2006-01-02T15:04:05.999999999Z07:00'
-      
-    #   # If JSON parsing fails, try to extract log level from plain text
-    #   - regex:
-    #       expression: '^(?P<level>(DEBUG|INFO|WARNING|ERROR|CRITICAL)):'
-      
-    #   - labels:
-    #       level:
-      
-    #   # Add output template (use message if parsed, otherwise use full line)
-    #   - output:
-    #       source: message
