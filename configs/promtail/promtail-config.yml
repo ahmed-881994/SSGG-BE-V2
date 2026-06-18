@@ -90,7 +90,12 @@ scrape_configs:
       # Parse the extras section if present (e.g., "request_id=abc, method=GET, url=/api/users")
       - regex:
           source: extras
-          expression: 'request_id=(?P<request_id>[a-f0-9-]+)'
+          expression: 'request_id=(?P<request_id>[^,\]\s]+)'
+
+      # Expose a camelCase key for Grafana-friendly filtering by requestId.
+      - regex:
+          source: extras
+          expression: 'request_id=(?P<requestId>[^,\]\s]+)'
       
       - regex:
           source: extras
@@ -123,6 +128,7 @@ scrape_configs:
           level:
           logger:
           request_id:
+          requestId:
           method:
           status_code:
           url:

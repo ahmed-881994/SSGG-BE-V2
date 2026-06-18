@@ -21,8 +21,13 @@ EXCLUDED_METHODS = {"OPTIONS", "HEAD"}
 
 async def logging_middleware(request: Request, call_next):
     """Middleware for request/response logging"""
-    # Generate request ID
-    request_id = request.state.request_id if hasattr(request.state, 'request_id') else str(uuid.uuid4())
+    # Prefer inbound request ID headers for cross-service correlation.
+    request_id = (
+        request.headers.get("x-request-id")
+        or request.headers.get("x-correlation-id")
+        or (request.state.request_id if hasattr(request.state, 'request_id') else None)
+        or str(uuid.uuid4())
+    )
     request.state.request_id = request_id
     
     # Set request_id in context (makes it available to all logs)

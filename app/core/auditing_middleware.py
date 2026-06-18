@@ -27,8 +27,13 @@ EXCLUDED_METHODS = {"OPTIONS", "HEAD"}
 class AuditMiddleware:
     async def __call__(self, request: Request, call_next):
         """Middleware for auditing requests and responses"""
-        # Generate request ID
-        request_id = request.state.request_id if hasattr(request.state, 'request_id') else str(uuid.uuid4())
+        # Prefer inbound request ID headers for cross-service correlation.
+        request_id = (
+            request.headers.get("x-request-id")
+            or request.headers.get("x-correlation-id")
+            or (request.state.request_id if hasattr(request.state, 'request_id') else None)
+            or str(uuid.uuid4())
+        )
         request.state.request_id = request_id
         # Skip auditing for excluded paths and methods
         if (request.url.path in EXCLUDED_PATHS or 
