@@ -64,6 +64,8 @@ async def logging_middleware(request: Request, call_next):
         logger.info(
             "Request completed ",# + str(request_id) + " " + str(response.status_code),
             extra={
+                "method": request.method,
+                "url": str(request.url.path),
                 "status_code": response.status_code,
                 "process_time": process_time,
             }
