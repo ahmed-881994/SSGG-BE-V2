@@ -9,7 +9,7 @@ from app.schemas.common_schema import NameObject
 # Requests
 
 class MemberCreateRequest(BaseSchema):
-    member_id: Optional[str] = Field(default=None,alias='MemberID', description="The unique identifier for the member (for creation only till ID generation is implemented)")
+    member_id: Optional[str] = Field(default=None,alias='MemberID', description="The unique identifier for the member formatted as S or G followed by 8 digits", examples=["S20394002", "G20394002"])
     name: NameObject = Field(alias='Name', description="The name of the member")
     place_of_birth: Optional[str] = Field(default=None,alias='PlaceOfBirth', description="The place of birth of the member")
     date_of_birth: date = Field(alias='DateOfBirth', description="The date of birth of the member")
@@ -49,6 +49,17 @@ class MemberCreateRequest(BaseSchema):
     conditions_consent: Optional[bool] = Field(default=None,alias='ConditionsConsent', description="The conditions consent status of the member")
     stage_joined: Literal['Smurfs/Pres', 'Cubs/Jeanette', 'Scout/Guide', 'Senior/GA', 'Rover', 'Leader'] = Field(alias='StageJoined', description="The stage the member joined at (e.g., Smurfs/Pres, Cubs/Jeanette, Scout/Guide, Senior/GA, Rover, Leader)")
 
+    @field_validator('member_id')
+    @classmethod
+    def validate_member_id(cls, v):
+        if v is None or v == '':
+            return None
+        import re
+        pattern = r'^[SG][0-9]{8}$'
+        if not re.match(pattern, v):
+            raise ValueError('Invalid member ID format (should start with S or G followed by 8 digits)')
+        return v
+    
     @field_validator('email')
     @classmethod
     def validate_email(cls, v):
