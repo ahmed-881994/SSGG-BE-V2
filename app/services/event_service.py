@@ -62,7 +62,7 @@ class EventService:
         except EntityDoesNotExistError:
             raise
         except Exception as e:
-            logger.error(f"Error retrieving event: {event_id}: {str(e)}")
+            logger.error(f"Error retrieving event: {event_id}: {str(e)}", exc_info=True)
             raise ServiceError(
                 message=f"Failed to retrieve event: {str(e)}",
                 name="Event Retrieval Error"
@@ -80,7 +80,7 @@ class EventService:
         except EntityDoesNotExistError:
             raise
         except Exception as e:
-            logger.error(f"Error searching events: {str(e)}")
+            logger.error(f"Error searching events: {str(e)}", exc_info=True)
             raise ServiceError(
                 message=f"Failed to search events: {str(e)}",
                 name="Event Search Error"
@@ -93,7 +93,7 @@ class EventService:
             new_event = self.event_repository.create_event(event_data, current_user_id=current_user_id)
             return self._format_event_data(new_event)
         except Exception as e:
-            logger.error(f"Error creating event: {str(e)}")
+            logger.error(f"Error creating event: {str(e)}", exc_info=True)
             raise ServiceError(
                 message=f"Failed to create event: {str(e)}",
                 name="Event Creation Error"
@@ -113,7 +113,7 @@ class EventService:
         except EntityDoesNotExistError:
             raise
         except Exception as e:
-            logger.error(f"Error updating event {event_id}: {str(e)}")
+            logger.error(f"Error updating event {event_id}: {str(e)}", exc_info=True)
             raise ServiceError(
                 message=f"Failed to update event: {str(e)}",
                 name="Event Update Error"
@@ -131,7 +131,7 @@ class EventService:
         except EntityDoesNotExistError:
             raise
         except Exception as e:
-            logger.error(f"Error deleting event {event_id}: {str(e)}")
+            logger.error(f"Error deleting event {event_id}: {str(e)}", exc_info=True)
             raise ServiceError(
                 message=f"Failed to delete event: {str(e)}",
                 name="Event Deletion Error"
@@ -173,7 +173,7 @@ class EventService:
         except EntityDoesNotExistError:
             raise
         except Exception as e:
-            logger.error(f"Error retrieving attendance for event {event_id}: {str(e)}")
+            logger.error(f"Error retrieving attendance for event {event_id}: {str(e)}", exc_info=True)
             raise ServiceError(
                 message=f"Failed to retrieve event attendance: {str(e)}",
                 name="Event Attendance Retrieval Error"
@@ -200,7 +200,7 @@ class EventService:
         except EntityDoesNotExistError:
             raise
         except Exception as e:
-            logger.error(f"Error updating attendance for event {event_id}: {str(e)}")
+            logger.error(f"Error updating attendance for event {event_id}: {str(e)}", exc_info=True)
             raise ServiceError(
                 message=f"Failed to update event attendance: {str(e)}",
                 name="Event Attendance Update Error"
