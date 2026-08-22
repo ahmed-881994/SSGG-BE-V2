@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.config.logging_config import logger
@@ -222,13 +222,21 @@ def update_entity_member_role(entityID: int, body: RoleUpdate, db: Session = Dep
         raise HTTPException(status_code=500, detail="Unexpected error")
     
 @router.get("/{entityID}/attendance", tags=['Entities'], response_model=EntityAttendanceResponse)
-def get_entity_attendance(entityID: int, db: Session = Depends(get_db_session)):
+def get_entity_attendance(
+    entityID: int,
+    includeChildren: Optional[bool] = Query(default=False),
+    db: Session = Depends(get_db_session),
+):
     """
     Get attendance records of entity members.
+     - **includeChildren**: If true, include members and events of descendant entities until leaf nodes. Duplicates are removed by MemberID.
     """
     try:
         entity_service = EntityService(db)
-        return entity_service.get_entity_attendance(entity_id=entityID)
+        return entity_service.get_entity_attendance(
+            entity_id=entityID,
+            include_children=includeChildren or False,
+        )
     except EntityDoesNotExistError as e:
         logger.error(f"Entity not found during attendance retrieval: {e.message}", exc_info=True)
         raise HTTPException(status_code=404, detail=e.message)

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.config.logging_config import logger
 from app.core.exceptions import EntityDoesNotExistError, ServiceError
 from app.repositories.event_repository import EventRepository
+from app.util.attendance import dedupe_attendance_records, serialize_attendance_record
 
 
 class EventService:
@@ -146,7 +147,9 @@ class EventService:
                 raise EntityDoesNotExistError(
                     f"Event with ID {event_id} does not exist.", name="Event Retrieval Error"
                 )
-            attendance_records = self.event_repository.get_event_attendance(event_id)
+            attendance_records = dedupe_attendance_records(
+                self.event_repository.get_event_attendance(event_id)
+            )
             return {
                 "event_id": event.event_id,
                 "event_name": {
@@ -154,20 +157,7 @@ class EventService:
                     "ar": event.event_name_ar
                 },
                 "attendance_records": [
-                    {
-                        "member_id": record.member.member_id,
-                        "member_name": {
-                            "en": record.member.name_en,
-                            "ar": record.member.name_ar
-                        },
-                        "attendance_state": {
-                            "attendance_state_id": record.attendance_state.attendance_state_id,
-                            "attendance_state_name": {
-                                "en": record.attendance_state.attendance_state_name_en,
-                                "ar": record.attendance_state.attendance_state_name_ar
-                            }
-                        }
-                    } for record in attendance_records
+                    serialize_attendance_record(record) for record in attendance_records
                 ]
             }
         except EntityDoesNotExistError:

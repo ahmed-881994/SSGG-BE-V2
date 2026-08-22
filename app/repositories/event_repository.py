@@ -14,6 +14,7 @@ from app.models.entity_model import Entity
 from app.models.event_entity_model import EventEntity
 from app.models.event_model import Event
 from app.repositories.base_repository import BaseRepository
+from app.repositories.entity_repository import EntityRepository
 from app.util.egy_time import get_egypt_time
 
 
@@ -54,7 +55,7 @@ class EventRepository(BaseRepository[Event]):
             if end_date:
                 query = query.filter(Event.event_end_date <= end_date)
             if entity_id is not None:
-                entity_children = []
+                entity_ids = [entity_id]
                 if include_children:
                     requesting_member = self.db.query(EntityMember).filter(
                         EntityMember.entity_id == entity_id,
@@ -66,16 +67,14 @@ class EventRepository(BaseRepository[Event]):
                         requesting_member_entity_role = requesting_member.member_entity_role_id
                         # If the requesting member is a Leader, Assistant leader, or Secretary
                         if requesting_member_entity_role in [1, 2, 4]:
-                            entity_children = self.db.query(Entity).filter(
-                                Entity.entity_parent_id == entity_id
-                            ).all()
+                            entity_ids = EntityRepository(self.db).get_descendant_entity_ids(
+                                entity_id, include_self=True
+                            )
                 query = query.filter(
                     or_(
-                        Event.organizing_entity_id == entity_id,
+                        Event.organizing_entity_id.in_(entity_ids),
                         Event.event_entities.any(
-                            EventEntity.entity_id == entity_id),
-                        Event.organizing_entity_id.in_(
-                            [child.entity_id for child in entity_children])
+                            EventEntity.entity_id.in_(entity_ids)),
                     ))
             return query.all()
         except SQLAlchemyError as e:
@@ -115,12 +114,23 @@ class EventRepository(BaseRepository[Event]):
             organizing_entity_members = self.db.query(Entity).filter(
                 Entity.entity_id == event["organizing_entity_id"]).first().members
 
-            for member in organizing_entity_members:
+            added_member_ids: set[str] = set()
+
+            def add_member_attendance(member) -> None:
+                if member is None or not getattr(member, "member_id", None):
+                    return
+                member_key = str(member.member_id).strip().upper()
+                if not member_key or member_key in added_member_ids:
+                    return
+                added_member_ids.add(member_key)
                 member_attendance = Attendance()
                 member_attendance.event_id = new_event.event_id
                 member_attendance.member_id = member.member_id
                 member_attendance.attendance_state_id = not_specified_state.attendance_state_id
                 new_event.attendance_records.append(member_attendance)
+
+            for member in organizing_entity_members:
+                add_member_attendance(member)
 
             logger.info(f"is_multi_team: {event.get('is_multi_team')}")
             logger.info(
@@ -140,29 +150,7 @@ class EventRepository(BaseRepository[Event]):
 
                     # Create attendance records for members of participating entity
                     for member in participating_entity_members:
-                        if member not in organizing_entity_members:
-                            member_attendance = Attendance()
-                            member_attendance.event_id = new_event.event_id
-                            member_attendance.member_id = member.member_id
-                            member_attendance.attendance_state_id = not_specified_state.attendance_state_id
-                            new_event.attendance_records.append(
-                                member_attendance)
-
-                    # Create attendance records for members of child entities & add entity as participant
-                    # if participating_entity.children:
-                    #     for child_entity in participating_entity.children:
-                    #         event_entity = EventEntity()
-                    #         event_entity.event_id = new_event.event_id
-                    #         event_entity.entity_id = child_entity.entity_id
-                    #         new_event.event_entities.append(event_entity)
-                    #         child_entity_members = child_entity.members
-                    #         for member in child_entity_members:
-                    #             if member not in organizing_entity_members:
-                    #                 member_attendance = Attendance()
-                    #                 member_attendance.event_id = new_event.event_id
-                    #                 member_attendance.member_id = member.member_id
-                    #                 member_attendance.attendance_state_id = not_specified_state.attendance_state_id
-                    #                 new_event.attendance_records.append(member_attendance)
+                        add_member_attendance(member)
 
             self.db.commit()
 

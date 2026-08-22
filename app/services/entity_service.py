@@ -1,15 +1,22 @@
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from app.config.logging_config import logger
 from app.core.exceptions import (EntityAlreadyExistsError,
                                  EntityDoesNotExistError, ServiceError)
 from app.models.entity_member_model import EntityMember
+from app.models.event_entity_model import EventEntity
+from app.models.event_model import Event
 from app.models.member_model import Member
 from app.repositories.entity_repository import EntityRepository
 from app.schemas.entity_schema import EntityTransfer
+from app.util.attendance import (
+    dedupe_attendance_records,
+    member_id_key,
+    serialize_attendance_record,
+)
 
 
 class EntityService:
@@ -536,8 +543,8 @@ class EntityService:
                 name="Entity Delete Error"
             )
             
-    def get_entity_attendance(self, entity_id: int):
-        """Get attendance data for an entity."""
+    def get_entity_attendance(self, entity_id: int, include_children: bool = False):
+        """Get attendance data for an entity, optionally including descendant entities."""
         try:
             entity = self.entity_repository.get_entity_by_entity_id(entity_id)
             if entity is None:
@@ -545,55 +552,62 @@ class EntityService:
                     message=f"Entity with ID {entity_id} does not exist.",
                     name="Entity Attendance Retrieval Error"
                 )
-            # entity_events = entity.all_events + [event for child in entity.children for event in child.all_events] if hasattr(entity, 'children') else entity.all_events
-            entity_events = entity.all_events if hasattr(entity, 'all_events') else []
-            total_events = len(entity_events)
-            attended_events = 0
+
+            if include_children:
+                entity_ids = self.entity_repository.get_descendant_entity_ids(
+                    entity_id, include_self=True
+                )
+                member_keys = {
+                    member_id_key(member_id)
+                    for member_id in self.entity_repository.get_active_member_ids(entity_ids)
+                }
+                entity_events = self._events_for_entity_ids(entity_ids)
+            else:
+                member_keys = {
+                    member_id_key(member.member_id)
+                    for member in entity.members
+                    if member and member.member_id
+                }
+                entity_events = entity.all_events if hasattr(entity, "all_events") else []
+
+            events_payload = []
             attendance_records_count = 0
-            
-            entity_attendance = {
-                "events": [
-                    {
-                        "event_id": event.event_id,
-                        "event_name": {
-                            "en": event.event_name_en,
-                            "ar": event.event_name_ar
-                        },
-                        "event_start_date": event.event_start_date,
-                        "event_end_date": event.event_end_date,
-                        "attendance": [
-                            {
-                                "member_id": attendance.member.member_id,
-                                "member_name": {
-                                    "en": attendance.member.name_en,
-                                    "ar": attendance.member.name_ar
-                                } if attendance.member else None,
-                                "attendance_state": {
-                                    "attendance_state_id": attendance.attendance_state.attendance_state_id,
-                                    "attendance_state_name": {
-                                        "en": attendance.attendance_state.attendance_state_name_en,
-                                        "ar": attendance.attendance_state.attendance_state_name_ar
-                                    } if attendance.attendance_state else None
-                                } if attendance.attendance_state else None
-                            }
-                            for attendance in event.attendance_records if attendance.member.member_id in [member.member_id for member in entity.members]
-                        ] if hasattr(event, 'attendance_records') else []
-                    }
-                    for event in entity_events
-                ],
-                "total_events": 0,  # Direct assignment of int
-                "attendance_percentage": 0.0  # Direct assignment of float
-            }
-            # Calculate attendance statistics
+            attended_count = 0
+
             for event in entity_events:
-                attendance_records_count += len(event.attendance_records)
-                attended_events += sum(1 for attendance in event.attendance_records if attendance.attendance_state_id in [1, 4])  # Assuming 1 and 4 are the IDs for attended states
+                records = getattr(event, "attendance_records", None) or []
+                matching_records = [
+                    record for record in records
+                    if record.member and member_id_key(record.member.member_id) in member_keys
+                ]
+                unique_records = dedupe_attendance_records(matching_records)
+                attendance_records_count += len(unique_records)
+                attended_count += sum(
+                    1 for record in unique_records if record.attendance_state_id in [1, 4]
+                )
+                events_payload.append({
+                    "event_id": event.event_id,
+                    "event_name": {
+                        "en": event.event_name_en,
+                        "ar": event.event_name_ar
+                    },
+                    "event_start_date": event.event_start_date,
+                    "event_end_date": event.event_end_date,
+                    "attendance": [
+                        serialize_attendance_record(record) for record in unique_records
+                    ],
+                })
 
-            attendance_percentage = (attended_events / attendance_records_count * 100) if attendance_records_count > 0 else 0
+            attendance_percentage = (
+                (attended_count / attendance_records_count * 100)
+                if attendance_records_count > 0 else 0
+            )
 
-            entity_attendance["total_events"] = total_events
-            entity_attendance["attendance_percentage"] = attendance_percentage
-            return entity_attendance
+            return {
+                "events": events_payload,
+                "total_events": len(events_payload),
+                "attendance_percentage": attendance_percentage,
+            }
         except EntityDoesNotExistError:
             raise
         except Exception as e:
@@ -602,3 +616,20 @@ class EntityService:
                 message=f"Failed to retrieve entity attendance: {str(e)}",
                 name="Entity Attendance Retrieval Error"
             )
+
+    def _events_for_entity_ids(self, entity_ids: List[int]) -> List[Event]:
+        """Return unique events organized by or participated in by the given entities."""
+        if not entity_ids:
+            return []
+        return (
+            self.db_session.query(Event)
+            .outerjoin(EventEntity, EventEntity.event_id == Event.event_id)
+            .filter(
+                or_(
+                    Event.organizing_entity_id.in_(entity_ids),
+                    EventEntity.entity_id.in_(entity_ids),
+                )
+            )
+            .distinct()
+            .all()
+        )

@@ -1,5 +1,6 @@
+from collections import deque
 from datetime import date, datetime
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from sqlalchemy import and_, func, or_
 from sqlalchemy.exc import SQLAlchemyError
@@ -82,6 +83,54 @@ class EntityRepository(BaseRepository[Entity]):
         except SQLAlchemyError as e:
             raise ServiceError(
                 message=f"Failed to retrieve next entity ID: {str(e)}",
+                name="Database Error"
+            )
+
+    def get_descendant_entity_ids(self, entity_id: int, include_self: bool = True) -> List[int]:
+        """Return this entity and all descendants via parent_id, with cycle protection."""
+        try:
+            visited: Set[int] = set()
+            queue = deque([entity_id])
+            while queue:
+                current = queue.popleft()
+                if current in visited:
+                    continue
+                visited.add(current)
+                children = (
+                    self.db.query(Entity.entity_id)
+                    .filter(Entity.entity_parent_id == current)
+                    .all()
+                )
+                for (child_id,) in children:
+                    if child_id not in visited:
+                        queue.append(child_id)
+            if not include_self:
+                visited.discard(entity_id)
+            return list(visited)
+        except SQLAlchemyError as e:
+            raise ServiceError(
+                message=f"Failed to retrieve descendant entities: {str(e)}",
+                name="Database Error"
+            )
+
+    def get_active_member_ids(self, entity_ids: List[int]) -> Set[str]:
+        """Return unique active member IDs for the given entities."""
+        if not entity_ids:
+            return set()
+        try:
+            rows = (
+                self.db.query(EntityMember.member_id)
+                .filter(
+                    EntityMember.entity_id.in_(entity_ids),
+                    EntityMember.date_to.is_(None),
+                )
+                .distinct()
+                .all()
+            )
+            return {row.member_id for row in rows if row.member_id}
+        except SQLAlchemyError as e:
+            raise ServiceError(
+                message=f"Failed to retrieve entity members: {str(e)}",
                 name="Database Error"
             )
 
